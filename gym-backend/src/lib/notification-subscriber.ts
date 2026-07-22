@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { env } from '@/config/env';
 import { logger } from '@/config/logger';
 import { emitToUser } from '@/lib/socket';
+import { sendPushToUser } from '@/lib/push';
 
 // Must match gym-queue-worker's NOTIFICATION_CHANNEL constant exactly.
 const NOTIFICATION_CHANNEL = 'gym:notification:new';
@@ -25,6 +26,9 @@ export function startNotificationSubscriber() {
     try {
       const { userId, notification } = JSON.parse(message);
       emitToUser(userId, 'notification:new', notification);
+      sendPushToUser(userId, { title: notification.title, body: notification.body }).catch((err) =>
+        logger.error('sendPushToUser failed', { err, userId })
+      );
     } catch (err) {
       logger.error('Failed to process notification event', { err });
     }

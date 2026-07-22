@@ -14,6 +14,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { GoogleSignInSection } from "@/components/google-sign-in-button";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -73,6 +74,8 @@ export default function LoginPage() {
               {mutation.isPending ? "Logging in..." : "Log in"}
             </Button>
           </form>
+
+          <GoogleSignInSection onError={setServerError} />
 
           <p className="mt-6 text-center text-sm text-muted">
             Don&apos;t have an account?{" "}

@@ -130,6 +130,7 @@ model User {
 
   aiLogs         AiLog[]
   aiChatMessages AiChatMessage[]
+  pushSubscriptions PushSubscription[]
 
   @@index([role])
   @@map("users")
@@ -1068,4 +1069,19 @@ model AiChatMessage {
 
   @@index([userId, createdAt])
   @@map("ai_chat_messages")
+}
+
+model PushSubscription {
+  id       String @id @default(uuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint String @unique
+  p256dh   String
+  auth     String
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

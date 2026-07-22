@@ -52,6 +52,7 @@ import { reportsRouter } from '@/features/reports/reports.routes';
 import { segmentsRouter } from '@/features/segments/segments.routes';
 import { adminAiRouter, aiRouter } from '@/features/ai/ai.routes';
 import { trainerRouter } from '@/features/trainer/trainer.routes';
+import { pushRouter } from '@/features/push/push.routes';
 import { auditLog } from '@/middlewares/auditLog';
 
 const allowedOrigins = env.CORS_ORIGINS.split(',').map((origin) => origin.trim());
@@ -133,6 +134,7 @@ export function createApp() {
   app.use('/api/v1/ai', aiRouter);
   app.use('/api/v1/admin/ai', adminAiRouter);
   app.use('/api/v1/trainer', trainerRouter);
+  app.use('/api/v1/push', pushRouter);
 
   const openApiSpec = buildOpenApiSpec([
     { prefix: '/api/v1/health', router: healthRouter, tag: 'Health' },
@@ -188,6 +190,7 @@ export function createApp() {
     { prefix: '/api/v1/ai', router: aiRouter, tag: 'AI' },
     { prefix: '/api/v1/admin/ai', router: adminAiRouter, tag: 'Admin: AI' },
     { prefix: '/api/v1/trainer', router: trainerRouter, tag: 'Trainer' },
+    { prefix: '/api/v1/push', router: pushRouter, tag: 'Push Notifications' },
   ]);
 
   app.get('/api-docs.json', (_req, res) => res.json(openApiSpec));

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Script from "next/script";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { CheckCircle2, CreditCard, Download, Receipt } from "lucide-react";
@@ -12,13 +13,21 @@ import {
   getMyMembership,
   listMembershipPlans,
   listMyPayments,
+  verifyPayment,
   type MembershipPlan,
-  type PaymentGateway,
 } from "@/lib/membership-api";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/require-auth";
 import { cn } from "@/lib/utils";
+
+// Razorpay's checkout.js attaches itself to window.Razorpay — no official
+// types package, so declare just the shape we use.
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
 
 function finalPrice(plan: MembershipPlan) {
   if (!plan.discountPercent) return plan.price;
@@ -53,26 +62,73 @@ function PlanCard({ plan, onBuy, isPending }: { plan: MembershipPlan; onBuy: () 
 
 function MembershipContent() {
   const queryClient = useQueryClient();
-  const [gateway] = useState<PaymentGateway>("UPI");
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const { data: plans } = useQuery({ queryKey: ["membership-plans"], queryFn: listMembershipPlans });
   const { data: membership } = useQuery({ queryKey: ["my-membership"], queryFn: getMyMembership });
   const { data: payments } = useQuery({ queryKey: ["my-payments"], queryFn: listMyPayments });
 
+  function refreshAfterPurchase() {
+    queryClient.invalidateQueries({ queryKey: ["my-membership"] });
+    queryClient.invalidateQueries({ queryKey: ["my-payments"] });
+  }
+
+  const verifyMutation = useMutation({
+    mutationFn: verifyPayment,
+    onSuccess: refreshAfterPurchase,
+    onError: () => setCheckoutError("Payment verification failed. If money was deducted, it will be refunded automatically."),
+  });
+
   const checkoutMutation = useMutation({
-    mutationFn: (planId: string) => checkout(planId, gateway),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-membership"] });
-      queryClient.invalidateQueries({ queryKey: ["my-payments"] });
+    mutationFn: (planId: string) => checkout(planId, "RAZORPAY"),
+    onSuccess: (result) => {
+      setCheckoutError(null);
+
+      if (!result.requiresPayment) {
+        // Demo mode (no Razorpay keys configured yet) — already completed server-side.
+        refreshAfterPurchase();
+        return;
+      }
+
+      if (!window.Razorpay) {
+        setCheckoutError("Payment widget failed to load. Please refresh and try again.");
+        return;
+      }
+
+      const razorpay = new window.Razorpay({
+        key: result.keyId,
+        amount: result.amount,
+        currency: result.currency,
+        order_id: result.orderId,
+        name: "Gym Platform",
+        description: "Membership purchase",
+        handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          verifyMutation.mutate({
+            paymentId: result.paymentId!,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+        },
+        modal: {
+          ondismiss: () => setCheckoutError("Payment cancelled."),
+        },
+      });
+      razorpay.open();
     },
+    onError: () => setCheckoutError("Could not start checkout. Please try again."),
   });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+
       <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-semibold">
         Membership
       </motion.h1>
       <p className="mt-1 text-muted">Manage your plan and payment history.</p>
+
+      {checkoutError && <p className="mt-3 text-sm text-danger">{checkoutError}</p>}
 
       {membership && (
         <Card className="mt-6">
@@ -106,7 +162,7 @@ function MembershipContent() {
           <PlanCard
             key={plan.id}
             plan={plan}
-            isPending={checkoutMutation.isPending}
+            isPending={checkoutMutation.isPending || verifyMutation.isPending}
             onBuy={() => checkoutMutation.mutate(plan.id)}
           />
         ))}

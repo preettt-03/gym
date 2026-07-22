@@ -11,6 +11,7 @@ import { registerUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { GoogleSignInSection } from "@/components/google-sign-in-button";
 import Link from "next/link";
 import { isAxiosError } from "axios";
 
@@ -75,6 +76,8 @@ export default function RegisterPage() {
               {mutation.isPending ? "Creating account..." : "Create account"}
             </Button>
           </form>
+
+          <GoogleSignInSection onError={setServerError} />
 
           <p className="mt-6 text-center text-sm text-muted">
             Already have an account?{" "}

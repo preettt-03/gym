@@ -117,6 +117,9 @@ services:
         # the internal Docker service name.
         NEXT_PUBLIC_API_URL: http://localhost:8004/api/v1
         NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        # Optional — set via `NEXT_PUBLIC_GOOGLE_CLIENT_ID=... docker compose build`
+        # to enable the Google sign-in button; empty hides it.
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     container_name: gym-user-frontend
     restart: unless-stopped
     ports:

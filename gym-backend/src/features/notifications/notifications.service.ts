@@ -1,8 +1,10 @@
 import { NotificationType, Prisma, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/config/logger';
 import { AppError } from '@/middlewares/errorHandler';
 import { PaginationParams } from '@/lib/pagination';
 import { emitToUser } from '@/lib/socket';
+import { sendPushToUser } from '@/lib/push';
 
 export async function createNotification(
   userId: string,
@@ -16,6 +18,11 @@ export async function createNotification(
   });
 
   emitToUser(userId, 'notification:new', notification);
+  // Fire-and-forget — a push failure (or no subscription) shouldn't fail the
+  // action that triggered this notification; the DB row + socket emit already succeeded.
+  sendPushToUser(userId, { title, body, data: { notificationId: notification.id, type } }).catch((err) =>
+    logger.error('sendPushToUser failed', { err, userId })
+  );
   return notification;
 }
 
@@ -71,7 +78,10 @@ export async function broadcastAnnouncement(title: string, body: string | undefi
     })),
   });
 
-  targets.forEach((t) => emitToUser(t.id, 'notification:new', { type: NotificationType.ADMIN_ANNOUNCEMENT, title, body }));
+  targets.forEach((t) => {
+    emitToUser(t.id, 'notification:new', { type: NotificationType.ADMIN_ANNOUNCEMENT, title, body });
+    sendPushToUser(t.id, { title, body }).catch((err) => logger.error('sendPushToUser failed', { err, userId: t.id }));
+  });
 
   return { notified: targets.length };
 }

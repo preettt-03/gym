@@ -34,8 +34,33 @@ export async function getMyMembership() {
   return data;
 }
 
+export interface CheckoutResult {
+  requiresPayment: boolean;
+  demo: boolean;
+  // Present when requiresPayment is true (real Razorpay order to open in the widget)
+  paymentId?: string;
+  orderId?: string;
+  amount?: number;
+  currency?: string;
+  keyId?: string;
+  // Present when requiresPayment is false (demo instant-completion, or after verifyPayment)
+  membership?: Membership;
+  payment?: Payment;
+  isRenewal?: boolean;
+}
+
 export async function checkout(planId: string, gateway: PaymentGateway) {
-  const { data } = await apiClient.post("/memberships/checkout", { planId, gateway });
+  const { data } = await apiClient.post<CheckoutResult>("/memberships/checkout", { planId, gateway });
+  return data;
+}
+
+export async function verifyPayment(input: {
+  paymentId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}) {
+  const { data } = await apiClient.post<CheckoutResult>("/memberships/verify-payment", input);
   return data;
 }
 

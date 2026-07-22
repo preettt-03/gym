@@ -26,6 +26,18 @@ const envSchema = z.object({
   // Used to build absolute URLs for locally-stored uploads. Point this at a real
   // S3/Cloudinary-backed CDN URL in production instead of switching storage backends.
   PUBLIC_URL: z.string().default('http://localhost:8004'),
+
+  // Web Push (browser notifications). Generate with `npx web-push generate-vapid-keys`.
+  // Optional — push subscribe/send endpoints return a clear "not configured" error when absent.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:admin@gym.local'),
+
+  // Razorpay (payment gateway). Optional — checkout falls back to an instant
+  // demo-completion flow (clearly labeled) when absent, so membership purchase
+  // still works end-to-end without a merchant account.
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

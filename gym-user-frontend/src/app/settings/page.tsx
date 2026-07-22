@@ -1,14 +1,72 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
+import { Bell, BellOff } from "lucide-react";
 import { getMyProfile, updateMyProfile, type UpdateProfileInput } from "@/lib/profile-api";
+import {
+  getCurrentSubscription,
+  isPushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push-client";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/require-auth";
+
+function PushNotificationsCard() {
+  const [supported, setSupported] = useState(true);
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isPushSupported()) {
+      setSupported(false);
+      setLoading(false);
+      return;
+    }
+    getCurrentSubscription()
+      .then((sub) => setSubscribed(Boolean(sub)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleToggle() {
+    setError(null);
+    if (subscribed) {
+      await unsubscribeFromPush();
+      setSubscribed(false);
+      return;
+    }
+    const result = await subscribeToPush();
+    if (result.ok) {
+      setSubscribed(true);
+    } else {
+      setError(result.reason ?? "Could not enable notifications.");
+    }
+  }
+
+  if (!supported || loading) return null;
+
+  return (
+    <Card className="mt-6">
+      <CardTitle className="flex items-center gap-2">
+        {subscribed ? <Bell className="h-4 w-4 text-accent" /> : <BellOff className="h-4 w-4 text-muted" />}
+        Push notifications
+      </CardTitle>
+      <CardDescription className="mt-1 mb-3">
+        Get workout reminders, membership alerts, and trainer notes even when the app is closed.
+      </CardDescription>
+      <Button variant={subscribed ? "glass" : "default"} size="sm" onClick={handleToggle}>
+        {subscribed ? "Disable" : "Enable"} push notifications
+      </Button>
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+    </Card>
+  );
+}
 
 interface FormValues {
   name: string;
@@ -137,6 +195,8 @@ function SettingsContent() {
           {mutation.isSuccess && <p className="text-sm text-accent-2 sm:col-span-2">Profile updated.</p>}
         </form>
       </Card>
+
+      <PushNotificationsCard />
     </div>
   );
 }

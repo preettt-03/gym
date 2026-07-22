@@ -21,6 +21,11 @@ export async function loginUser(input: { email: string; password: string }) {
   return data;
 }
 
+export async function googleLogin(idToken: string) {
+  const { data } = await apiClient.post<AuthResponse>("/auth/google", { idToken });
+  return data;
+}
+
 export interface Exercise {
   id: string;
   name: string;
