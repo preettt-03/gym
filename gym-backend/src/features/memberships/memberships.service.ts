@@ -117,7 +117,10 @@ async function checkoutWithRazorpay(userId: string, planId: string) {
   const order = await razorpay!.orders.create({
     amount: amountPaise,
     currency: 'INR',
-    receipt: `plan_${plan.id}_${Date.now()}`,
+    // Razorpay caps receipt at 40 chars — a full plan UUID + timestamp
+    // overflows that, so use a short random receipt and keep the real
+    // ids in `notes` instead.
+    receipt: `rcpt_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
     notes: { userId, planId },
   });
 
