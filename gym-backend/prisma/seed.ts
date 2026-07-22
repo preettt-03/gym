@@ -21,6 +21,23 @@ async function main() {
   });
 
   console.log(`Seeded admin user: ${admin.email} (password: ${password})`);
+
+  // A handful of tests (payments, membership-checkout, razorpay-webhook) need
+  // at least one active plan to exist — this keeps a fresh database (CI, a new
+  // dev machine) test-ready without any manual admin setup first.
+  const existingPlan = await prisma.membershipPlan.findFirst({ where: { isActive: true, deletedAt: null } });
+  if (!existingPlan) {
+    const plan = await prisma.membershipPlan.create({
+      data: {
+        name: 'Monthly Standard',
+        description: '1 month of full gym access.',
+        durationDays: 30,
+        price: 900,
+        benefits: ['Gym access', 'Locker'],
+      },
+    });
+    console.log(`Seeded membership plan: ${plan.name}`);
+  }
 }
 
 main()

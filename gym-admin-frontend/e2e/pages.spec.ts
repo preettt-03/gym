@@ -20,7 +20,7 @@ test.describe("Admin pages", () => {
   test("users page loads the user list", async ({ page }) => {
     await page.getByRole("link", { name: "Users" }).click();
     await expect(page).toHaveURL(/\/users/);
-    await expect(page.getByText(/admin@gym\.local/)).toBeVisible();
+    await expect(page.getByRole("main").getByText(/admin@gym\.local/)).toBeVisible();
   });
 
   test("exercises page loads", async ({ page }) => {

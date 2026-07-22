@@ -38,6 +38,12 @@ const envSchema = z.object({
   // still works end-to-end without a merchant account.
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
+
+  // Razorpay webhook signing secret (Dashboard > Webhooks > set a secret, distinct
+  // from the API key secret above). Optional — without it, the webhook endpoint
+  // stays disabled and payment confirmation relies solely on the client-side
+  // checkout callback.
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

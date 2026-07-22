@@ -53,6 +53,7 @@ import { segmentsRouter } from '@/features/segments/segments.routes';
 import { adminAiRouter, aiRouter } from '@/features/ai/ai.routes';
 import { trainerRouter } from '@/features/trainer/trainer.routes';
 import { pushRouter } from '@/features/push/push.routes';
+import { webhooksRouter } from '@/features/webhooks/webhooks.routes';
 import { auditLog } from '@/middlewares/auditLog';
 
 const allowedOrigins = env.CORS_ORIGINS.split(',').map((origin) => origin.trim());
@@ -68,6 +69,11 @@ export function createApp() {
     })
   );
   app.use(compression());
+
+  // Mounted before the global json() parser below — it needs the raw request
+  // body to verify Razorpay's webhook signature.
+  app.use('/api/v1/webhooks', webhooksRouter);
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
@@ -191,6 +197,7 @@ export function createApp() {
     { prefix: '/api/v1/admin/ai', router: adminAiRouter, tag: 'Admin: AI' },
     { prefix: '/api/v1/trainer', router: trainerRouter, tag: 'Trainer' },
     { prefix: '/api/v1/push', router: pushRouter, tag: 'Push Notifications' },
+    { prefix: '/api/v1/webhooks', router: webhooksRouter, tag: 'Webhooks' },
   ]);
 
   app.get('/api-docs.json', (_req, res) => res.json(openApiSpec));

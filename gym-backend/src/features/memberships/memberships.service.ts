@@ -181,3 +181,31 @@ export async function verifyPayment(
 
   return { ...result, requiresPayment: false, demo: false };
 }
+
+// Server-to-server confirmation path, called from the Razorpay webhook handler.
+// This is the source of truth for completing a payment — unlike the client-side
+// checkout callback, it still fires even if the browser tab closes mid-payment
+// (e.g. a UPI app-switch that never returns focus to the browser). Looked up by
+// order id (set at checkout) or, once completed, by payment id (set by
+// activateMembership) so a duplicate webhook delivery is a safe no-op.
+export async function completeRazorpayPaymentFromWebhook(orderId: string, razorpayPaymentId: string) {
+  const payment = await prisma.payment.findFirst({
+    where: { OR: [{ gatewayReferenceId: orderId }, { gatewayReferenceId: razorpayPaymentId }] },
+  });
+  if (!payment || payment.status !== PaymentStatus.PENDING) return null;
+
+  return activateMembership(
+    payment.userId,
+    payment.planId,
+    payment.amount,
+    PaymentGateway.RAZORPAY,
+    razorpayPaymentId,
+    payment.id
+  );
+}
+
+export async function markRazorpayPaymentFailedFromWebhook(orderId: string) {
+  const payment = await prisma.payment.findFirst({ where: { gatewayReferenceId: orderId } });
+  if (!payment || payment.status !== PaymentStatus.PENDING) return null;
+  return prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.FAILED } });
+}

@@ -44,3 +44,11 @@ pushRouter.get(
     res.json({ subscriptions });
   })
 );
+
+pushRouter.post(
+  '/test',
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const result = await service.sendTestPush(req.user!.id);
+    res.json(result);
+  })
+);

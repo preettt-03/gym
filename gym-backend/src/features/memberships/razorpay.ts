@@ -15,3 +15,10 @@ export function verifyRazorpaySignature(orderId: string, paymentId: string, sign
     .digest('hex');
   return expected === signature;
 }
+
+export const isRazorpayWebhookConfigured = Boolean(env.RAZORPAY_WEBHOOK_SECRET);
+
+export function verifyRazorpayWebhookSignature(rawBody: Buffer, signature: string): boolean {
+  const expected = crypto.createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET!).update(rawBody).digest('hex');
+  return expected === signature;
+}

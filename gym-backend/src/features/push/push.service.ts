@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { sendPushToUser } from '@/lib/push';
 
 export async function subscribe(
   userId: string,
@@ -24,4 +25,16 @@ export async function unsubscribe(userId: string, endpoint: string) {
 
 export async function listMySubscriptions(userId: string) {
   return prisma.pushSubscription.findMany({ where: { userId }, select: { id: true, endpoint: true, createdAt: true } });
+}
+
+// Lets the caller verify their own subscription actually works end-to-end
+// (VAPID keys + browser permission + service worker) without waiting for a
+// real system event to trigger one.
+export async function sendTestPush(userId: string) {
+  const subscriptionCount = await prisma.pushSubscription.count({ where: { userId } });
+  await sendPushToUser(userId, {
+    title: 'Test notification',
+    body: 'If you can see this, push notifications are working.',
+  });
+  return { subscriptionCount };
 }
