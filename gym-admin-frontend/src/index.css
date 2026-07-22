@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f2f3f7;
+  --foreground: #16171c;
+  --muted: #6b7080;
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.12);
+
+  --accent: #6d5efc;
+  --accent-2: #00c2b8;
+  --danger: #ef4444;
+
+  --radius-lg: 1.5rem;
+  --radius-md: 1rem;
+}
+
+:root[data-theme="dark"] {
+  --background: #0b0c10;
+  --foreground: #f4f5f7;
+  --muted: #9aa0ae;
+
+  --glass-bg: rgba(24, 26, 34, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+
+  --accent: #8b7bff;
+  --accent-2: #29e6d8;
+  --danger: #f87171;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #0b0c10;
+    --foreground: #f4f5f7;
+    --muted: #9aa0ae;
+
+    --glass-bg: rgba(24, 26, 34, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+
+    --accent: #8b7bff;
+    --accent-2: #29e6d8;
+    --danger: #f87171;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-danger: var(--danger);
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent),
+    radial-gradient(1000px 500px at 110% 10%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent),
+    var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.glass-input {
+  background: color-mix(in srgb, var(--glass-bg) 70%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.9rem;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.accent-gradient {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}

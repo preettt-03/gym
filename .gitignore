@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Env files with real secrets — .env.sample files ARE committed on purpose
+.env
+.env.local
+.env.*.local
+!.env.sample
+
+# Build output
+dist/
+.next/
+build/
+out/
+
+# Uploaded media (local disk storage — not meant to be versioned)
+gym-backend/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Test artifacts
+coverage/
+
+# Claude Code session files
+.claude/

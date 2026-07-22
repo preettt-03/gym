@@ -1,0 +1,71 @@
+{
+  "name": "gym-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gym Management Platform — shared backend (Express + Prisma)",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
+    "lint": "eslint . --ext .ts",
+    "test": "NODE_OPTIONS=--no-webstorage jest --runInBand"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "prisma": {
+    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "bcrypt": "^5.1.1",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "google-auth-library": "^9.14.1",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
+    "nodemailer": "^6.9.14",
+    "pdfkit": "^0.19.1",
+    "socket.io": "^4.8.3",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.14.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/compression": "^1.7.5",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^20.19.43",
+    "@types/nodemailer": "^6.4.15",
+    "@types/pdfkit": "^0.17.6",
+    "@types/supertest": "^7.2.1",
+    "@types/swagger-ui-express": "^4.1.8",
+    "jest": "^30.4.2",
+    "prisma": "^5.19.1",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.10",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.5.4"
+  }
+}

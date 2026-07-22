@@ -1,0 +1,142 @@
+# Local dev stack. Credentials below (postgres gym/gym, pgAdmin admin/admin)
+# are throwaway defaults for local development only — change them (and set
+# real secrets in ../gym-backend/.env, see that file's comments) before
+# deploying anywhere reachable outside your machine.
+
+networks:
+  gym:
+    name: gym
+
+volumes:
+  gym_postgres_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gym-postgres
+    restart: unless-stopped
+    environment:
+      # Change these for anything beyond local dev — they must then also be
+      # updated in gym-backend/.env's DATABASE_URL and below in this file.
+      POSTGRES_USER: gym
+      POSTGRES_PASSWORD: gym
+      POSTGRES_DB: gym
+    ports:
+      - "8001:5432"
+    volumes:
+      - gym_postgres_data:/var/lib/postgresql/data
+    networks:
+      - gym
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gym -d gym"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: gym-redis
+    restart: unless-stopped
+    ports:
+      - "8000:6379"
+    networks:
+      - gym
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../gym-backend
+    container_name: gym-backend
+    restart: unless-stopped
+    # Loads JWT secrets, SMTP, GOOGLE_CLIENT_ID, GEMINI_API_KEY, etc. from
+    # gym-backend/.env — see that file's comments for how to generate each.
+    env_file:
+      - ../gym-backend/.env
+    environment:
+      # Overrides .env's localhost URLs so the container reaches the other
+      # containers by their Docker Compose service name instead.
+      DATABASE_URL: postgresql://gym:gym@postgres:5432/gym?schema=public
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8004:8004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gym
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: gym-pgadmin
+    restart: unless-stopped
+    environment:
+      # Login for the pgAdmin web UI at http://localhost:8007 — change these
+      # for anything beyond local dev.
+      PGADMIN_DEFAULT_EMAIL: admin@gym.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8007:80"
+    depends_on:
+      - postgres
+    networks:
+      - gym
+
+  queue-worker:
+    build:
+      context: ../gym-queue-worker
+    container_name: gym-queue-worker
+    restart: unless-stopped
+    env_file:
+      - ../gym-queue-worker/.env
+    environment:
+      # Must share the same Postgres/Redis instance as the backend.
+      DATABASE_URL: postgresql://gym:gym@postgres:5432/gym?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - gym
+
+  user-frontend:
+    build:
+      context: ../gym-user-frontend
+      args:
+        # Baked into the browser bundle at build time — the browser calls
+        # this directly, so it must be the host-published backend URL, not
+        # the internal Docker service name.
+        NEXT_PUBLIC_API_URL: http://localhost:8004/api/v1
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    container_name: gym-user-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - gym
+
+  admin-frontend:
+    build:
+      context: ../gym-admin-frontend
+      args:
+        # Same reasoning as user-frontend's NEXT_PUBLIC_API_URL above.
+        VITE_API_URL: http://localhost:8004/api/v1
+    container_name: gym-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "8003:80"
+    depends_on:
+      - backend
+    networks:
+      - gym

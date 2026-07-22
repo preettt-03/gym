@@ -1,0 +1,80 @@
+import { Request, Response } from 'express';
+import { OtpPurpose } from '@prisma/client';
+import { env } from '@/config/env';
+import * as authService from '@/features/auth/auth.service';
+
+const REFRESH_COOKIE = 'refreshToken';
+const REFRESH_COOKIE_PATH = '/api/v1/auth';
+const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function setRefreshCookie(res: Response, token: string) {
+  res.cookie(REFRESH_COOKIE, token, {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+    path: REFRESH_COOKIE_PATH,
+  });
+}
+
+export async function register(req: Request, res: Response) {
+  const { email, password, name } = req.body;
+  const user = await authService.register(email, password, name);
+  res.status(201).json({ user, message: 'Registered. Check your email for the verification code.' });
+}
+
+export async function verifyEmail(req: Request, res: Response) {
+  const { email, code } = req.body;
+  const { user, accessToken, refreshToken } = await authService.verifyEmail(email, code);
+  setRefreshCookie(res, refreshToken);
+  res.json({ user, accessToken });
+}
+
+export async function resendOtp(req: Request, res: Response) {
+  const { email } = req.body;
+  await authService.resendOtp(email, OtpPurpose.EMAIL_VERIFICATION);
+  res.json({ message: 'If the account exists, a new code has been sent.' });
+}
+
+export async function login(req: Request, res: Response) {
+  const { email, password } = req.body;
+  const { user, accessToken, refreshToken } = await authService.login(email, password);
+  setRefreshCookie(res, refreshToken);
+  res.json({ user, accessToken });
+}
+
+export async function refresh(req: Request, res: Response) {
+  const token = req.cookies?.[REFRESH_COOKIE];
+  if (!token) {
+    return res.status(401).json({ error: { message: 'Missing refresh token' } });
+  }
+  const { accessToken, refreshToken } = await authService.refresh(token);
+  setRefreshCookie(res, refreshToken);
+  res.json({ accessToken });
+}
+
+export async function logout(req: Request, res: Response) {
+  const token = req.cookies?.[REFRESH_COOKIE];
+  if (token) await authService.logout(token);
+  res.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH });
+  res.json({ message: 'Logged out' });
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+  await authService.forgotPassword(email);
+  res.json({ message: 'If the account exists, a reset code has been sent.' });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { email, code, newPassword } = req.body;
+  await authService.resetPassword(email, code, newPassword);
+  res.json({ message: 'Password reset successful' });
+}
+
+export async function googleLogin(req: Request, res: Response) {
+  const { idToken } = req.body;
+  const { user, accessToken, refreshToken } = await authService.googleLogin(idToken);
+  setRefreshCookie(res, refreshToken);
+  res.json({ user, accessToken });
+}

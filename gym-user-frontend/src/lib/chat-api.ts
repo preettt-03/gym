@@ -1,0 +1,61 @@
+import { apiClient } from "@/lib/api-client";
+
+export type ChatType = "GLOBAL" | "CHANNEL" | "DIRECT";
+export type MessageType = "TEXT" | "IMAGE" | "VOICE" | "SYSTEM";
+
+export interface ChatRoom {
+  id: string;
+  type: ChatType;
+  name: string | null;
+}
+
+export interface DirectRoom extends ChatRoom {
+  otherUser: { id: string; name: string | null; email: string } | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string;
+  type: MessageType;
+  content: string | null;
+  mediaUrl: string | null;
+  isPinned: boolean;
+  createdAt: string;
+  sender: { id: string; name: string | null; email: string; photoUrl: string | null };
+}
+
+export async function listMyRooms() {
+  const { data } = await apiClient.get<{ global: ChatRoom; channels: ChatRoom[]; direct: DirectRoom[] }>(
+    "/chat/rooms"
+  );
+  return data;
+}
+
+export async function getOrCreateDirectRoom(userId: string) {
+  const { data } = await apiClient.post<{ room: ChatRoom }>("/chat/rooms/direct", { userId });
+  return data.room;
+}
+
+export async function listMessages(roomId: string) {
+  const { data } = await apiClient.get<{ items: ChatMessage[]; pagination: { total: number } }>(
+    `/chat/rooms/${roomId}/messages`
+  );
+  return data;
+}
+
+export async function sendMessageRest(roomId: string, content: string) {
+  const { data } = await apiClient.post<{ message: ChatMessage }>(`/chat/rooms/${roomId}/messages`, {
+    type: "TEXT",
+    content,
+  });
+  return data.message;
+}
+
+export async function blockUser(userId: string) {
+  await apiClient.post(`/chat/users/${userId}/block`);
+}
+
+export async function reportMessage(messageId: string, reason?: string) {
+  await apiClient.post(`/chat/messages/${messageId}/report`, { reason });
+}
