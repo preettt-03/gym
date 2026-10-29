@@ -8,6 +8,7 @@ import { AppError } from '@/middlewares/errorHandler';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@/lib/jwt';
 import { generateOtp } from '@/lib/otp';
 import { sendMail } from '@/lib/mailer';
+import { redis } from '@/lib/redis';
 import { logger } from '@/config/logger';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -165,16 +166,80 @@ export async function resendOtp(email: string, purpose: OtpPurpose) {
   await issueOtp(user.id, email, purpose);
 }
 
+export const LOGIN_MAX_ATTEMPTS = 3;
+export const LOGIN_LOCK_SECONDS = 30;
+// Wrong attempts are forgotten after this long without hitting the limit.
+const LOGIN_FAIL_WINDOW_SECONDS = 15 * 60;
+
+const failKey = (email: string) => `login:fail:${email.toLowerCase()}`;
+const lockKey = (email: string) => `login:lock:${email.toLowerCase()}`;
+
+function lockedError(seconds: number) {
+  return new AppError(`Too many wrong attempts. Try again in ${seconds} seconds.`, 429, {
+    code: 'LOGIN_LOCKED',
+    retryAfterSeconds: seconds,
+  });
+}
+
+// The lock is a convenience against guessing, not the only defence (the auth rate
+// limiter still applies), so a Redis outage must never block logins — fail open.
+async function lockSecondsLeft(email: string) {
+  try {
+    const ttl = await redis.ttl(lockKey(email));
+    return ttl > 0 ? ttl : 0;
+  } catch (err) {
+    logger.error('Login lock check failed', { err });
+    return 0;
+  }
+}
+
+async function recordFailedLogin(email: string): Promise<{ attemptsLeft: number; locked: boolean }> {
+  try {
+    const [[, count]] = (await redis.multi().incr(failKey(email)).expire(failKey(email), LOGIN_FAIL_WINDOW_SECONDS).exec()) as [[unknown, number]];
+    if (count >= LOGIN_MAX_ATTEMPTS) {
+      await redis.multi().set(lockKey(email), '1', 'EX', LOGIN_LOCK_SECONDS).del(failKey(email)).exec();
+      return { attemptsLeft: 0, locked: true };
+    }
+    return { attemptsLeft: LOGIN_MAX_ATTEMPTS - count, locked: false };
+  } catch (err) {
+    logger.error('Recording failed login failed', { err });
+    return { attemptsLeft: LOGIN_MAX_ATTEMPTS, locked: false };
+  }
+}
+
+async function clearFailedLogins(email: string) {
+  await redis.del(failKey(email), lockKey(email)).catch((err) => logger.error('Clearing login attempts failed', { err }));
+}
+
+// Errors carry a machine-readable `details.code` so the apps can react (link to
+// sign-up, show a countdown) without matching on message text.
 export async function login(email: string, password: string) {
+  const locked = await lockSecondsLeft(email);
+  if (locked) throw lockedError(locked);
+
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.passwordHash) throw new AppError('Invalid credentials', 401);
+  if (!user || user.deletedAt) {
+    throw new AppError('No account found with this email. Check the spelling or sign up.', 404, { code: 'USER_NOT_FOUND' });
+  }
+  if (!user.passwordHash) {
+    throw new AppError('This account uses Google sign-in. Continue with Google instead.', 400, { code: 'GOOGLE_ACCOUNT' });
+  }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) throw new AppError('Invalid credentials', 401);
+  if (!valid) {
+    const { attemptsLeft, locked: nowLocked } = await recordFailedLogin(email);
+    if (nowLocked) throw lockedError(LOGIN_LOCK_SECONDS);
+    throw new AppError(
+      `Incorrect password. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left before a ${LOGIN_LOCK_SECONDS}-second lock.`,
+      401,
+      { code: 'WRONG_PASSWORD', attemptsLeft }
+    );
+  }
+  await clearFailedLogins(email);
 
-  if (!user.isEmailVerified) throw new AppError('Email not verified', 403);
+  if (!user.isEmailVerified) throw new AppError('Email not verified', 403, { code: 'EMAIL_NOT_VERIFIED' });
   if (user.accountStatus !== 'ACTIVE') {
-    throw new AppError(`Account is ${user.accountStatus.toLowerCase()}`, 403);
+    throw new AppError(`Account is ${user.accountStatus.toLowerCase()}`, 403, { code: 'ACCOUNT_INACTIVE' });
   }
 
   const tokens = await issueTokens(user);

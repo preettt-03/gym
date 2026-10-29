@@ -33,8 +33,18 @@ test.describe("Registration and login", () => {
     await page.getByPlaceholder("Password").fill("WrongPassword123");
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(/Invalid credentials/i)).toBeVisible();
+    await expect(page.getByText(/Incorrect password\. 2 attempts left/i)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("says when no account exists for the email", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByPlaceholder("Email").fill(uniqueTestEmail("nobody"));
+    await page.getByPlaceholder("Password").fill(password);
+    await page.locator("form").getByRole("button", { name: "Log in" }).click();
+
+    await expect(page.getByText(/No account found with this email/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: /Create an account/ })).toBeVisible();
   });
 
   test("logs in with the correct password and reaches the dashboard", async ({ page }) => {
@@ -78,5 +88,22 @@ test.describe("Registration and login", () => {
   test("redirects an unauthenticated visitor away from a protected page", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login/);
+  });
+
+  // Runs last: it leaves this account locked for 30 seconds.
+  test("locks login for 30 seconds after three wrong passwords", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByPlaceholder("Email").fill(email);
+    const submit = page.locator("form").getByRole("button", { name: "Log in" });
+    for (const left of [/2 attempts left/, /1 attempt left/]) {
+      await page.getByPlaceholder("Password").fill("WrongPassword123");
+      await submit.click();
+      await expect(page.getByText(left)).toBeVisible();
+    }
+    await page.getByPlaceholder("Password").fill("WrongPassword123");
+    await submit.click();
+
+    await expect(page.getByText(/Too many wrong attempts\. Try again in \d+ seconds?/)).toBeVisible();
+    await expect(page.locator("form").getByRole("button", { name: /Try again in \d+s/ })).toBeDisabled();
   });
 });

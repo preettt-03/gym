@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { motion, useReducedMotion } from "framer-motion";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, Lock, ShieldCheck } from "lucide-react";
 import { loginAdmin } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,24 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+// Ticks once a second while a lock is active; returns whole seconds left.
+function useCountdown(until: number | null) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!until) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [until]);
+  return until ? Math.max(0, Math.ceil((until - now) / 1000)) : 0;
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const lockSeconds = useCountdown(lockedUntil);
+  const locked = lockSeconds > 0;
   const reduceMotion = useReducedMotion();
 
   const {
@@ -46,7 +60,11 @@ export function LoginPage() {
       navigate("/");
     },
     onError: (err) => {
-      setServerError(isAxiosError(err) ? (err.response?.data?.error?.message ?? "Login failed") : "Login failed");
+      if (isAxiosError(err) && !err.response) return setServerError("Can't reach the server. Check that the backend is running.");
+      const error = isAxiosError(err) ? err.response?.data?.error : undefined;
+      // The countdown replaces the message, so nothing stale is left once it ends.
+      if (error?.details?.code === "LOGIN_LOCKED") return setLockedUntil(Date.now() + error.details.retryAfterSeconds * 1000);
+      setServerError(error?.message ?? "Login failed");
     },
   });
 
@@ -83,6 +101,7 @@ export function LoginPage() {
             noValidate
             className="mt-8 flex flex-col gap-4"
             onSubmit={handleSubmit((values) => {
+              if (locked) return;
               setServerError(null);
               mutation.mutate(values);
             })}
@@ -117,11 +136,12 @@ export function LoginPage() {
               <FieldError id="password-error" message={errors.password?.message} />
             </div>
 
-            <FormAlert message={serverError} />
+            <FormAlert message={locked ? `Too many wrong attempts. Try again in ${lockSeconds} second${lockSeconds === 1 ? "" : "s"}.` : serverError} />
 
-            <Button type="submit" disabled={pending} className="mt-2 uppercase tracking-wider">
+            <Button type="submit" disabled={pending || locked} className="mt-2 uppercase tracking-wider">
               {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {mutation.isPending ? "Signing in..." : "Sign in"}
+              {locked && <Lock className="h-4 w-4" />}
+              {mutation.isPending ? "Signing in..." : locked ? `Try again in ${lockSeconds}s` : "Sign in"}
             </Button>
           </form>
 

@@ -15,7 +15,7 @@ test.describe("Admin auth", () => {
     await page.getByPlaceholder("Password").fill("WrongPassword123");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.getByText(/Invalid credentials/i)).toBeVisible();
+    await expect(page.getByText(/Incorrect password\. \d attempts? left/i)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
 

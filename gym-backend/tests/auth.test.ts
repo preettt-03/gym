@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { app, deleteTestUser, getLatestOtp, uniqueTestEmail } from './helpers';
 
 describe('Auth flow', () => {
@@ -69,9 +70,39 @@ describe('Auth flow', () => {
     expect(me.body.user.email).toBe(email);
   });
 
-  it('rejects login with the wrong password', async () => {
+  it('tells the member when no account exists for the email', async () => {
+    const res = await request(app).post('/api/v1/auth/login').send({ email: uniqueTestEmail('nobody'), password });
+    expect(res.status).toBe(404);
+    expect(res.body.error.details.code).toBe('USER_NOT_FOUND');
+  });
+
+  it('counts down wrong passwords, then locks the account for 30 seconds', async () => {
+    const wrong = () => request(app).post('/api/v1/auth/login').send({ email, password: 'WrongPassword123' });
+
+    const first = await wrong();
+    expect(first.status).toBe(401);
+    expect(first.body.error.details).toEqual({ code: 'WRONG_PASSWORD', attemptsLeft: 2 });
+    expect((await wrong()).body.error.details.attemptsLeft).toBe(1);
+
+    const third = await wrong();
+    expect(third.status).toBe(429);
+    expect(third.body.error.details).toEqual({ code: 'LOGIN_LOCKED', retryAfterSeconds: 30 });
+
+    // Even the right password is refused while locked.
+    const locked = await request(app).post('/api/v1/auth/login').send({ email, password });
+    expect(locked.status).toBe(429);
+    expect(locked.body.error.details.retryAfterSeconds).toBeGreaterThan(0);
+
+    await redis.del(`login:lock:${email}`);
+    expect((await request(app).post('/api/v1/auth/login').send({ email, password })).status).toBe(200);
+  });
+
+  it('resets the wrong-password count after a successful login', async () => {
+    await request(app).post('/api/v1/auth/login').send({ email, password: 'WrongPassword123' });
+    await request(app).post('/api/v1/auth/login').send({ email, password });
     const res = await request(app).post('/api/v1/auth/login').send({ email, password: 'WrongPassword123' });
-    expect(res.status).toBe(401);
+    expect(res.body.error.details.attemptsLeft).toBe(2);
+    await redis.del(`login:fail:${email}`);
   });
 
   it('rejects requests with no token', async () => {
