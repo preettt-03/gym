@@ -78,7 +78,7 @@ services:
     environment:
       # Login for the pgAdmin web UI at http://localhost:8007 — change these
       # for anything beyond local dev.
-      PGADMIN_DEFAULT_EMAIL: admin@gym.local
+      PGADMIN_DEFAULT_EMAIL: admin@gym.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "8007:80"
