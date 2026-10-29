@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
+  Apple,
   Bell,
   Bot,
   CalendarCheck,
@@ -13,6 +14,7 @@ import {
   Menu,
   MessageSquare,
   ScrollText,
+  Tags,
   Target,
   Trophy,
   UtensilsCrossed,
@@ -33,6 +35,8 @@ const NAV_GROUPS = [
     items: [
       { to: "/users", label: "Users", icon: Users, end: false },
       { to: "/exercises", label: "Exercises", icon: Dumbbell, end: false },
+      { to: "/foods", label: "Foods", icon: Apple, end: false },
+      { to: "/categories", label: "Categories", icon: Tags, end: false },
       { to: "/workout-plans", label: "Workout Plans", icon: Dumbbell, end: false },
       { to: "/diet-plans", label: "Diet Plans", icon: UtensilsCrossed, end: false },
     ],

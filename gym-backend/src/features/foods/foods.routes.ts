@@ -12,6 +12,7 @@ foodsRouter.get('/:id', validate(schemas.foodIdParamSchema), asyncHandler(contro
 
 export const adminFoodsRouter = Router();
 adminFoodsRouter.use(requireAuth, requireRole(Role.ADMIN));
+adminFoodsRouter.get('/', validate(schemas.listFoodsSchema), asyncHandler(controller.adminList));
 adminFoodsRouter.post('/', validate(schemas.createFoodSchema), asyncHandler(controller.create));
 adminFoodsRouter.patch('/:id', validate(schemas.updateFoodSchema), asyncHandler(controller.update));
 adminFoodsRouter.delete('/:id', validate(schemas.foodIdParamSchema), asyncHandler(controller.remove));

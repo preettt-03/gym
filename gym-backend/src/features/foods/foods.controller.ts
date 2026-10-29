@@ -9,6 +9,12 @@ export async function list(req: Request, res: Response) {
   res.json(result);
 }
 
+export async function adminList(req: Request, res: Response) {
+  const pagination = parsePagination(req.query as Record<string, unknown>);
+  const { search } = req.query as Record<string, string | undefined>;
+  res.json(await service.listFoods(search, pagination, true));
+}
+
 export async function get(req: Request, res: Response) {
   const food = await service.getFood(req.params.id);
   res.json({ food });

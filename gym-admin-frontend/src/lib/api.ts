@@ -96,6 +96,12 @@ export async function updateUser(id: string, patch: { role?: Role; accountStatus
   return data.user;
 }
 
+// Emails the member a reset code and signs them out; the admin never sets the password.
+export async function sendPasswordReset(id: string) {
+  const { data } = await apiClient.post<{ message: string; email: string }>(`/admin/users/${id}/reset-password`);
+  return data;
+}
+
 export async function deleteUser(id: string) {
   await apiClient.delete(`/admin/users/${id}`);
 }
@@ -395,6 +401,85 @@ export async function assignDietPlan(planId: string, userIds: string[]) {
 export interface AdminFood {
   id: string;
   name: string;
+}
+
+// Values are per 100 g.
+export interface FoodInput {
+  name: string;
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+  fiberPer100g?: number | null;
+  sugarPer100g?: number | null;
+  sodiumMgPer100g?: number | null;
+}
+
+export interface ManagedFood extends FoodInput {
+  id: string;
+  slug: string;
+  updatedAt: string;
+  _count: { nutritionLogs: number; mealItems: number };
+}
+
+export interface Paginated<T> {
+  items: T[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export async function listManagedFoods(params: { search?: string; page?: number; limit?: number }) {
+  const { data } = await apiClient.get<Paginated<ManagedFood>>("/admin/foods", { params });
+  return data;
+}
+
+export async function createFood(input: FoodInput) {
+  const { data } = await apiClient.post<{ food: ManagedFood }>("/admin/foods", input);
+  return data.food;
+}
+
+export async function updateFood(id: string, input: Partial<FoodInput>) {
+  const { data } = await apiClient.patch<{ food: ManagedFood }>(`/admin/foods/${id}`, input);
+  return data.food;
+}
+
+export async function deleteFood(id: string) {
+  await apiClient.delete(`/admin/foods/${id}`);
+}
+
+export type CategoryKind = "exercise" | "diet";
+
+export interface ManagedCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  // "exercises" for exercise categories, "plans" for diet categories.
+  _count: { exercises?: number; plans?: number };
+}
+
+const categoryPath = (kind: CategoryKind) => `/admin/${kind}-categories`;
+
+export function categoryUsage(category: ManagedCategory) {
+  return category._count.exercises ?? category._count.plans ?? 0;
+}
+
+export async function listManagedCategories(kind: CategoryKind) {
+  const { data } = await apiClient.get<{ categories: ManagedCategory[] }>(categoryPath(kind));
+  return data.categories;
+}
+
+export async function createCategory(kind: CategoryKind, input: { name: string; description?: string }) {
+  const { data } = await apiClient.post<{ category: ManagedCategory }>(categoryPath(kind), input);
+  return data.category;
+}
+
+export async function updateCategory(kind: CategoryKind, id: string, input: { name?: string; description?: string | null }) {
+  const { data } = await apiClient.patch<{ category: ManagedCategory }>(`${categoryPath(kind)}/${id}`, input);
+  return data.category;
+}
+
+export async function deleteCategory(kind: CategoryKind, id: string) {
+  await apiClient.delete(`${categoryPath(kind)}/${id}`);
 }
 
 export async function listFoodsForAdmin(search?: string) {

@@ -11,6 +11,7 @@ dietCategoriesRouter.get('/', asyncHandler(controller.list));
 
 export const adminDietCategoriesRouter = Router();
 adminDietCategoriesRouter.use(requireAuth, requireRole(Role.ADMIN));
+adminDietCategoriesRouter.get('/', asyncHandler(controller.adminList));
 adminDietCategoriesRouter.post('/', validate(schemas.createDietCategorySchema), asyncHandler(controller.create));
 adminDietCategoriesRouter.patch(
   '/:id',

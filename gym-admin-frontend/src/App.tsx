@@ -3,6 +3,8 @@ import { LoginPage } from "@/pages/login-page";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { UsersPage } from "@/pages/users-page";
 import { ExercisesPage } from "@/pages/exercises-page";
+import { FoodsPage } from "@/pages/foods-page";
+import { CategoriesPage } from "@/pages/categories-page";
 import { ChatPage } from "@/pages/chat-page";
 import { NotificationsPage } from "@/pages/notifications-page";
 import { MembershipPlansPage } from "@/pages/membership-plans-page";
@@ -32,6 +34,8 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/exercises" element={<ExercisesPage />} />
+        <Route path="/foods" element={<FoodsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/workout-plans" element={<WorkoutPlansPage />} />
         <Route path="/diet-plans" element={<DietPlansPage />} />
         <Route path="/membership-plans" element={<MembershipPlansPage />} />

@@ -6,6 +6,11 @@ export async function list(_req: Request, res: Response) {
   res.json({ categories });
 }
 
+export async function adminList(_req: Request, res: Response) {
+  const categories = await service.listDietCategories(true);
+  res.json({ categories });
+}
+
 export async function create(req: Request, res: Response) {
   const { name, description } = req.body;
   const category = await service.createDietCategory(name, description);

@@ -11,6 +11,7 @@ exerciseCategoriesRouter.get('/', asyncHandler(controller.list));
 
 export const adminExerciseCategoriesRouter = Router();
 adminExerciseCategoriesRouter.use(requireAuth, requireRole(Role.ADMIN));
+adminExerciseCategoriesRouter.get('/', asyncHandler(controller.adminList));
 adminExerciseCategoriesRouter.post('/', validate(schemas.createCategorySchema), asyncHandler(controller.create));
 adminExerciseCategoriesRouter.patch(
   '/:id',

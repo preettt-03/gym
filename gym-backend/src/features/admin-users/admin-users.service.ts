@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt';
 import { AccountStatus, Prisma, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
@@ -96,17 +95,6 @@ export async function deleteUser(id: string) {
 
   await prisma.$transaction([
     prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }),
-    prisma.refreshToken.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } }),
-  ]);
-}
-
-export async function resetUserPassword(id: string, newPassword: string) {
-  const user = await prisma.user.findFirst({ where: { id, deletedAt: null } });
-  if (!user) throw new AppError('User not found', 404);
-
-  const passwordHash = await bcrypt.hash(newPassword, 12);
-  await prisma.$transaction([
-    prisma.user.update({ where: { id }, data: { passwordHash } }),
     prisma.refreshToken.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } }),
   ]);
 }

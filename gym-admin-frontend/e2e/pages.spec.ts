@@ -31,6 +31,56 @@ test.describe("Admin pages", () => {
     await expect(page.getByRole("img", { name: /Revenue by day/ })).toBeVisible();
   });
 
+  test("foods: validates, adds, edits and removes a food", async ({ page }) => {
+    const name = `E2E Paneer ${Date.now()}`;
+    await page.getByRole("link", { name: "Foods" }).click();
+    await expect(page.getByRole("heading", { name: "Foods" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Add food" }).first().click();
+    const dialog = page.getByRole("dialog", { name: "Add food" });
+    await dialog.getByLabel("Name").fill(name);
+    await dialog.getByLabel("Calories").fill("265");
+    await dialog.getByLabel("Protein").fill("60");
+    await dialog.getByLabel("Carbs").fill("30");
+    await dialog.getByLabel("Fat", { exact: true }).fill("20");
+    await dialog.getByRole("button", { name: "Add food" }).click();
+    await expect(dialog.getByText("Protein, carbs and fat together cannot exceed 100 g")).toBeVisible();
+
+    await dialog.getByLabel("Protein").fill("18");
+    await dialog.getByLabel("Carbs").fill("3.6");
+    await dialog.getByRole("button", { name: "Add food" }).click();
+    await expect(page.getByText(`Added ${name}`)).toBeVisible();
+
+    await page.getByLabel("Search foods").fill(name);
+    await page.getByRole("button", { name: `Edit ${name}` }).first().click();
+    const edit = page.getByRole("dialog", { name: "Edit food" });
+    await edit.getByLabel("Calories").fill("270");
+    await edit.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.getByText(`Updated ${name}`)).toBeVisible();
+
+    await page.getByRole("button", { name: `Remove ${name}` }).first().click();
+    await page.getByRole("dialog").getByRole("button", { name: "Remove food" }).click();
+    await expect(page.getByText(`Removed ${name}`)).toBeVisible();
+    await expect(page.getByText(/No foods match/)).toBeVisible();
+  });
+
+  test("categories: adds and deletes an exercise category", async ({ page }) => {
+    const name = `E2E Mobility ${Date.now()}`;
+    await page.getByRole("link", { name: "Categories" }).click();
+    await page.getByRole("button", { name: "Add exercise category" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Add category" }).click();
+    await expect(dialog.getByText("Name is required")).toBeVisible();
+
+    await dialog.getByLabel("Name").fill(name);
+    await dialog.getByRole("button", { name: "Add category" }).click();
+    await expect(page.getByText(`Added ${name}`)).toBeVisible();
+
+    await page.getByRole("button", { name: `Delete ${name}` }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete category" }).click();
+    await expect(page.getByText(`Deleted ${name}`)).toBeVisible();
+  });
+
   test("users page loads the user list", async ({ page }) => {
     await page.getByRole("link", { name: "Users" }).click();
     await expect(page).toHaveURL(/\/users/);

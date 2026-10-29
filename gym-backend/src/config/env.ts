@@ -30,6 +30,8 @@ const envSchema = z.object({
   // Used to build absolute URLs for locally-stored uploads. Point this at a real
   // S3/Cloudinary-backed CDN URL in production instead of switching storage backends.
   PUBLIC_URL: z.string().default('http://localhost:8004'),
+  // Member web app, used for links in emails (e.g. the password-reset page).
+  USER_APP_URL: z.string().default('http://localhost:3000'),
 
   // Web Push (browser notifications). Generate with `npx web-push generate-vapid-keys`.
   // Optional — push subscribe/send endpoints return a clear "not configured" error when absent.

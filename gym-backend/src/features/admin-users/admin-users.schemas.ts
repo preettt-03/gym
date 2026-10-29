@@ -25,5 +25,4 @@ export const updateUserSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   params: z.object({ id: z.string().uuid() }),
-  body: z.object({ newPassword: z.string().min(8) }),
 });

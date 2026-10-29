@@ -50,8 +50,19 @@ async function issueOtp(userId: string, email: string, purpose: OtpPurpose) {
     }),
   ]);
 
-  const subject = purpose === OtpPurpose.EMAIL_VERIFICATION ? 'Verify your email' : 'Reset your password';
-  await sendMail(email, subject, `<p>Your verification code is <b>${code}</b>. It expires in 10 minutes.</p>`);
+  if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
+    await sendMail(email, 'Verify your email', `<p>Your verification code is <b>${code}</b>. It expires in 10 minutes.</p>`);
+    return;
+  }
+
+  const resetUrl = `${env.USER_APP_URL}/reset-password?email=${encodeURIComponent(email)}`;
+  await sendMail(
+    email,
+    'Reset your password',
+    `<p>Your password reset code is <b>${code}</b>. It expires in 10 minutes.</p>` +
+      `<p><a href="${resetUrl}">Choose a new password</a></p>` +
+      `<p>If you didn't ask for this, you can ignore this email — your password won't change.</p>`
+  );
 }
 
 function codesMatch(a: string, b: string) {
@@ -185,6 +196,26 @@ export async function logout(refreshToken: string) {
     where: { token: refreshToken, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+}
+
+// Admin-initiated reset: emails the member a reset code and signs them out
+// everywhere. The admin never sees or chooses the new password.
+export async function sendAdminPasswordReset(userId: string) {
+  const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+  if (!user) throw new AppError('User not found', 404);
+
+  const latest = await prisma.otpCode.findFirst({
+    where: { userId, purpose: OtpPurpose.PASSWORD_RESET },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  });
+  if (latest && Date.now() - latest.createdAt.getTime() < OTP_RESEND_COOLDOWN_SECONDS * 1000) {
+    throw new AppError('A reset email was sent less than a minute ago. Try again shortly.', 429);
+  }
+
+  await prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+  await issueOtp(user.id, user.email, OtpPurpose.PASSWORD_RESET);
+  return { email: user.email };
 }
 
 export async function forgotPassword(email: string) {
