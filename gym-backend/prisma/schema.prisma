@@ -79,6 +79,8 @@ model User {
   trainerId String?
   trainer   User?   @relation("TrainerAssignment", fields: [trainerId], references: [id])
   trainees  User[]  @relation("TrainerAssignment")
+  trainerNotesWritten TrainerNote[] @relation("TrainerNoteAuthor")
+  trainerNotesAbout   TrainerNote[] @relation("TrainerNoteSubject")
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -1086,4 +1088,21 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+// Private coaching notes. Visible to whoever currently coaches the trainee
+// (so they carry over on reassignment); only the author can edit or delete.
+// Never shown to the trainee.
+model TrainerNote {
+  id        String   @id @default(uuid())
+  authorId  String
+  author    User     @relation("TrainerNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  traineeId String
+  trainee   User     @relation("TrainerNoteSubject", fields: [traineeId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([traineeId, createdAt])
+  @@map("trainer_notes")
 }

@@ -94,6 +94,39 @@ trainerRouter.post(
   })
 );
 
+trainerRouter.get(
+  '/trainees/:traineeId/private-notes',
+  validate(schemas.traineeIdParamSchema),
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    res.json({ notes: await service.listPrivateNotes(req.user!.id, req.params.traineeId) });
+  })
+);
+
+trainerRouter.post(
+  '/trainees/:traineeId/private-notes',
+  validate(schemas.createPrivateNoteSchema),
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    res.status(201).json({ note: await service.addPrivateNote(req.user!.id, req.params.traineeId, req.body.body.trim()) });
+  })
+);
+
+trainerRouter.patch(
+  '/private-notes/:noteId',
+  validate(schemas.updatePrivateNoteSchema),
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    res.json({ note: await service.updatePrivateNote(req.user!.id, req.params.noteId, req.body.body.trim()) });
+  })
+);
+
+trainerRouter.delete(
+  '/private-notes/:noteId',
+  validate(schemas.privateNoteIdSchema),
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    await service.deletePrivateNote(req.user!.id, req.params.noteId);
+    res.status(204).send();
+  })
+);
+
 // Read-only catalog access so a trainer can pick a plan to assign — reuses
 // the admin plan-listing services (they only ever return ADMIN-source plans,
 // with no role check baked in; the role check for this route is above).
