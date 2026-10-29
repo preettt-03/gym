@@ -27,6 +27,48 @@ export async function getAdminDashboard() {
   return data;
 }
 
+export type AnalyticsRange = 7 | 30 | 90;
+
+interface PeriodTotal {
+  current: number;
+  previous: number;
+}
+
+interface DashboardPerson {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
+export interface DashboardAnalytics {
+  range: { days: AnalyticsRange; from: string; to: string; timeZone: string };
+  totals: { revenue: PeriodTotal; signups: PeriodTotal; attendance: PeriodTotal };
+  trends: Record<"revenue" | "signups" | "attendance", { date: string; value: number }[]>;
+  membershipStatus: {
+    active: number;
+    expiringSoon: number;
+    expired: number;
+    cancelled: number;
+    expiringWindowDays: number;
+  };
+  activeByPlan: { planId: string; name: string; count: number }[];
+  paymentStatus: Record<"PENDING" | "COMPLETED" | "FAILED" | "REFUNDED", number>;
+  expiringSoon: { id: string; endDate: string; plan: { name: string }; user: DashboardPerson }[];
+  recentPayments: {
+    id: string;
+    amount: number;
+    currency: string;
+    createdAt: string;
+    plan: { name: string };
+    user: DashboardPerson;
+  }[];
+}
+
+export async function getDashboardAnalytics(days: AnalyticsRange) {
+  const { data } = await apiClient.get<DashboardAnalytics>("/admin/dashboard/analytics", { params: { days } });
+  return data;
+}
+
 export type Role = "ADMIN" | "TRAINER" | "USER";
 export type AccountStatus = "ACTIVE" | "SUSPENDED" | "BANNED";
 

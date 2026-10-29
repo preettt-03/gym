@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { type AccountStatus, type AdminUserListItem, deleteUser, listUsers, updateUser } from "@/lib/api";
@@ -15,7 +16,9 @@ const STATUS_STYLES: Record<AccountStatus, string> = {
 };
 
 export function UsersPage() {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  // Other pages deep-link here with ?search=<email>.
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({

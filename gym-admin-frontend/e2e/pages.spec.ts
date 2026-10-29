@@ -17,6 +17,20 @@ test.describe("Admin pages", () => {
     await expect(page.getByText("Total revenue")).toBeVisible();
   });
 
+  test("dashboard analytics switch date range and expose chart data", async ({ page }) => {
+    const sevenDays = page.getByRole("button", { name: "7 days" });
+    await expect(page.getByRole("button", { name: "30 days" })).toHaveAttribute("aria-pressed", "true");
+
+    await sevenDays.click();
+    await expect(sevenDays).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("vs previous 7 days").first()).toBeVisible();
+
+    // Every chart has a table twin; the revenue table lists one row per day.
+    await page.getByText("View data").first().click();
+    await expect(page.locator("details[open] tbody tr")).toHaveCount(7);
+    await expect(page.getByRole("img", { name: /Revenue by day/ })).toBeVisible();
+  });
+
   test("users page loads the user list", async ({ page }) => {
     await page.getByRole("link", { name: "Users" }).click();
     await expect(page).toHaveURL(/\/users/);

@@ -3,6 +3,12 @@ import { Role } from '@prisma/client';
 import { asyncHandler } from '@/middlewares/asyncHandler';
 import { requireAuth, requireRole } from '@/middlewares/auth';
 import { prisma } from '@/lib/prisma';
+import { AppError } from '@/middlewares/errorHandler';
+import {
+  ANALYTICS_RANGES,
+  AnalyticsRange,
+  getDashboardAnalytics,
+} from '@/features/admin-dashboard/admin-dashboard.service';
 
 export const adminDashboardRouter = Router();
 adminDashboardRouter.use(requireAuth, requireRole(Role.ADMIN));
@@ -48,7 +54,18 @@ adminDashboardRouter.get(
       activeMemberships,
       attendanceToday,
       totalRevenue: revenueAgg._sum.amount ?? 0,
-      // Chat, CMS, and reporting features aren't built yet, so these aren't included here.
     });
+  })
+);
+
+// Trend data for the dashboard charts. `days` must be one of ANALYTICS_RANGES.
+adminDashboardRouter.get(
+  '/analytics',
+  asyncHandler(async (req, res: Response) => {
+    const days = Number(req.query.days ?? 30) as AnalyticsRange;
+    if (!ANALYTICS_RANGES.includes(days)) {
+      throw new AppError(`days must be one of ${ANALYTICS_RANGES.join(', ')}`, 422);
+    }
+    res.json(await getDashboardAnalytics(days));
   })
 );
