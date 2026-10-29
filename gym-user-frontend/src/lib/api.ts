@@ -55,12 +55,23 @@ export interface Exercise {
   description: string | null;
   difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
   targetMuscle: string;
+  secondaryMuscles: string[];
   equipment: string[];
   caloriesBurnedEstimate: number | null;
+  thumbnailUrl: string | null;
+  images: string[];
+  videoUrl: string | null;
   categories: { id: string; name: string; slug: string }[];
 }
 
-export async function listExercises(params: { search?: string; category?: string; difficulty?: string; page?: number; limit?: number }) {
+export async function listExercises(params: {
+  search?: string;
+  category?: string;
+  difficulty?: string;
+  muscleGroup?: string;
+  page?: number;
+  limit?: number;
+}) {
   const { data } = await apiClient.get<{
     items: Exercise[];
     pagination: { page: number; limit: number; total: number; totalPages: number };

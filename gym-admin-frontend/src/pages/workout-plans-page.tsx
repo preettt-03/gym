@@ -75,7 +75,7 @@ function AssignControl({ planId }: { planId: string }) {
 export function WorkoutPlansPage() {
   const queryClient = useQueryClient();
   const { data: plans } = useQuery({ queryKey: ["admin-workout-plans"], queryFn: listAdminWorkoutPlans });
-  const { data: exercises } = useQuery({ queryKey: ["admin-exercises-all"], queryFn: () => listExercises({}) });
+  const { data: exercises } = useQuery({ queryKey: ["admin-exercises-all"], queryFn: () => listExercises({ limit: 100 }) });
 
   const { register, control, handleSubmit, reset } = useForm<FormValues>({
     defaultValues: { difficulty: "BEGINNER", exercises: [{ exerciseId: "", targetSets: "3", targetReps: "10" }] },

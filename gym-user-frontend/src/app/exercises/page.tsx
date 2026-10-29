@@ -8,6 +8,7 @@ import { listExerciseCategories, listExercises, type Exercise } from "@/lib/api"
 import { clearRecentExercises, listRecentExercises } from "@/lib/exercise-api";
 import { ExerciseCard, difficultyLabel } from "@/components/exercise/exercise-card";
 import { useFavoriteExercises } from "@/components/exercise/favorite-button";
+import { inMuscleGroup, MUSCLE_GROUPS, type MuscleGroupKey } from "@/lib/muscles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SkeletonGrid } from "@/components/ui/skeleton";
@@ -52,13 +53,24 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
+// Labelled row of chips; scrolls sideways on phones instead of wrapping into a wall.
+function ChipRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+      <span className="w-32 shrink-0 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.18em] text-muted">{label}</span>
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&>*]:shrink-0">{children}</div>
+    </div>
+  );
+}
+
 // Client-side filter for the favourites / recent lists (they aren't paginated).
-function matches(e: Exercise, search: string, category?: string, difficulty?: string) {
+function matches(e: Exercise, search: string, category?: string, difficulty?: string, muscleGroup?: MuscleGroupKey) {
   const term = search.toLowerCase();
   return (
     (!term || e.name.toLowerCase().includes(term) || e.targetMuscle.toLowerCase().includes(term)) &&
     (!category || e.categories.some((c) => c.slug === category)) &&
-    (!difficulty || e.difficulty === difficulty)
+    (!difficulty || e.difficulty === difficulty) &&
+    (!muscleGroup || inMuscleGroup(e.targetMuscle, muscleGroup))
   );
 }
 
@@ -69,6 +81,7 @@ export default function ExercisesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>();
   const [difficulty, setDifficulty] = useState<string | undefined>();
+  const [muscleGroup, setMuscleGroup] = useState<MuscleGroupKey | undefined>();
   const [page, setPage] = useState(1);
   const [confirmClear, setConfirmClear] = useState(false);
   const debouncedSearch = useDebounced(search.trim());
@@ -77,8 +90,8 @@ export default function ExercisesPage() {
   const { data: categories } = useQuery({ queryKey: ["exercise-categories"], queryFn: listExerciseCategories });
 
   const all = useQuery({
-    queryKey: ["exercises", debouncedSearch, category, difficulty, page],
-    queryFn: () => listExercises({ search: debouncedSearch || undefined, category, difficulty, page, limit: PAGE_SIZE }),
+    queryKey: ["exercises", debouncedSearch, category, difficulty, muscleGroup, page],
+    queryFn: () => listExercises({ search: debouncedSearch || undefined, category, difficulty, muscleGroup, page, limit: PAGE_SIZE }),
     placeholderData: keepPreviousData,
     enabled: activeTab === "all",
   });
@@ -98,8 +111,8 @@ export default function ExercisesPage() {
   const items =
     activeTab === "all"
       ? all.data?.items
-      : (activeTab === "favorites" ? favorites.data : recent.data)?.filter((e) => matches(e, debouncedSearch, category, difficulty));
-  const filtersActive = Boolean(debouncedSearch || category || difficulty);
+      : (activeTab === "favorites" ? favorites.data : recent.data)?.filter((e) => matches(e, debouncedSearch, category, difficulty, muscleGroup));
+  const filtersActive = Boolean(debouncedSearch || category || difficulty || muscleGroup);
 
   const emptyMessage =
     activeTab === "favorites" && !filtersActive
@@ -156,28 +169,38 @@ export default function ExercisesPage() {
             }}
           />
         </div>
-        {categories && categories.length > 0 && (
-          <div className="flex flex-wrap gap-2" aria-label="Category">
-            <Chip active={!category} onClick={() => (setCategory(undefined), resetPage())}>
-              All categories
+        <ChipRow label="Muscle group">
+          <Chip active={!muscleGroup} onClick={() => (setMuscleGroup(undefined), resetPage())}>
+            All
+          </Chip>
+          {MUSCLE_GROUPS.map((g) => (
+            <Chip key={g.key} active={muscleGroup === g.key} onClick={() => (setMuscleGroup(g.key), resetPage())}>
+              {g.label}
             </Chip>
-            {categories.map((c) => (
-              <Chip key={c.id} active={category === c.slug} onClick={() => (setCategory(c.slug), resetPage())}>
-                {c.name}
-              </Chip>
-            ))}
-          </div>
-        )}
-        <div className="flex flex-wrap gap-2" aria-label="Difficulty">
+          ))}
+        </ChipRow>
+        <ChipRow label="Difficulty">
           <Chip active={!difficulty} onClick={() => (setDifficulty(undefined), resetPage())}>
-            Any difficulty
+            Any
           </Chip>
           {DIFFICULTIES.map((d) => (
             <Chip key={d} active={difficulty === d} onClick={() => (setDifficulty(d), resetPage())}>
               {difficultyLabel(d)}
             </Chip>
           ))}
-        </div>
+        </ChipRow>
+        {categories && categories.length > 0 && (
+          <ChipRow label="Category">
+            <Chip active={!category} onClick={() => (setCategory(undefined), resetPage())}>
+              All
+            </Chip>
+            {categories.map((c) => (
+              <Chip key={c.id} active={category === c.slug} onClick={() => (setCategory(c.slug), resetPage())}>
+                {c.name}
+              </Chip>
+            ))}
+          </ChipRow>
+        )}
       </div>
 
       {activeTab === "recent" && recent.data && recent.data.length > 0 && (
@@ -201,7 +224,7 @@ export default function ExercisesPage() {
       )}
 
       {current.isPending && current.fetchStatus !== "idle" && (
-        <SkeletonGrid count={6} className="mt-8 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-52" />
+        <SkeletonGrid count={6} className="mt-8 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-80" />
       )}
       {current.isError && (
         <p role="alert" className="mt-8 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">

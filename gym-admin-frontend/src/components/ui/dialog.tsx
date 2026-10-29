@@ -22,7 +22,7 @@ export function Dialog({
   description?: string;
   children?: React.ReactNode;
   footer?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -77,7 +77,8 @@ export function Dialog({
           "relative flex max-h-[92vh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-2xl sm:rounded-2xl",
           size === "sm" && "sm:max-w-md",
           size === "md" && "sm:max-w-lg",
-          size === "lg" && "sm:max-w-2xl"
+          size === "lg" && "sm:max-w-2xl",
+          size === "xl" && "sm:max-w-4xl"
         )}
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">

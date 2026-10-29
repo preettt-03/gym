@@ -179,6 +179,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
         break;
       case "Escape":
         e.preventDefault();
+        // Only close the menu — not a dialog the select sits in.
+        e.stopPropagation();
         close();
         break;
       case "Tab":

@@ -165,15 +165,23 @@ export interface AdminExercise {
   description: string | null;
   difficulty: Difficulty;
   targetMuscle: string;
+  secondaryMuscles: string[];
   equipment: string[];
   caloriesBurnedEstimate: number | null;
+  thumbnailUrl: string | null;
+  images: string[];
+  videoUrl: string | null;
+  instructions: string[];
+  commonMistakes: string[];
+  coachTip: string | null;
   categories: { id: string; name: string; slug: string }[];
 }
 
-export async function listExercises(params: { search?: string }) {
-  const { data } = await apiClient.get<{ items: AdminExercise[]; pagination: { total: number } }>("/exercises", {
-    params,
-  });
+export async function listExercises(params: { search?: string; page?: number; limit?: number }) {
+  const { data } = await apiClient.get<{ items: AdminExercise[]; pagination: { total: number; page: number; totalPages: number } }>(
+    "/exercises",
+    { params }
+  );
   return data;
 }
 
@@ -188,19 +196,54 @@ export async function listExerciseCategories() {
   return data.categories;
 }
 
-export interface CreateExerciseInput {
+// null clears an optional field when editing.
+export interface ExerciseInput {
   name: string;
-  description?: string;
+  description?: string | null;
   difficulty: Difficulty;
   targetMuscle: string;
+  secondaryMuscles?: string[];
   equipment?: string[];
-  caloriesBurnedEstimate?: number;
+  caloriesBurnedEstimate?: number | null;
+  thumbnailUrl?: string | null;
+  images?: string[];
+  videoUrl?: string | null;
+  instructions?: string[];
+  commonMistakes?: string[];
+  coachTip?: string | null;
   categoryIds?: string[];
 }
 
-export async function createExercise(input: CreateExerciseInput) {
+export async function createExercise(input: ExerciseInput) {
   const { data } = await apiClient.post<{ exercise: AdminExercise }>("/admin/exercises", input);
   return data.exercise;
+}
+
+export async function updateExercise(id: string, input: ExerciseInput) {
+  const { data } = await apiClient.patch<{ exercise: AdminExercise }>(`/admin/exercises/${id}`, input);
+  return data.exercise;
+}
+
+export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+export const VIDEO_MAX_BYTES = 100 * 1024 * 1024;
+
+export async function uploadImage(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await apiClient.post<{ url: string }>("/uploads", form, { headers: { "Content-Type": "multipart/form-data" } });
+  return data.url;
+}
+
+export async function uploadVideo(file: File, onProgress?: (percent: number) => void) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await apiClient.post<{ url: string }>("/uploads/video", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+  });
+  return data.url;
 }
 
 export async function deleteExercise(id: string) {

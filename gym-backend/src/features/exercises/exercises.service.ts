@@ -2,6 +2,7 @@ import { Difficulty, Exercise, ExerciseCategory, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/slug';
 import { AppError } from '@/middlewares/errorHandler';
+import { MUSCLE_GROUPS, MuscleGroup } from '@/lib/muscles';
 import { PaginationParams } from '@/lib/pagination';
 import { CreateExerciseInput, UpdateExerciseInput } from '@/features/exercises/exercises.schemas';
 
@@ -11,6 +12,7 @@ export interface ExerciseFilters {
   equipment?: string;
   difficulty?: Difficulty;
   targetMuscle?: string;
+  muscleGroup?: MuscleGroup;
   workoutType?: string;
   minCalories?: number;
   maxCalories?: number;
@@ -49,6 +51,12 @@ function buildWhere(filters: ExerciseFilters): Prisma.ExerciseWhereInput {
   }
   if (filters.difficulty) where.difficulty = filters.difficulty;
   if (filters.targetMuscle) where.targetMuscle = { equals: filters.targetMuscle, mode: 'insensitive' };
+  if (filters.muscleGroup) {
+    // An exercise belongs to a group by its primary muscle only, so "Legs" doesn't
+    // list every move that merely engages the glutes.
+    const muscles = [...MUSCLE_GROUPS[filters.muscleGroup]];
+    where.AND = [{ OR: muscles.map((m) => ({ targetMuscle: { equals: m, mode: 'insensitive' as const } })) }];
+  }
   if (filters.workoutType) where.workoutType = { equals: filters.workoutType, mode: 'insensitive' };
   if (filters.minCalories !== undefined || filters.maxCalories !== undefined) {
     where.caloriesBurnedEstimate = {
@@ -130,23 +138,24 @@ export async function updateExercise(id: string, data: UpdateExerciseInput) {
 
   const { categoryIds, ...rest } = data;
 
-  if (categoryIds) {
-    await prisma.exerciseCategoryLink.deleteMany({ where: { exerciseId: id } });
+  try {
+    const updated = await prisma.exercise.update({
+      where: { id },
+      data: {
+        ...rest,
+        slug: rest.name ? slugify(rest.name) : undefined,
+        // Replaced in the same statement, so a failed update can't leave the links half-cleared.
+        categories: categoryIds ? { deleteMany: {}, create: categoryIds.map((categoryId) => ({ categoryId })) } : undefined,
+      },
+      include: includeCategories,
+    });
+    return serializeExercise(updated);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new AppError('An exercise with this name already exists', 409);
+    }
+    throw err;
   }
-
-  const updated = await prisma.exercise.update({
-    where: { id },
-    data: {
-      ...rest,
-      slug: rest.name ? slugify(rest.name) : undefined,
-      categories: categoryIds?.length
-        ? { create: categoryIds.map((categoryId) => ({ categoryId })) }
-        : undefined,
-    },
-    include: includeCategories,
-  });
-
-  return serializeExercise(updated);
 }
 
 export async function deleteExercise(id: string) {

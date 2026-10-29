@@ -109,7 +109,9 @@ test.describe("Admin pages", () => {
 
   test("themed dropdowns open, pick with mouse and keyboard, and close on Escape", async ({ page }) => {
     await page.goto("/exercises");
-    const difficulty = page.getByRole("combobox", { name: "Difficulty" });
+    await page.getByRole("button", { name: "Add exercise" }).first().click();
+    const dialog = page.getByRole("dialog");
+    const difficulty = dialog.getByRole("combobox", { name: "Difficulty" });
     await expect(difficulty).toHaveText("Beginner");
 
     await difficulty.click();
@@ -127,11 +129,63 @@ test.describe("Admin pages", () => {
     await page.keyboard.press("Enter");
     await expect(difficulty).toHaveText("Intermediate");
 
+    // Escape closes only the menu, not the dialog around it.
     await page.keyboard.press("ArrowDown");
     await expect(page.getByRole("listbox")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(dialog).toBeVisible();
     await expect(difficulty).toHaveText("Intermediate");
+  });
+
+  test("creates an exercise with muscles, steps and a thumbnail, then edits and deletes it", async ({ page }) => {
+    const name = `E2E Curl ${Date.now()}`;
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+    await page.goto("/exercises");
+    await page.getByRole("button", { name: "Add exercise" }).first().click();
+    const dialog = page.getByRole("dialog");
+
+    // Required fields are checked before anything is sent.
+    await dialog.getByRole("button", { name: "Save exercise" }).click();
+    await expect(dialog.getByText("Name is required")).toBeVisible();
+    await expect(dialog.getByText("Pick the primary muscle")).toBeVisible();
+
+    await dialog.getByLabel("Name").fill(name);
+    await dialog.getByRole("combobox", { name: "Primary target muscle" }).click();
+    await page.getByRole("combobox", { name: "Search options" }).fill("bice");
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByRole("combobox", { name: "Primary target muscle" })).toHaveText("Biceps");
+
+    await dialog.getByLabel("Secondary muscles").fill("Forearms");
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByRole("button", { name: "Remove Forearms" })).toBeVisible();
+
+    await dialog.getByLabel("Step 1", { exact: true }).fill("Stand tall with dumbbells at your sides");
+    await page.keyboard.press("Enter");
+    await dialog.getByLabel("Step 2", { exact: true }).fill("Curl up without swinging");
+    await dialog.getByLabel("Mistake 1", { exact: true }).fill("Swinging the hips");
+    await dialog.getByLabel("Coach's tip").fill("Squeeze hard at the top.");
+    await dialog.locator("#ex-thumbnail").setInputFiles({ name: "thumb.png", mimeType: "image/png", buffer: png });
+    await expect(dialog.getByRole("img", { name: "Thumbnail preview" })).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Save exercise" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await page.getByLabel("Search exercises").fill(name);
+    const card = page.locator("article", { hasText: name });
+    await expect(card).toHaveCount(1);
+    await expect(card.getByText("Biceps")).toBeVisible();
+    await expect(card.getByText("Forearms")).toBeVisible();
+
+    await card.getByRole("button", { name: `Edit ${name}` }).click();
+    await expect(dialog.getByLabel("Step 2", { exact: true })).toHaveValue("Curl up without swinging");
+    await dialog.getByRole("button", { name: "Remove step 1" }).click();
+    await dialog.getByRole("button", { name: "Save changes" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await card.getByRole("button", { name: `Delete ${name}` }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+    await expect(card).toHaveCount(0);
   });
 
   test("workout plans page loads", async ({ page }) => {

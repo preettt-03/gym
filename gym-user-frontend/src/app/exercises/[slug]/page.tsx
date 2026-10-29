@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Dumbbell, Flame, PlayCircle, Target, Timer } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Dumbbell, Flame, Sparkles, Target, Timer } from "lucide-react";
 import { getExercise } from "@/lib/exercise-api";
 import { DifficultyBadge } from "@/components/exercise/exercise-card";
 import { FavoriteButton } from "@/components/exercise/favorite-button";
 import { FormTipButton } from "@/components/exercise/form-tip-button";
+import { MediaPlayer } from "@/components/exercise/media-player";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -58,7 +59,7 @@ export default function ExerciseDetailPage() {
   const notFound = isAxiosError(error) && error.response?.status === 404;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <Link href="/exercises" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-gold">
         <ArrowLeft className="h-4 w-4" /> Exercise library
       </Link>
@@ -93,92 +94,96 @@ export default function ExerciseDetailPage() {
               <FavoriteButton exercise={exercise} size="lg" />
             </div>
 
-            <div className="mt-8 grid gap-6 md:grid-cols-[2fr_1fr]">
-              <div className="flex flex-col gap-6">
-                {exercise.gifUrl || exercise.images[0] ? (
-                  // Exercise media is admin-uploaded and can live on any host.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={exercise.gifUrl || exercise.images[0]}
-                    alt={`${exercise.name} demonstration`}
-                    loading="lazy"
-                    className="aspect-video w-full rounded-2xl border border-border object-cover"
-                  />
-                ) : null}
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1.7fr_1fr]">
+              <MediaPlayer name={exercise.name} videoUrl={exercise.videoUrl} thumbnailUrl={exercise.thumbnailUrl} images={exercise.images} />
 
-                <section className="glass-card p-6">
-                  <h2 className="text-xl font-semibold uppercase">How to do it</h2>
-                  {exercise.instructions.length > 0 ? (
-                    <ol className="mt-4 flex flex-col gap-4">
-                      {exercise.instructions.map((step, i) => (
-                        <li key={i} className="flex gap-4">
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold font-display text-sm font-bold text-accent-foreground">
-                            {i + 1}
-                          </span>
-                          <span className="pt-0.5 leading-relaxed text-foreground/85">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted">Step-by-step instructions haven&apos;t been added yet.</p>
-                  )}
+              <aside className="flex flex-col gap-3" aria-label="Exercise specs">
+                <section className="rounded-2xl bg-linear-to-br from-gold-light via-gold to-gold-dark p-5 text-accent-foreground">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-75">Primary muscle</p>
+                  <p className="mt-1 flex items-center gap-2 font-display text-2xl font-bold uppercase">
+                    <Target className="h-5 w-5" /> {exercise.targetMuscle}
+                  </p>
                 </section>
-
-                {exercise.commonMistakes.length > 0 && (
-                  <section className="glass-card p-6">
-                    <h2 className="text-xl font-semibold uppercase">Common mistakes</h2>
-                    <ul className="mt-4 flex flex-col gap-3">
-                      {exercise.commonMistakes.map((m, i) => (
-                        <li key={i} className="flex gap-3 text-foreground/85">
-                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#fab219]" />
+                <section className="glass-card p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Secondary / assisting</p>
+                  {exercise.secondaryMuscles.length > 0 ? (
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {exercise.secondaryMuscles.map((m) => (
+                        <li key={m} className="rounded-full border border-border bg-surface-2 px-3 py-1 text-sm">
                           {m}
                         </li>
                       ))}
                     </ul>
-                  </section>
-                )}
-
-                <section className="glass-card p-6">
-                  <h2 className="text-xl font-semibold uppercase">Coach&apos;s tip</h2>
-                  <div className="mt-4">
-                    {isAuthed ? (
-                      <FormTipButton exerciseId={exercise.id} />
-                    ) : (
-                      <p className="text-sm text-muted">
-                        <Link href="/login" className="font-semibold text-gold hover:underline">
-                          Log in
-                        </Link>{" "}
-                        to get an AI form tip tailored to this exercise.
-                      </p>
-                    )}
-                  </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted">Mostly isolates the primary muscle.</p>
+                  )}
                 </section>
-              </div>
-
-              <aside className="glass-card h-fit p-6">
-                <dl className="flex flex-col gap-5">
-                  <Fact icon={Target} label="Target muscle" value={exercise.targetMuscle} />
-                  {exercise.secondaryMuscles.length > 0 && (
-                    <Fact icon={CheckCircle2} label="Also works" value={exercise.secondaryMuscles.join(", ")} />
-                  )}
-                  <Fact icon={Dumbbell} label="Equipment" value={exercise.equipment.length ? exercise.equipment.join(", ") : "None — bodyweight"} />
-                  {exercise.durationMinutes && <Fact icon={Timer} label="Duration" value={`${exercise.durationMinutes} min`} />}
-                  {exercise.caloriesBurnedEstimate && (
-                    <Fact icon={Flame} label="Estimated burn" value={`~${exercise.caloriesBurnedEstimate} kcal`} />
-                  )}
-                </dl>
-                {exercise.videoUrl && (
-                  <a
-                    href={exercise.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-6 flex items-center justify-center gap-2 rounded-xl border border-gold/50 px-4 py-2.5 text-sm font-semibold text-gold hover:bg-gold hover:text-accent-foreground"
-                  >
-                    <PlayCircle className="h-4 w-4" /> Watch video
-                  </a>
-                )}
+                <section className="glass-card p-5">
+                  <dl className="flex flex-col gap-4">
+                    <Fact icon={Dumbbell} label="Equipment" value={exercise.equipment.length ? exercise.equipment.join(", ") : "None — bodyweight"} />
+                    {exercise.durationMinutes ? <Fact icon={Timer} label="Duration" value={`${exercise.durationMinutes} min`} /> : null}
+                    {exercise.caloriesBurnedEstimate ? <Fact icon={Flame} label="Estimated burn" value={`~${exercise.caloriesBurnedEstimate} kcal`} /> : null}
+                  </dl>
+                </section>
               </aside>
             </div>
+
+            <h2 className="mt-10 text-2xl font-bold uppercase">Details</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <section className="glass-card p-6">
+                <h3 className="text-xl font-semibold uppercase">How to do it</h3>
+                {exercise.instructions.length > 0 ? (
+                  <ol className="mt-4 flex flex-col gap-4">
+                    {exercise.instructions.map((step, i) => (
+                      <li key={i} className="flex gap-4">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold font-display text-sm font-bold text-accent-foreground">
+                          {i + 1}
+                        </span>
+                        <span className="pt-0.5 leading-relaxed text-foreground/85">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">Step-by-step instructions haven&apos;t been added yet.</p>
+                )}
+              </section>
+
+              <section className="glass-card p-6">
+                <h3 className="text-xl font-semibold uppercase">Common mistakes</h3>
+                {exercise.commonMistakes.length > 0 ? (
+                  <ul className="mt-4 flex flex-col gap-3">
+                    {exercise.commonMistakes.map((m, i) => (
+                      <li key={i} className="flex items-start gap-3 text-foreground/85">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fab219]/15" aria-hidden>
+                          <AlertTriangle className="h-3.5 w-3.5 text-[#fab219]" />
+                        </span>
+                        <span className="pt-0.5 leading-relaxed">{m}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">No common mistakes listed yet.</p>
+                )}
+              </section>
+            </div>
+
+            <section className="relative mt-4 overflow-hidden rounded-2xl bg-linear-to-br from-gold-light via-gold to-gold-dark p-6 text-accent-foreground shadow-[0_20px_60px_-20px] shadow-gold/40">
+              <Sparkles className="absolute -right-2 -top-2 h-20 w-20 opacity-15" aria-hidden />
+              <h2 className="font-display text-2xl font-bold uppercase">Coach&apos;s tip</h2>
+              {exercise.coachTip && <p className="mt-2 max-w-3xl text-base leading-relaxed">{exercise.coachTip}</p>}
+              <div className="mt-4 rounded-xl bg-background/90 p-4 text-foreground">
+                {isAuthed ? (
+                  <FormTipButton exerciseId={exercise.id} />
+                ) : (
+                  <p className="text-sm text-muted">
+                    <Link href="/login" className="font-semibold text-gold hover:underline">
+                      Log in
+                    </Link>{" "}
+                    to get an AI form tip tailored to you.
+                  </p>
+                )}
+              </div>
+            </section>
           </article>
         )}
       </div>

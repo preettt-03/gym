@@ -51,6 +51,22 @@ test.describe("Public marketing pages", () => {
     }
   });
 
+  test("exercise library filters by muscle group and opens a detail page", async ({ page }) => {
+    await page.goto("/exercises");
+    await page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Chest" }).click();
+    await expect(page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Chest" })).toHaveAttribute("aria-pressed", "true");
+    const cards = page.locator("main article, article").filter({ has: page.getByRole("link") });
+    await expect(cards.first()).toBeVisible();
+    // Every card left is a chest exercise (seed: bench press, push-up).
+    for (const name of await cards.getByRole("heading").allInnerTexts()) expect(name).toMatch(/BENCH|PUSH|CHEST|FLY|DIP/i);
+
+    await cards.first().getByRole("link").click();
+    await expect(page.getByText("Primary muscle")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "How to do it" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Common mistakes" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Coach's tip" })).toBeVisible();
+  });
+
   test("manifest, robots, and sitemap are served", async ({ page }) => {
     const manifest = await page.request.get("/manifest.webmanifest");
     expect(manifest.status()).toBe(200);

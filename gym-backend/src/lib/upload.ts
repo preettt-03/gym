@@ -34,3 +34,19 @@ export const upload = multer({
     cb(null, true);
   },
 });
+
+// Exercise demo videos — admin-only (see uploads.routes), hence the larger limit.
+export const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+export const MAX_VIDEO_SIZE_BYTES = 100 * 1024 * 1024;
+
+export const videoUpload = multer({
+  storage,
+  limits: { fileSize: MAX_VIDEO_SIZE_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if (!VIDEO_MIME_TYPES.includes(file.mimetype)) {
+      cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'Unsupported video type — use MP4, WebM or MOV'));
+      return;
+    }
+    cb(null, true);
+  },
+});

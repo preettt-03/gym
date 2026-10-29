@@ -15,6 +15,7 @@ export async function list(req: AuthedRequest, res: Response) {
       equipment: q.equipment,
       difficulty: q.difficulty as Difficulty | undefined,
       targetMuscle: q.targetMuscle,
+      muscleGroup: q.muscleGroup as service.ExerciseFilters['muscleGroup'],
       workoutType: q.workoutType,
       minCalories: q.minCalories !== undefined ? Number(q.minCalories) : undefined,
       maxCalories: q.maxCalories !== undefined ? Number(q.maxCalories) : undefined,
