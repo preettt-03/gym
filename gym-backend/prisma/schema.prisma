@@ -174,6 +174,8 @@ model OtpCode {
   purpose     OtpPurpose
   expiresAt   DateTime
   consumedAt  DateTime?
+  // Wrong guesses against this code; it is burned once the limit is hit.
+  attempts    Int        @default(0)
   createdAt   DateTime   @default(now())
 
   @@index([userId, purpose])

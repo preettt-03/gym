@@ -8,13 +8,14 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { Loader2 } from "lucide-react";
-import { verifyEmail } from "@/lib/api";
+import { resendVerificationCode, verifyEmail } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FieldError, FormAlert } from "@/components/ui/form-message";
 import { AuthShell } from "@/components/auth-shell";
+import { ResendCodeButton } from "@/components/resend-code-button";
 
 const schema = z.object({
   code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code from your email"),
@@ -95,6 +96,15 @@ function VerifyEmailForm() {
           {mutation.isPending ? "Verifying..." : "Verify email"}
         </Button>
       </form>
+
+      {email && (
+        <div className="mt-6">
+          <ResendCodeButton
+            startCoolingDown={searchParams.get("sent") === "1"}
+            onResend={() => resendVerificationCode(email)}
+          />
+        </div>
+      )}
     </>
   );
 }

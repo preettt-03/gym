@@ -46,6 +46,35 @@ test.describe("Registration and login", () => {
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
+  test("resets a forgotten password and logs in with the new one", async ({ page }) => {
+    const newPassword = "FreshPassword456";
+
+    await page.goto("/login");
+    await page.getByRole("link", { name: "Forgot password?" }).click();
+    await page.getByLabel("Email").fill(email);
+    await page.getByRole("button", { name: "Send reset code" }).click();
+
+    await expect(page).toHaveURL(/\/reset-password/);
+    await expect(page.getByRole("button", { name: /Resend in \d+s/ })).toBeDisabled();
+
+    await page.getByPlaceholder("000000").fill(await getLatestOtp(email));
+    await page.getByLabel("New password", { exact: true }).fill(newPassword);
+    await page.getByLabel("Confirm new password").fill("SomethingElse999");
+    await page.getByLabel("Confirm new password").blur();
+    await expect(page.getByText("Passwords don't match")).toBeVisible();
+
+    await page.getByLabel("Confirm new password").fill(newPassword);
+    await page.getByRole("button", { name: "Update password" }).click();
+
+    await expect(page).toHaveURL(/\/login\?reset=1/);
+    await expect(page.getByText("Password updated")).toBeVisible();
+
+    await page.getByPlaceholder("Email").fill(email);
+    await page.getByPlaceholder("Password").fill(newPassword);
+    await page.locator("form").getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+  });
+
   test("redirects an unauthenticated visitor away from a protected page", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login/);

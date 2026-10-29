@@ -40,7 +40,7 @@ export default function RegisterPage() {
   const mutation = useMutation({
     mutationFn: registerUser,
     onSuccess: (_data, variables) => {
-      router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
+      router.push(`/verify-email?email=${encodeURIComponent(variables.email)}&sent=1`);
     },
     onError: (err) => {
       setServerError(isAxiosError(err) ? err.response?.data?.error?.message ?? "Registration failed" : "Registration failed");

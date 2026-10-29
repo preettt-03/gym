@@ -33,7 +33,7 @@ export async function verifyEmail(req: Request, res: Response) {
 export async function resendOtp(req: Request, res: Response) {
   const { email } = req.body;
   await authService.resendOtp(email, OtpPurpose.EMAIL_VERIFICATION);
-  res.json({ message: 'If the account exists, a new code has been sent.' });
+  res.json({ message: 'If the account exists, a new code has been sent.', cooldownSeconds: authService.OTP_RESEND_COOLDOWN_SECONDS });
 }
 
 export async function login(req: Request, res: Response) {
@@ -63,7 +63,7 @@ export async function logout(req: Request, res: Response) {
 export async function forgotPassword(req: Request, res: Response) {
   const { email } = req.body;
   await authService.forgotPassword(email);
-  res.json({ message: 'If the account exists, a reset code has been sent.' });
+  res.json({ message: 'If the account exists, a reset code has been sent.', cooldownSeconds: authService.OTP_RESEND_COOLDOWN_SECONDS });
 }
 
 export async function resetPassword(req: Request, res: Response) {

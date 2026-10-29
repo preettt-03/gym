@@ -21,6 +21,28 @@ export async function loginUser(input: { email: string; password: string }) {
   return data;
 }
 
+// Both always succeed with the same message whether or not the account
+// exists; cooldownSeconds tells the UI how long to disable "resend".
+export interface CodeSentResponse {
+  message: string;
+  cooldownSeconds: number;
+}
+
+export async function resendVerificationCode(email: string) {
+  const { data } = await apiClient.post<CodeSentResponse>("/auth/resend-otp", { email });
+  return data;
+}
+
+export async function requestPasswordReset(email: string) {
+  const { data } = await apiClient.post<CodeSentResponse>("/auth/forgot-password", { email });
+  return data;
+}
+
+export async function resetPassword(input: { email: string; code: string; newPassword: string }) {
+  const { data } = await apiClient.post<{ message: string }>("/auth/reset-password", input);
+  return data;
+}
+
 export async function googleLogin(idToken: string) {
   const { data } = await apiClient.post<AuthResponse>("/auth/google", { idToken });
   return data;

@@ -9,6 +9,10 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(1, 'JWT_ACCESS_SECRET is required'),
   JWT_REFRESH_SECRET: z.string().min(1, 'JWT_REFRESH_SECRET is required'),
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
+  // Requests per IP per 15 minutes. Keep the production defaults; local
+  // E2E runs log in dozens of times and may raise AUTH_RATE_LIMIT_MAX.
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
 
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),

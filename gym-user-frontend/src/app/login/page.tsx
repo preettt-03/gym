@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { loginUser } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { FieldError, FormAlert } from "@/components/ui/form-message";
 import { AuthShell } from "@/components/auth-shell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GoogleSignInSection } from "@/components/google-sign-in-button";
 
 const schema = z.object({
@@ -27,8 +28,9 @@ type FormValues = z.infer<typeof schema>;
 
 const UNVERIFIED = "Email not verified";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const justReset = useSearchParams().get("reset") === "1";
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -55,7 +57,13 @@ export default function LoginPage() {
   const pending = isSubmitting || mutation.isPending;
 
   return (
-    <AuthShell title="Welcome back" subtitle="Log in to continue your journey.">
+    <>
+      {justReset && !serverError && (
+        <p role="status" className="mb-6 flex items-start gap-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          Password updated. Log in with your new password.
+        </p>
+      )}
       <form
         noValidate
         className="flex flex-col gap-4"
@@ -80,9 +88,14 @@ export default function LoginPage() {
           <FieldError id="email-error" message={errors.email?.message} />
         </div>
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
-            Password
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium">
+              Password
+            </label>
+            <Link href="/forgot-password" className="text-xs font-semibold text-gold hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <PasswordInput
             id="password"
             autoComplete="current-password"
@@ -118,6 +131,24 @@ export default function LoginPage() {
           Sign up
         </Link>
       </p>
+    </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <AuthShell title="Welcome back" subtitle="Log in to continue your journey.">
+      <Suspense
+        fallback={
+          <div className="flex flex-col gap-4" aria-label="Loading">
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+        }
+      >
+        <LoginForm />
+      </Suspense>
     </AuthShell>
   );
 }
