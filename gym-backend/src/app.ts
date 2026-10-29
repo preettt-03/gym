@@ -61,6 +61,11 @@ const allowedOrigins = env.CORS_ORIGINS.split(',').map((origin) => origin.trim()
 export function createApp() {
   const app = express();
 
+  if (env.TRUST_PROXY) {
+    const hops = Number(env.TRUST_PROXY);
+    app.set('trust proxy', Number.isInteger(hops) ? hops : env.TRUST_PROXY);
+  }
+
   app.use(helmet());
   app.use(
     cors({
@@ -77,10 +82,10 @@ export function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  app.use(globalRateLimiter);
 
   // Helmet's default same-origin CORP would block the frontend apps (different ports)
   // from loading these images, so relax it specifically for this static route.
+  // Served ahead of the rate limiter so image-heavy pages don't eat the API budget.
   app.use(
     '/uploads',
     (_req, res, next) => {
@@ -89,6 +94,8 @@ export function createApp() {
     },
     express.static(UPLOAD_DIR)
   );
+
+  app.use(globalRateLimiter);
 
   // Applies to every /api/v1/admin/* mutation regardless of which router below handles
   // it — req.user is populated by the specific router's requireAuth by the time the

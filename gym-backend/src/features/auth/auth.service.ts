@@ -38,10 +38,12 @@ async function issueTokens(user: Pick<User, 'id' | 'role'>) {
   return { accessToken, refreshToken };
 }
 
-// Stores a fresh code and emails it. Returns whether the email went out: a
-// mail outage must not fail registration (the user can press "Resend code"),
-// so delivery errors are logged rather than thrown.
-async function issueOtp(userId: string, email: string, purpose: OtpPurpose) {
+// Stores a fresh code and emails it. A mail outage must never fail a
+// self-service request (the user can press "Resend code"), so delivery errors
+// are logged, not thrown. By default the email is sent in the background —
+// SMTP can take seconds — and the call resolves immediately; pass
+// waitForDelivery when the caller needs to know whether it went out.
+async function issueOtp(userId: string, email: string, purpose: OtpPurpose, { waitForDelivery = false } = {}) {
   const code = generateOtp();
   // Only the newest code is ever valid, so resends don't multiply the odds of a guess.
   await prisma.$transaction([
@@ -65,13 +67,14 @@ async function issueOtp(userId: string, email: string, purpose: OtpPurpose) {
             `<p>If you didn't ask for this, you can ignore this email — your password won't change.</p>`,
         ];
 
-  try {
-    await sendMail(email, subject, html);
-    return true;
-  } catch (err) {
-    logger.error('Failed to send OTP email', { purpose, userId, err: err instanceof Error ? err.message : err });
-    return false;
-  }
+  const delivery = sendMail(email, subject, html).then(
+    () => true,
+    (err) => {
+      logger.error('Failed to send OTP email', { purpose, userId, err: err instanceof Error ? err.message : err });
+      return false;
+    }
+  );
+  return waitForDelivery ? delivery : true;
 }
 
 function codesMatch(a: string, b: string) {
@@ -223,7 +226,7 @@ export async function sendAdminPasswordReset(userId: string) {
   }
 
   // Unlike self-service flows, the admin needs to know if the email didn't go out.
-  const delivered = await issueOtp(user.id, user.email, OtpPurpose.PASSWORD_RESET);
+  const delivered = await issueOtp(user.id, user.email, OtpPurpose.PASSWORD_RESET, { waitForDelivery: true });
   if (!delivered) throw new AppError("Couldn't send the reset email. Check the mail settings and try again in a minute.", 502);
 
   await prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });

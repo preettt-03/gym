@@ -61,9 +61,10 @@ services:
       # containers by their Docker Compose service name instead.
       DATABASE_URL: postgresql://gym:gym@postgres:5432/gym?schema=public
       REDIS_URL: redis://redis:6379
-      # Local dev only: the E2E suites log in far more than 20 times per
-      # 15 minutes. Production keeps the default of 20.
+      # Local dev only: every E2E suite shares one IP and logs in far more than
+      # production traffic would. Production keeps the defaults (20 / 1000).
       AUTH_RATE_LIMIT_MAX: "200"
+      RATE_LIMIT_MAX: "5000"
     ports:
       - "8004:8004"
     depends_on:

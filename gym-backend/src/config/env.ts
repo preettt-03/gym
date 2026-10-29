@@ -11,8 +11,12 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
   // Requests per IP per 15 minutes. Keep the production defaults; local
   // E2E runs log in dozens of times and may raise AUTH_RATE_LIMIT_MAX.
-  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(1000),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  // Express "trust proxy" setting. Behind a reverse proxy / load balancer set
+  // this to the number of proxy hops (usually 1); otherwise every visitor
+  // shares the proxy's IP and one busy user rate-limits everyone.
+  TRUST_PROXY: z.string().optional(),
 
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
