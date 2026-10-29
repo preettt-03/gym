@@ -15,6 +15,25 @@ test.describe("Authenticated feature pages", () => {
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
+  test("favourites and recently viewed exercises", async ({ page }) => {
+    await page.goto("/exercises/plank");
+    const save = page.getByRole("button", { name: "Add Plank to favourites" });
+    await save.click();
+    const saved = page.getByRole("button", { name: "Remove Plank from favourites" });
+    await expect(saved).toHaveAttribute("aria-pressed", "true");
+
+    await page.goto("/exercises");
+    await page.getByRole("tab", { name: /Favourites/ }).click();
+    await expect(page.getByRole("link", { name: "Plank" })).toBeVisible();
+    await page.getByRole("tab", { name: "Recently viewed" }).click();
+    await expect(page.getByRole("link", { name: "Plank" })).toBeVisible();
+
+    // Leave the shared admin account as we found it.
+    await page.getByRole("tab", { name: /Favourites/ }).click();
+    await page.getByRole("button", { name: "Remove Plank from favourites" }).click();
+    await expect(page.getByText(/No favourites yet/)).toBeVisible();
+  });
+
   test("dashboard shows stat cards and today's plan sections", async ({ page }) => {
     await expect(page.getByText("BMI")).toBeVisible();
     await expect(page.getByText("Current streak")).toBeVisible();

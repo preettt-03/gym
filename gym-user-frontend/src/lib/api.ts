@@ -60,8 +60,11 @@ export interface Exercise {
   categories: { id: string; name: string; slug: string }[];
 }
 
-export async function listExercises(params: { search?: string; category?: string; difficulty?: string }) {
-  const { data } = await apiClient.get<{ items: Exercise[]; pagination: { total: number } }>("/exercises", {
+export async function listExercises(params: { search?: string; category?: string; difficulty?: string; page?: number; limit?: number }) {
+  const { data } = await apiClient.get<{
+    items: Exercise[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  }>("/exercises", {
     params,
   });
   return data;

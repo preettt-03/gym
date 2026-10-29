@@ -8,6 +8,7 @@ import { AppError } from '@/middlewares/errorHandler';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@/lib/jwt';
 import { generateOtp } from '@/lib/otp';
 import { sendMail } from '@/lib/mailer';
+import { logger } from '@/config/logger';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -37,6 +38,9 @@ async function issueTokens(user: Pick<User, 'id' | 'role'>) {
   return { accessToken, refreshToken };
 }
 
+// Stores a fresh code and emails it. Returns whether the email went out: a
+// mail outage must not fail registration (the user can press "Resend code"),
+// so delivery errors are logged rather than thrown.
 async function issueOtp(userId: string, email: string, purpose: OtpPurpose) {
   const code = generateOtp();
   // Only the newest code is ever valid, so resends don't multiply the odds of a guess.
@@ -50,19 +54,24 @@ async function issueOtp(userId: string, email: string, purpose: OtpPurpose) {
     }),
   ]);
 
-  if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
-    await sendMail(email, 'Verify your email', `<p>Your verification code is <b>${code}</b>. It expires in 10 minutes.</p>`);
-    return;
-  }
-
   const resetUrl = `${env.USER_APP_URL}/reset-password?email=${encodeURIComponent(email)}`;
-  await sendMail(
-    email,
-    'Reset your password',
-    `<p>Your password reset code is <b>${code}</b>. It expires in 10 minutes.</p>` +
-      `<p><a href="${resetUrl}">Choose a new password</a></p>` +
-      `<p>If you didn't ask for this, you can ignore this email — your password won't change.</p>`
-  );
+  const [subject, html] =
+    purpose === OtpPurpose.EMAIL_VERIFICATION
+      ? ['Verify your email', `<p>Your verification code is <b>${code}</b>. It expires in 10 minutes.</p>`]
+      : [
+          'Reset your password',
+          `<p>Your password reset code is <b>${code}</b>. It expires in 10 minutes.</p>` +
+            `<p><a href="${resetUrl}">Choose a new password</a></p>` +
+            `<p>If you didn't ask for this, you can ignore this email — your password won't change.</p>`,
+        ];
+
+  try {
+    await sendMail(email, subject, html);
+    return true;
+  } catch (err) {
+    logger.error('Failed to send OTP email', { purpose, userId, err: err instanceof Error ? err.message : err });
+    return false;
+  }
 }
 
 function codesMatch(a: string, b: string) {
@@ -213,8 +222,11 @@ export async function sendAdminPasswordReset(userId: string) {
     throw new AppError('A reset email was sent less than a minute ago. Try again shortly.', 429);
   }
 
+  // Unlike self-service flows, the admin needs to know if the email didn't go out.
+  const delivered = await issueOtp(user.id, user.email, OtpPurpose.PASSWORD_RESET);
+  if (!delivered) throw new AppError("Couldn't send the reset email. Check the mail settings and try again in a minute.", 502);
+
   await prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
-  await issueOtp(user.id, user.email, OtpPurpose.PASSWORD_RESET);
   return { email: user.email };
 }
 

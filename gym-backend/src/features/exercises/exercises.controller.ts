@@ -52,6 +52,19 @@ export async function toggleFavorite(req: AuthedRequest, res: Response) {
   res.json(result);
 }
 
+export async function favorite(req: AuthedRequest, res: Response) {
+  res.json(await service.setFavorite(req.user!.id, req.params.id, true));
+}
+
+export async function unfavorite(req: AuthedRequest, res: Response) {
+  res.json(await service.setFavorite(req.user!.id, req.params.id, false));
+}
+
+export async function clearRecent(req: AuthedRequest, res: Response) {
+  await service.clearRecentlyViewed(req.user!.id);
+  res.status(204).send();
+}
+
 export async function favorites(req: AuthedRequest, res: Response) {
   const items = await service.listFavorites(req.user!.id);
   res.json({ items });

@@ -14,12 +14,15 @@ exercisesRouter.get('/', validate(schemas.listExercisesSchema), asyncHandler(con
 // Authenticated user actions (must precede the /:slug catch-all)
 exercisesRouter.get('/favorites', requireAuth, asyncHandler(controller.favorites));
 exercisesRouter.get('/recent', requireAuth, asyncHandler(controller.recent));
+exercisesRouter.delete('/recent', requireAuth, asyncHandler(controller.clearRecent));
 exercisesRouter.post(
   '/:id/favorite',
   requireAuth,
   validate(schemas.idParamSchema),
   asyncHandler(controller.toggleFavorite)
 );
+exercisesRouter.put('/:id/favorite', requireAuth, validate(schemas.idParamSchema), asyncHandler(controller.favorite));
+exercisesRouter.delete('/:id/favorite', requireAuth, validate(schemas.idParamSchema), asyncHandler(controller.unfavorite));
 
 // Public detail — tracks a view when the caller happens to be logged in
 exercisesRouter.get('/:slug', optionalAuth, validate(schemas.slugParamSchema), asyncHandler(controller.detail));

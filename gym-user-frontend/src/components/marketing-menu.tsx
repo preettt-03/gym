@@ -9,6 +9,7 @@ export const MARKETING_LINKS = [
   { href: "/faq", label: "FAQ" },
   { href: "/blog", label: "Blog" },
   { href: "/gallery", label: "Gallery" },
+  { href: "/tools/body-fat", label: "Body-fat calculator" },
 ];
 
 export function MarketingMenu() {

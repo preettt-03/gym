@@ -98,9 +98,7 @@ export async function getExerciseBySlug(slug: string, userId?: string) {
   });
   if (!exercise) throw new AppError('Exercise not found', 404);
 
-  if (userId) {
-    await prisma.exerciseView.create({ data: { userId, exerciseId: exercise.id } }).catch(() => undefined);
-  }
+  if (userId) await recordView(userId, exercise.id);
 
   return serializeExercise(exercise);
 }
@@ -158,26 +156,59 @@ export async function deleteExercise(id: string) {
   await prisma.exercise.update({ where: { id }, data: { deletedAt: new Date() } });
 }
 
-export async function toggleFavorite(userId: string, exerciseId: string) {
-  const exercise = await prisma.exercise.findUnique({ where: { id: exerciseId } });
-  if (!exercise || exercise.deletedAt) throw new AppError('Exercise not found', 404);
+const VIEW_DEDUPE_MS = 5 * 60 * 1000;
 
+// One row per visit; reloading the same page within a few minutes doesn't
+// add another. Failures never block the page itself.
+async function recordView(userId: string, exerciseId: string) {
+  try {
+    const recent = await prisma.exerciseView.findFirst({
+      where: { userId, exerciseId, viewedAt: { gte: new Date(Date.now() - VIEW_DEDUPE_MS) } },
+      select: { id: true },
+    });
+    if (recent) {
+      await prisma.exerciseView.update({ where: { id: recent.id }, data: { viewedAt: new Date() } });
+    } else {
+      await prisma.exerciseView.create({ data: { userId, exerciseId } });
+    }
+  } catch {
+    // View history is best-effort.
+  }
+}
+
+async function assertLiveExercise(exerciseId: string) {
+  const exercise = await prisma.exercise.findUnique({ where: { id: exerciseId }, select: { deletedAt: true } });
+  if (!exercise || exercise.deletedAt) throw new AppError('Exercise not found', 404);
+}
+
+// Idempotent favourite/unfavourite: repeating the call (double clicks, two
+// tabs) leaves the same state instead of flipping or hitting the unique key.
+export async function setFavorite(userId: string, exerciseId: string, favorited: boolean) {
+  await assertLiveExercise(exerciseId);
+  if (favorited) {
+    await prisma.exerciseFavorite.upsert({
+      where: { userId_exerciseId: { userId, exerciseId } },
+      create: { userId, exerciseId },
+      update: {},
+    });
+  } else {
+    await prisma.exerciseFavorite.deleteMany({ where: { userId, exerciseId } });
+  }
+  return { favorited };
+}
+
+// Kept for older clients; new UI uses setFavorite.
+export async function toggleFavorite(userId: string, exerciseId: string) {
   const existing = await prisma.exerciseFavorite.findUnique({
     where: { userId_exerciseId: { userId, exerciseId } },
+    select: { id: true },
   });
-
-  if (existing) {
-    await prisma.exerciseFavorite.delete({ where: { id: existing.id } });
-    return { favorited: false };
-  }
-
-  await prisma.exerciseFavorite.create({ data: { userId, exerciseId } });
-  return { favorited: true };
+  return setFavorite(userId, exerciseId, !existing);
 }
 
 export async function listFavorites(userId: string) {
   const favorites = await prisma.exerciseFavorite.findMany({
-    where: { userId },
+    where: { userId, exercise: { deletedAt: null } },
     include: { exercise: { include: includeCategories } },
     orderBy: { createdAt: 'desc' },
   });
@@ -185,14 +216,29 @@ export async function listFavorites(userId: string) {
   return favorites.map((f) => serializeExercise(f.exercise));
 }
 
+// Most recent distinct exercises: group in the database first, then limit,
+// so repeat views of one exercise can't crowd others out.
 export async function listRecentlyViewed(userId: string, limit = 20) {
-  const views = await prisma.exerciseView.findMany({
-    where: { userId },
-    include: { exercise: { include: includeCategories } },
-    orderBy: { viewedAt: 'desc' },
+  const latest = await prisma.exerciseView.groupBy({
+    by: ['exerciseId'],
+    where: { userId, exercise: { deletedAt: null } },
+    _max: { viewedAt: true },
+    orderBy: { _max: { viewedAt: 'desc' } },
     take: limit,
-    distinct: ['exerciseId'],
   });
 
-  return views.map((v) => serializeExercise(v.exercise));
+  const exercises = await prisma.exercise.findMany({
+    where: { id: { in: latest.map((v) => v.exerciseId) } },
+    include: includeCategories,
+  });
+  const byId = new Map(exercises.map((e) => [e.id, e]));
+
+  return latest.flatMap((v) => {
+    const exercise = byId.get(v.exerciseId);
+    return exercise ? [{ ...serializeExercise(exercise), viewedAt: v._max.viewedAt }] : [];
+  });
+}
+
+export async function clearRecentlyViewed(userId: string) {
+  await prisma.exerciseView.deleteMany({ where: { userId } });
 }

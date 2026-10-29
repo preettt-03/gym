@@ -12,6 +12,7 @@ const PUBLIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitema
   { path: "/faq", changeFrequency: "monthly", priority: 0.6 },
   { path: "/blog", changeFrequency: "weekly", priority: 0.7 },
   { path: "/gallery", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/tools/body-fat", changeFrequency: "yearly", priority: 0.5 },
   { path: "/exercises", changeFrequency: "weekly", priority: 0.8 },
   { path: "/login", changeFrequency: "yearly", priority: 0.3 },
   { path: "/register", changeFrequency: "yearly", priority: 0.5 },

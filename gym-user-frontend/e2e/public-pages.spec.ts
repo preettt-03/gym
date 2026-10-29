@@ -13,6 +13,32 @@ test.describe("Public marketing pages", () => {
     await expect(page.getByPlaceholder("Search exercises...")).toBeVisible();
   });
 
+  test("exercise cards open a detail page with instructions", async ({ page }) => {
+    await page.goto("/exercises");
+    await page.getByRole("link", { name: "Push-Up" }).click();
+    await expect(page).toHaveURL(/\/exercises\/push-up/);
+    await expect(page.getByRole("heading", { name: "Push-Up" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "How to do it" })).toBeVisible();
+  });
+
+  test("body-fat calculator validates input and returns an estimate", async ({ page }) => {
+    await page.goto("/tools/body-fat");
+    await page.getByRole("button", { name: "Calculate" }).click();
+    await expect(page.getByText("Height is required")).toBeVisible();
+
+    await page.getByLabel("Height").fill("178");
+    await page.getByLabel("Neck").fill("38");
+    await page.getByLabel("Waist").fill("85");
+    await page.getByRole("button", { name: "Calculate" }).click();
+    await expect(page.getByText("Estimated body fat")).toBeVisible();
+    await expect(page.getByText(/Category:/)).toBeVisible();
+
+    // Women need a hip measurement.
+    await page.getByText("Female", { exact: true }).click();
+    await page.getByRole("button", { name: "Calculate" }).click();
+    await expect(page.getByText("Hip is required for women")).toBeVisible();
+  });
+
   test("pricing page lists membership plans", async ({ page }) => {
     await page.goto("/pricing");
     await expect(page.getByText("Membership Plans")).toBeVisible();
