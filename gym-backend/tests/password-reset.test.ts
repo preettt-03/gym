@@ -3,8 +3,6 @@ import { OtpPurpose } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { app, deleteTestUser, getLatestOtp, uniqueTestEmail } from './helpers';
 
-// Every request here goes through the auth rate limiter (20 per window), so
-// this file deliberately stays under that budget.
 describe('Password reset and OTP hardening', () => {
   const email = uniqueTestEmail('reset');
   const password = 'OriginalPass123';
@@ -61,8 +59,8 @@ describe('Password reset and OTP hardening', () => {
   });
 
   it('burns a code after five wrong guesses', async () => {
-    const [active] = await resetCodes();
-    const wrong = active.code === '000000' ? '111111' : '000000';
+    const code = await getLatestOtp(userId, OtpPurpose.PASSWORD_RESET);
+    const wrong = code === '000000' ? '111111' : '000000';
 
     for (let i = 0; i < 4; i++) {
       const res = await request(app)
@@ -79,7 +77,7 @@ describe('Password reset and OTP hardening', () => {
 
     const correctButBurned = await request(app)
       .post('/api/v1/auth/reset-password')
-      .send({ email, code: active.code, newPassword });
+      .send({ email, code, newPassword });
     expect(correctButBurned.status).toBe(400);
   });
 
@@ -97,9 +95,10 @@ describe('Password reset and OTP hardening', () => {
     expect(codes.find((c) => c.id === superseded.id)?.consumedAt).not.toBeNull();
     expect(codes.filter((c) => c.consumedAt === null)).toHaveLength(1);
 
+    const code = await getLatestOtp(userId, OtpPurpose.PASSWORD_RESET);
     const res = await request(app)
       .post('/api/v1/auth/reset-password')
-      .send({ email, code: codes[0].code, newPassword });
+      .send({ email, code, newPassword });
     expect(res.status).toBe(200);
 
     const liveSessions = await prisma.refreshToken.count({ where: { userId, revokedAt: null } });
@@ -107,7 +106,7 @@ describe('Password reset and OTP hardening', () => {
 
     const reused = await request(app)
       .post('/api/v1/auth/reset-password')
-      .send({ email, code: codes[0].code, newPassword: 'AnotherPass789' });
+      .send({ email, code, newPassword: 'AnotherPass789' });
     expect(reused.status).toBe(400);
 
     const oldLogin = await request(app).post('/api/v1/auth/login').send({ email, password });

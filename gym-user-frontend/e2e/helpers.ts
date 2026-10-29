@@ -1,3 +1,6 @@
+import { createHmac, randomInt } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { Client } from "pg";
 
 const DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgresql://gym:gym@localhost:8001/gym?schema=public";
@@ -6,20 +9,35 @@ export function uniqueTestEmail(label: string) {
   return `e2e-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 }
 
-// Registration only queues an OTP email (or logs it to console if SMTP isn't
-// configured) — reading the code straight from Postgres is more reliable than
-// parsing container logs and works the same whether SMTP is configured or not.
+// The backend stores only a keyed hash of each OTP (keyed with its access-token
+// secret), so the emailed code can't be read back. Instead we pin the latest OTP
+// to a fresh code using the same secret from gym-backend/.env and return it.
+function otpSecret(): string {
+  if (process.env.E2E_JWT_ACCESS_SECRET) return process.env.E2E_JWT_ACCESS_SECRET;
+  const envFile = readFileSync(path.join(__dirname, "../../gym-backend/.env"), "utf8");
+  const line = envFile.split("\n").find((l) => l.startsWith("JWT_ACCESS_SECRET="));
+  if (!line) throw new Error("Set E2E_JWT_ACCESS_SECRET or add JWT_ACCESS_SECRET to gym-backend/.env");
+  return line.slice("JWT_ACCESS_SECRET=".length).trim().replace(/^["']|["']$/g, "");
+}
+
+function hashOtp(code: string) {
+  const key = createHmac("sha256", otpSecret()).update("otp-codes").digest();
+  return createHmac("sha256", key).update(code).digest("hex");
+}
+
 export async function getLatestOtp(email: string): Promise<string> {
   const client = new Client({ connectionString: DATABASE_URL });
   await client.connect();
   try {
+    const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
     const result = await client.query(
-      `SELECT o.code FROM otp_codes o JOIN users u ON u.id = o."userId"
-       WHERE u.email = $1 ORDER BY o."createdAt" DESC LIMIT 1`,
-      [email]
+      `UPDATE otp_codes SET "codeHash" = $2 WHERE id = (
+         SELECT o.id FROM otp_codes o JOIN users u ON u.id = o."userId"
+         WHERE u.email = $1 ORDER BY o."createdAt" DESC LIMIT 1)`,
+      [email, hashOtp(code)]
     );
-    if (result.rows.length === 0) throw new Error(`No OTP found for ${email}`);
-    return result.rows[0].code as string;
+    if (result.rowCount === 0) throw new Error(`No OTP found for ${email}`);
+    return code;
   } finally {
     await client.end();
   }

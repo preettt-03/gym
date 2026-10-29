@@ -1,4 +1,4 @@
-import { timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import { OtpPurpose, Role, User } from '@prisma/client';
@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { env } from '@/config/env';
 import { AppError } from '@/middlewares/errorHandler';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@/lib/jwt';
-import { generateOtp } from '@/lib/otp';
+import { generateOtp, hashOtp } from '@/lib/otp';
 import { sendMail } from '@/lib/mailer';
 import { redis } from '@/lib/redis';
 import { logger } from '@/config/logger';
@@ -24,13 +24,19 @@ function sanitizeUser(user: User) {
   return rest;
 }
 
+// Refresh tokens are long random JWTs, so a fast unkeyed hash is enough: the DB only
+// ever holds the hash, and a leaked table can't be replayed as live sessions.
+function hashRefreshToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 async function issueTokens(user: Pick<User, 'id' | 'role'>) {
   const accessToken = signAccessToken({ sub: user.id, role: user.role });
   const refreshToken = signRefreshToken({ sub: user.id, role: user.role });
 
   await prisma.refreshToken.create({
     data: {
-      token: refreshToken,
+      tokenHash: hashRefreshToken(refreshToken),
       userId: user.id,
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
     },
@@ -53,7 +59,7 @@ async function issueOtp(userId: string, email: string, purpose: OtpPurpose, { wa
       data: { consumedAt: new Date() },
     }),
     prisma.otpCode.create({
-      data: { userId, code, purpose, expiresAt: new Date(Date.now() + OTP_TTL_MS) },
+      data: { userId, codeHash: hashOtp(code), purpose, expiresAt: new Date(Date.now() + OTP_TTL_MS) },
     }),
   ]);
 
@@ -93,7 +99,7 @@ async function consumeOtp(userId: string, purpose: OtpPurpose, code: string) {
   });
   if (!otp) throw new AppError('Invalid or expired code', 400);
 
-  if (!codesMatch(otp.code, code)) {
+  if (!/^\d{6}$/.test(code) || !codesMatch(otp.codeHash, hashOtp(code))) {
     const attempts = otp.attempts + 1;
     const exhausted = attempts >= OTP_MAX_ATTEMPTS;
     await prisma.otpCode.update({
@@ -257,7 +263,7 @@ export async function refresh(oldRefreshToken: string, allowedRoles?: Role[]) {
     throw new AppError('Invalid refresh token', 401);
   }
 
-  const stored = await prisma.refreshToken.findUnique({ where: { token: oldRefreshToken } });
+  const stored = await prisma.refreshToken.findUnique({ where: { tokenHash: hashRefreshToken(oldRefreshToken) } });
   if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
     throw new AppError('Invalid refresh token', 401);
   }
@@ -278,7 +284,7 @@ export async function refresh(oldRefreshToken: string, allowedRoles?: Role[]) {
 
 export async function logout(refreshToken: string) {
   await prisma.refreshToken.updateMany({
-    where: { token: refreshToken, revokedAt: null },
+    where: { tokenHash: hashRefreshToken(refreshToken), revokedAt: null },
     data: { revokedAt: new Date() },
   });
 }

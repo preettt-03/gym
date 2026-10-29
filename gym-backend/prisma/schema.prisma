@@ -152,7 +152,8 @@ model WeightLog {
 
 model RefreshToken {
   id          String    @id @default(uuid())
-  token       String    @unique
+  // SHA-256 of the token; the token itself only ever lives in the user's cookie.
+  tokenHash   String    @unique
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt   DateTime
@@ -172,7 +173,8 @@ model OtpCode {
   id          String     @id @default(uuid())
   userId      String
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code        String
+  // Keyed hash of the code (see lib/otp.ts hashOtp); the code itself is only emailed.
+  codeHash    String
   purpose     OtpPurpose
   expiresAt   DateTime
   consumedAt  DateTime?

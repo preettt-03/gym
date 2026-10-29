@@ -167,7 +167,7 @@ describe('Admin catalog and account tools', () => {
   describe('admin-triggered password reset', () => {
     it('emails a reset code, signs the member out, and enforces a cooldown', async () => {
       await prisma.refreshToken.create({
-        data: { token: `${tag}-refresh`, userId: memberId, expiresAt: new Date(Date.now() + 60_000) },
+        data: { tokenHash: `${tag}-refresh`, userId: memberId, expiresAt: new Date(Date.now() + 60_000) },
       });
 
       const res = await request(app).post(`/api/v1/admin/users/${memberId}/reset-password`).set(as(admin));

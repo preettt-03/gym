@@ -60,7 +60,7 @@ describe('Admin user management', () => {
 
   it('signs a user out everywhere when their role changes', async () => {
     await prisma.refreshToken.create({
-      data: { token: `jest-role-${Date.now()}`, userId: ids.other, expiresAt: new Date(Date.now() + 60_000) },
+      data: { tokenHash: `jest-role-${Date.now()}`, userId: ids.other, expiresAt: new Date(Date.now() + 60_000) },
     });
     expect((await patch(ids.other, { role: 'TRAINER' })).status).toBe(200);
     expect(await prisma.refreshToken.count({ where: { userId: ids.other, revokedAt: null } })).toBe(0);

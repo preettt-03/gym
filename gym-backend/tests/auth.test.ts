@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import request from 'supertest';
 import { prisma } from '@/lib/prisma';
 import { redis } from '@/lib/redis';
@@ -68,6 +69,22 @@ describe('Auth flow', () => {
 
     expect(me.status).toBe(200);
     expect(me.body.user.email).toBe(email);
+  });
+
+  it('stores only hashes of OTPs and refresh tokens', async () => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    const otps = await prisma.otpCode.findMany({ where: { userId: user.id } });
+    expect(otps.length).toBeGreaterThan(0);
+    otps.forEach((o) => expect(o.codeHash).toMatch(/^[0-9a-f]{64}$/));
+
+    const res = await request(app).post('/api/v1/auth/login').send({ email, password });
+    const cookie = ([] as string[]).concat(res.headers['set-cookie'] ?? []).find((c) => c.startsWith('refreshToken='))!.split(';')[0];
+    const token = decodeURIComponent(cookie.slice('refreshToken='.length));
+    expect(await prisma.refreshToken.count({ where: { tokenHash: token } })).toBe(0);
+    expect(await prisma.refreshToken.count({ where: { tokenHash: createHash('sha256').update(token).digest('hex') } })).toBe(1);
+
+    // The cookie still works end to end.
+    expect((await request(app).post('/api/v1/auth/refresh').set('Cookie', cookie)).status).toBe(200);
   });
 
   it('tells the member when no account exists for the email', async () => {
