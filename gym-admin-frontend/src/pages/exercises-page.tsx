@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { createExercise, deleteExercise, listExercises } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 const schema = z.object({
@@ -23,6 +24,7 @@ export function ExercisesPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -67,11 +69,7 @@ export function ExercisesPage() {
             <Input placeholder="Target muscle" {...register("targetMuscle")} />
             {errors.targetMuscle && <p className="mt-1 text-xs text-danger">{errors.targetMuscle.message}</p>}
           </div>
-          <select className="glass-input h-11 px-4 text-sm" {...register("difficulty")}>
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-          </select>
+          <FormSelect control={control} name="difficulty" aria-label="Difficulty" options={[{ value: "BEGINNER", label: "Beginner" }, { value: "INTERMEDIATE", label: "Intermediate" }, { value: "ADVANCED", label: "Advanced" }]} />
           <Input type="number" placeholder="Calories burned (optional)" {...register("caloriesBurnedEstimate")} />
           <Button type="submit" className="sm:col-span-2" disabled={isSubmitting || createMutation.isPending}>
             <Plus className="h-4 w-4" /> {createMutation.isPending ? "Adding..." : "Add exercise"}

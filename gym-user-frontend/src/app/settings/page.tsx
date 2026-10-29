@@ -13,9 +13,10 @@ import { getCurrentSubscription, isPushSupported, subscribeToPush, unsubscribeFr
 import { RequireAuth } from "@/components/require-auth";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FieldError } from "@/components/ui/form-message";
-import { ErrorNote, MemberHeader, MemberPage, Panel, selectClass } from "@/components/member/ui";
+import { ErrorNote, MemberHeader, MemberPage, Panel } from "@/components/member/ui";
 import { cn } from "@/lib/utils";
 
 const PROFILE_KEY = ["my-profile"];
@@ -153,6 +154,7 @@ function SettingsContent() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
@@ -191,14 +193,14 @@ function SettingsContent() {
   });
 
   const select = (name: keyof typeof OPTIONS, placeholder: string) => (
-    <select className={selectClass} {...fieldProps(name)}>
-      <option value="">{placeholder}</option>
-      {OPTIONS[name].map(([value, label]) => (
-        <option key={value} value={value}>
-          {label}
-        </option>
-      ))}
-    </select>
+    <FormSelect
+      control={control}
+      name={name}
+      id={name}
+      aria-describedby={`${name}-error`}
+      placeholder={placeholder}
+      options={[{ value: "", label: placeholder }, ...OPTIONS[name].map(([value, label]) => ({ value, label }))]}
+    />
   );
 
   return (

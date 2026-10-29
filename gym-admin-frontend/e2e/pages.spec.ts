@@ -107,6 +107,33 @@ test.describe("Admin pages", () => {
     await expect(page).toHaveURL(/\/exercises/);
   });
 
+  test("themed dropdowns open, pick with mouse and keyboard, and close on Escape", async ({ page }) => {
+    await page.goto("/exercises");
+    const difficulty = page.getByRole("combobox", { name: "Difficulty" });
+    await expect(difficulty).toHaveText("Beginner");
+
+    await difficulty.click();
+    const list = page.getByRole("listbox");
+    await expect(list.getByRole("option")).toHaveCount(3);
+    await expect(list.getByRole("option", { name: "Beginner" })).toHaveAttribute("aria-selected", "true");
+    await list.getByRole("option", { name: "Advanced" }).click();
+    await expect(list).toHaveCount(0);
+    await expect(difficulty).toHaveText("Advanced");
+    await expect(difficulty).toBeFocused();
+
+    // Keyboard: open, move up one, choose.
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    await expect(difficulty).toHaveText("Intermediate");
+
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("listbox")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(difficulty).toHaveText("Intermediate");
+  });
+
   test("workout plans page loads", async ({ page }) => {
     await page.getByRole("link", { name: "Workout Plans" }).click();
     await expect(page).toHaveURL(/\/workout-plans/);

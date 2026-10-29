@@ -167,6 +167,3 @@ export function SegmentedTabs<T extends string>({
     </div>
   );
 }
-
-export const selectClass =
-  "glass-input h-11 w-full px-3 text-sm outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/25 disabled:opacity-60";

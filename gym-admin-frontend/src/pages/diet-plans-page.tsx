@@ -12,6 +12,7 @@ import {
 } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 interface ItemRow {
@@ -124,14 +125,7 @@ export function DietPlansPage() {
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input placeholder="Title" {...register("title", { required: true })} />
-            <select className="glass-input h-11 px-4 text-sm" {...register("mealType")}>
-              <option value="BREAKFAST">Breakfast</option>
-              <option value="LUNCH">Lunch</option>
-              <option value="DINNER">Dinner</option>
-              <option value="SNACKS">Snacks</option>
-              <option value="PRE_WORKOUT">Pre-workout</option>
-              <option value="POST_WORKOUT">Post-workout</option>
-            </select>
+            <FormSelect control={control} name="mealType" aria-label="Meal type" options={[{ value: "BREAKFAST", label: "Breakfast" }, { value: "LUNCH", label: "Lunch" }, { value: "DINNER", label: "Dinner" }, { value: "SNACKS", label: "Snacks" }, { value: "PRE_WORKOUT", label: "Pre-workout" }, { value: "POST_WORKOUT", label: "Post-workout" }]} />
             <Input placeholder="Estimated calories/day" type="number" {...register("estimatedCalories")} />
             <Input placeholder="Description (optional)" {...register("description")} />
           </div>
@@ -140,14 +134,14 @@ export function DietPlansPage() {
             <div className="text-sm font-medium">Food items</div>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
-                <select className="glass-input h-11 flex-1 px-4 text-sm" {...register(`items.${index}.foodId`)}>
-                  <option value="">Select food...</option>
-                  {foods?.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
+                <FormSelect
+                  control={control}
+                  name={`items.${index}.foodId`}
+                  className="flex-1"
+                  placeholder="Select food..."
+                  aria-label={`Food for item ${index + 1}`}
+                  options={(foods ?? []).map((f) => ({ value: f.id, label: f.name }))}
+                />
                 <Input
                   className="w-24"
                   placeholder="Grams"

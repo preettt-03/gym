@@ -20,9 +20,9 @@ import {
 import { RequireAuth } from "@/components/require-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState, ErrorNote, MemberHeader, MemberPage, Meter, Panel, selectClass } from "@/components/member/ui";
-import { cn } from "@/lib/utils";
+import { EmptyState, ErrorNote, MemberHeader, MemberPage, Meter, Panel } from "@/components/member/ui";
 
 const TZ = "Asia/Kolkata";
 // "YYYY-MM-DD" for an IST calendar day.
@@ -100,13 +100,13 @@ function FoodRow({ food, day, isToday }: { food: Food; day: string; isToday: boo
         <label className="sr-only" htmlFor={`meal-${food.id}`}>
           Meal
         </label>
-        <select id={`meal-${food.id}`} className={cn(selectClass, "h-10 w-36")} value={meal} onChange={(e) => setMeal(e.target.value as MealType)}>
-          {MEAL_ORDER.map((m) => (
-            <option key={m} value={m}>
-              {MEAL_LABELS[m]}
-            </option>
-          ))}
-        </select>
+        <Select
+          id={`meal-${food.id}`}
+          className="h-10 w-36 px-3"
+          value={meal}
+          onChange={(v) => setMeal(v as MealType)}
+          options={MEAL_ORDER.map((m) => ({ value: m, label: MEAL_LABELS[m] }))}
+        />
         <Button size="sm" className="h-10" disabled={!valid || add.isPending} onClick={() => add.mutate()} aria-label={`Add ${food.name}`}>
           {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : add.isSuccess ? "Added ✓" : <Plus className="h-4 w-4" />}
           {!add.isPending && !add.isSuccess && "Add"}

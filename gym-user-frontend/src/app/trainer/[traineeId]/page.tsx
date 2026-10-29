@@ -37,6 +37,7 @@ import {
 } from "@/lib/trainer-api";
 import { RequireAuth } from "@/components/require-auth";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormAlert } from "@/components/ui/form-message";
@@ -432,7 +433,6 @@ function PlansTab({ traineeId }: { traineeId: string }) {
     },
   });
   const firstError = [assignWorkout, assignDiet, send].find((m) => m.isError)?.error;
-  const selectClass = "glass-input h-11 w-full px-3 text-sm outline-none focus:border-gold/60";
 
   return (
     <div className="flex flex-col gap-4">
@@ -448,14 +448,14 @@ function PlansTab({ traineeId }: { traineeId: string }) {
           <label htmlFor="assign-workout" className="sr-only">
             Workout plan
           </label>
-          <select id="assign-workout" className={selectClass} value={workoutPlan} onChange={(e) => setWorkoutPlan(e.target.value)}>
-            <option value="">{workoutPlans.isPending ? "Loading plans..." : "Choose a plan..."}</option>
-            {workoutPlans.data?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
+          <Select
+            id="assign-workout"
+            value={workoutPlan}
+            onChange={setWorkoutPlan}
+            disabled={workoutPlans.isPending}
+            placeholder={workoutPlans.isPending ? "Loading plans..." : "Choose a plan..."}
+            options={(workoutPlans.data ?? []).map((p) => ({ value: p.id, label: p.title }))}
+          />
           <Button className="mt-3 w-full" disabled={!workoutPlan || assignWorkout.isPending} onClick={() => assignWorkout.mutate()}>
             <Dumbbell className="h-4 w-4" /> Assign
           </Button>
@@ -464,14 +464,14 @@ function PlansTab({ traineeId }: { traineeId: string }) {
           <label htmlFor="assign-diet" className="sr-only">
             Diet plan
           </label>
-          <select id="assign-diet" className={selectClass} value={dietPlan} onChange={(e) => setDietPlan(e.target.value)}>
-            <option value="">{dietPlans.isPending ? "Loading plans..." : "Choose a plan..."}</option>
-            {dietPlans.data?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
+          <Select
+            id="assign-diet"
+            value={dietPlan}
+            onChange={setDietPlan}
+            disabled={dietPlans.isPending}
+            placeholder={dietPlans.isPending ? "Loading plans..." : "Choose a plan..."}
+            options={(dietPlans.data ?? []).map((p) => ({ value: p.id, label: p.title }))}
+          />
           <Button className="mt-3 w-full" disabled={!dietPlan || assignDiet.isPending} onClick={() => assignDiet.mutate()}>
             <UtensilsCrossed className="h-4 w-4" /> Assign
           </Button>

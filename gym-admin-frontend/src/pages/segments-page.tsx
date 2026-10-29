@@ -15,6 +15,7 @@ import {
 import { listAdminDietPlans, listAdminWorkoutPlans } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FormSelect, Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 interface FormValues {
@@ -109,18 +110,15 @@ function SegmentCard({ segment }: { segment: Segment }) {
 
       <div className="flex flex-col gap-2 border-t border-white/10 pt-3">
         <div className="flex items-center gap-2">
-          <select
-            className="glass-input h-9 flex-1 px-3 text-xs"
+          <Select
+            size="sm"
+            className="flex-1"
             value={selectedWorkoutPlan}
-            onChange={(e) => setSelectedWorkoutPlan(e.target.value)}
-          >
-            <option value="">Select workout plan...</option>
-            {workoutPlans?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedWorkoutPlan}
+            placeholder="Select workout plan..."
+            aria-label="Workout plan to assign"
+            options={(workoutPlans ?? []).map((p) => ({ value: p.id, label: p.title }))}
+          />
           <Button
             size="sm"
             disabled={!selectedWorkoutPlan || assignWorkoutMutation.isPending}
@@ -130,18 +128,15 @@ function SegmentCard({ segment }: { segment: Segment }) {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            className="glass-input h-9 flex-1 px-3 text-xs"
+          <Select
+            size="sm"
+            className="flex-1"
             value={selectedDietPlan}
-            onChange={(e) => setSelectedDietPlan(e.target.value)}
-          >
-            <option value="">Select diet plan...</option>
-            {dietPlans?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedDietPlan}
+            placeholder="Select diet plan..."
+            aria-label="Diet plan to assign"
+            options={(dietPlans ?? []).map((p) => ({ value: p.id, label: p.title }))}
+          />
           <Button
             size="sm"
             disabled={!selectedDietPlan || assignDietMutation.isPending}
@@ -170,7 +165,7 @@ function SegmentCard({ segment }: { segment: Segment }) {
 export function SegmentsPage() {
   const queryClient = useQueryClient();
   const { data: segments } = useQuery({ queryKey: ["admin-segments"], queryFn: listSegments });
-  const { register, handleSubmit, reset } = useForm<FormValues>();
+  const { register, control, handleSubmit, reset } = useForm<FormValues>();
 
   const createMutation = useMutation({
     mutationFn: (values: FormValues) => {
@@ -204,32 +199,10 @@ export function SegmentsPage() {
           <Input placeholder="Segment name" {...register("name", { required: true })} />
           <Input placeholder="Description (optional)" {...register("description")} />
 
-          <select className="glass-input h-11 px-4 text-sm" {...register("fitnessGoal")}>
-            <option value="">Any fitness goal</option>
-            <option value="WEIGHT_LOSS">Weight loss</option>
-            <option value="MUSCLE_GAIN">Muscle gain</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="ENDURANCE">Endurance</option>
-            <option value="GENERAL_FITNESS">General fitness</option>
-          </select>
-          <select className="glass-input h-11 px-4 text-sm" {...register("experienceLevel")}>
-            <option value="">Any experience level</option>
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-          </select>
-          <select className="glass-input h-11 px-4 text-sm" {...register("gender")}>
-            <option value="">Any gender</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
-          </select>
-          <select className="glass-input h-11 px-4 text-sm" {...register("membershipStatus")}>
-            <option value="">Any membership status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="NONE">No membership</option>
-          </select>
+          <FormSelect control={control} name="fitnessGoal" aria-label="Fitness goal" options={[{ value: "", label: "Any fitness goal" }, { value: "WEIGHT_LOSS", label: "Weight loss" }, { value: "MUSCLE_GAIN", label: "Muscle gain" }, { value: "MAINTENANCE", label: "Maintenance" }, { value: "ENDURANCE", label: "Endurance" }, { value: "GENERAL_FITNESS", label: "General fitness" }]} />
+          <FormSelect control={control} name="experienceLevel" aria-label="Experience level" options={[{ value: "", label: "Any experience level" }, { value: "BEGINNER", label: "Beginner" }, { value: "INTERMEDIATE", label: "Intermediate" }, { value: "ADVANCED", label: "Advanced" }]} />
+          <FormSelect control={control} name="gender" aria-label="Gender" options={[{ value: "", label: "Any gender" }, { value: "MALE", label: "Male" }, { value: "FEMALE", label: "Female" }, { value: "OTHER", label: "Other" }]} />
+          <FormSelect control={control} name="membershipStatus" aria-label="Membership status" options={[{ value: "", label: "Any membership status" }, { value: "ACTIVE", label: "Active" }, { value: "EXPIRED", label: "Expired" }, { value: "NONE", label: "No membership" }]} />
           <Input placeholder="Min age (optional)" type="number" {...register("ageMin")} />
           <Input placeholder="Max age (optional)" type="number" {...register("ageMax")} />
           <Input placeholder="Inactive for N days (optional)" type="number" {...register("inactiveDays")} />

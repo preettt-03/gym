@@ -25,6 +25,7 @@ import {
 import { useAuthStore } from "@/stores/auth-store";
 import { Avatar, RoleBadge, StatusBadge } from "@/components/user-badges";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { apiErrorMessage, useToast } from "@/hooks/use-toast";
@@ -34,9 +35,6 @@ import { cn } from "@/lib/utils";
 const date = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 const dateTime = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
 const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-
-const selectClass =
-  "glass-input h-11 w-full px-3 text-sm outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/25 disabled:opacity-60";
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
@@ -137,13 +135,12 @@ function AccessCard({ user, isSelf }: { user: AdminUserDetail; isSelf: boolean }
               Role
             </label>
             <div className="flex gap-2">
-              <select id="user-role" className={selectClass} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-                {(["USER", "TRAINER", "ADMIN"] as Role[]).map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABEL[r]}
-                  </option>
-                ))}
-              </select>
+              <Select
+                id="user-role"
+                value={role}
+                onChange={(v) => setRole(v as Role)}
+                options={(["USER", "TRAINER", "ADMIN"] as Role[]).map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+              />
               <Button variant="glass" disabled={role === user.role} onClick={() => setPending({ kind: "role", role })}>
                 Save
               </Button>
@@ -161,24 +158,21 @@ function AccessCard({ user, isSelf }: { user: AdminUserDetail; isSelf: boolean }
                 Trainer
               </label>
               <div className="flex gap-2">
-                <select
+                <Select
                   id="user-trainer"
-                  className={selectClass}
                   value={trainerId}
                   disabled={trainers.isPending}
-                  onChange={(e) => setTrainerId(e.target.value)}
-                >
-                  <option value="">No trainer</option>
-                  {/* Keep the current trainer selectable even if they're no longer active. */}
-                  {user.trainer && !trainers.data?.items.some((t) => t.id === user.trainer!.id) && (
-                    <option value={user.trainer.id}>{user.trainer.name ?? user.trainer.email}</option>
-                  )}
-                  {trainers.data?.items.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name ?? t.email}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setTrainerId}
+                  placeholder={trainers.isPending ? "Loading trainers..." : "No trainer"}
+                  options={[
+                    { value: "", label: "No trainer" },
+                    // Keep the current trainer selectable even if they're no longer active.
+                    ...(user.trainer && !trainers.data?.items.some((t) => t.id === user.trainer!.id)
+                      ? [{ value: user.trainer.id, label: user.trainer.name ?? user.trainer.email }]
+                      : []),
+                    ...(trainers.data?.items.map((t) => ({ value: t.id, label: t.name ?? t.email })) ?? []),
+                  ]}
+                />
                 <Button
                   variant="glass"
                   disabled={trainerId === (user.trainerId ?? "") || update.isPending}

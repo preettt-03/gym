@@ -12,6 +12,7 @@ import {
 } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 interface BadgeFormValues {
@@ -87,7 +88,7 @@ function BadgesSection() {
 function MissionsSection() {
   const queryClient = useQueryClient();
   const { data: missions } = useQuery({ queryKey: ["admin-missions"], queryFn: listAdminMissions });
-  const { register, handleSubmit, reset } = useForm<MissionFormValues>({
+  const { register, control, handleSubmit, reset } = useForm<MissionFormValues>({
     defaultValues: { conditionType: "CUSTOM" },
   });
 
@@ -123,14 +124,7 @@ function MissionsSection() {
         )}
       >
         <Input placeholder="Title" {...register("title", { required: true })} />
-        <select className="glass-input h-11 px-4 text-sm" {...register("conditionType")}>
-          <option value="COMPLETE_WORKOUT">Complete workout</option>
-          <option value="DRINK_WATER">Drink water</option>
-          <option value="BURN_CALORIES">Burn calories</option>
-          <option value="HIT_PROTEIN_GOAL">Hit protein goal</option>
-          <option value="WALK_STEPS">Walk steps</option>
-          <option value="CUSTOM">Custom</option>
-        </select>
+        <FormSelect control={control} name="conditionType" aria-label="Condition type" options={[{ value: "COMPLETE_WORKOUT", label: "Complete workout" }, { value: "DRINK_WATER", label: "Drink water" }, { value: "BURN_CALORIES", label: "Burn calories" }, { value: "HIT_PROTEIN_GOAL", label: "Hit protein goal" }, { value: "WALK_STEPS", label: "Walk steps" }, { value: "CUSTOM", label: "Custom" }]} />
         <Input placeholder="Target value" type="number" {...register("targetValue", { required: true })} />
         <Input placeholder="Reward coins" type="number" {...register("rewardCoins")} />
         <Input placeholder="Reward XP" type="number" {...register("rewardXp")} />

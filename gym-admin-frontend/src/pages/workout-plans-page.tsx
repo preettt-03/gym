@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 interface ExerciseRow {
@@ -136,11 +137,7 @@ export function WorkoutPlansPage() {
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input placeholder="Title" {...register("title", { required: true })} />
-            <select className="glass-input h-11 px-4 text-sm" {...register("difficulty")}>
-              <option value="BEGINNER">Beginner</option>
-              <option value="INTERMEDIATE">Intermediate</option>
-              <option value="ADVANCED">Advanced</option>
-            </select>
+            <FormSelect control={control} name="difficulty" aria-label="Difficulty" options={[{ value: "BEGINNER", label: "Beginner" }, { value: "INTERMEDIATE", label: "Intermediate" }, { value: "ADVANCED", label: "Advanced" }]} />
             <Input placeholder="Estimated calories" type="number" {...register("estimatedCalories")} />
             <Input placeholder="Estimated minutes" type="number" {...register("estimatedMinutes")} />
             <Input placeholder="Description (optional)" className="sm:col-span-2" {...register("description")} />
@@ -150,14 +147,14 @@ export function WorkoutPlansPage() {
             <div className="text-sm font-medium">Exercises</div>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
-                <select className="glass-input h-11 flex-1 px-4 text-sm" {...register(`exercises.${index}.exerciseId`)}>
-                  <option value="">Select exercise...</option>
-                  {exercises?.items.map((ex) => (
-                    <option key={ex.id} value={ex.id}>
-                      {ex.name}
-                    </option>
-                  ))}
-                </select>
+                <FormSelect
+                  control={control}
+                  name={`exercises.${index}.exerciseId`}
+                  className="flex-1"
+                  placeholder="Select exercise..."
+                  aria-label={`Exercise ${index + 1}`}
+                  options={(exercises?.items ?? []).map((ex) => ({ value: ex.id, label: ex.name }))}
+                />
                 <Input
                   className="w-20"
                   placeholder="Sets"
