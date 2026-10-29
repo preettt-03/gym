@@ -14,7 +14,7 @@ export const BRAND = {
     shortAddress: "Dharmat Rd, near Ranjit Hanuman Mandir, Fatehabad, MP 453551",
   },
   // Google only lists the opening time; add closing times here once confirmed.
-  hours: [{ days: "Opens daily", time: "5:00 AM" }],
+  hours: [{ days: "Open daily", time: "5:00 AM – 9:00 PM" }],
   rating: { score: "5.0", source: "Google" },
   amenities: ["Shower facility"],
   services: [

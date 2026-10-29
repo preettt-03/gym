@@ -21,7 +21,7 @@ const FALLBACK = {
 
 const STATS = [
   { value: `${BRAND.rating.score} ★`, label: `${BRAND.rating.source} rating` },
-  { value: "5:00 AM", label: "Doors open" },
+  { value: "5 AM – 9 PM", label: "Open daily" },
   { value: `${BRAND.services.length}+`, label: "Training styles" },
   { value: "1:1", label: "Personal training" },
 ];
