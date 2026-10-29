@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dumbbell, Film, Images, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Film, Images, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { deleteExercise, listExercises, type AdminExercise, type Difficulty } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiErrorMessage, useToast } from "@/hooks/use-toast";
@@ -10,6 +10,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState, PageHeader, Pagination } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExerciseFormDialog } from "@/components/exercise/exercise-form-dialog";
+import { MuscleSilhouette } from "@/components/exercise/muscle-silhouette";
+import { muscleGroupOf } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 24;
@@ -21,28 +23,26 @@ const DIFFICULTY_STYLE: Record<Difficulty, string> = {
 };
 
 function ExerciseCard({ exercise, onEdit, onDelete }: { exercise: AdminExercise; onEdit: () => void; onDelete: () => void }) {
-  const cover = exercise.thumbnailUrl ?? exercise.images[0];
-  const missing = [!cover && "image", exercise.instructions.length === 0 && "steps"].filter(Boolean);
+  const cover = exercise.thumbnailUrl;
+  const missing = [!cover && "photos", exercise.instructions.length === 0 && "steps"].filter(Boolean);
 
   return (
-    <article className="glass-card flex flex-col overflow-hidden">
-      <div className="relative aspect-video bg-surface-2">
+    <article className="glass-card group flex flex-col overflow-hidden transition-[border-color,box-shadow] duration-300 hover:border-gold/40 hover:shadow-[0_0_15px_rgba(229,192,123,0.15)]">
+      <div className="relative aspect-video overflow-hidden bg-surface-2">
         {cover ? (
-          <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
         ) : (
-          <div className="flex h-full items-center justify-center bg-linear-to-br from-surface-2 to-background">
-            <Dumbbell className="h-8 w-8 text-gold/40" />
-          </div>
+          <MuscleSilhouette group={muscleGroupOf(exercise.targetMuscle)} label={`${exercise.targetMuscle} diagram`} />
         )}
         <div className="absolute bottom-2 left-2 flex gap-1.5">
-          {exercise.videoUrl && (
+          {exercise.videoCount > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] text-white">
-              <Film className="h-3 w-3" /> Video
+              <Film className="h-3 w-3 text-gold" /> {exercise.videoCount} video{exercise.videoCount === 1 ? "" : "s"}
             </span>
           )}
-          {exercise.images.length > 0 && (
+          {exercise.photoCount > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] text-white">
-              <Images className="h-3 w-3" /> {exercise.images.length}
+              <Images className="h-3 w-3 text-gold" /> {exercise.photoCount}
             </span>
           )}
         </div>

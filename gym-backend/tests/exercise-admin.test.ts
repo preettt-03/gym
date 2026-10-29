@@ -29,7 +29,9 @@ describe('Exercise media, steps and filters', () => {
     await deleteTestUser(memberEmail);
   });
 
-  it('stores media, steps, mistakes and the coach tip, dropping blank rows', async () => {
+  const UP = 'http://localhost:8004/uploads';
+
+  it('stores ordered photos and labelled videos, with the flagged photo as thumbnail', async () => {
     const res = await request(app)
       .post('/api/v1/admin/exercises')
       .set(as(admin))
@@ -38,41 +40,60 @@ describe('Exercise media, steps and filters', () => {
         targetMuscle: 'Biceps',
         secondaryMuscles: ['Forearms', '  '],
         equipment: ['Dumbbells'],
-        thumbnailUrl: 'http://localhost:8004/uploads/thumb.jpg',
-        images: ['http://localhost:8004/uploads/a.jpg', 'http://localhost:8004/uploads/b.jpg'],
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        media: [
+          { type: 'IMAGE', url: `${UP}/a.jpg` },
+          { type: 'IMAGE', url: `${UP}/b.jpg`, isThumbnail: true, label: 'Top of the rep' },
+          { type: 'VIDEO', url: `${UP}/front.mp4`, label: 'Front view' },
+          { type: 'VIDEO', url: 'https://youtu.be/dQw4w9WgXcQ', label: '  ' },
+        ],
         instructions: ['Stand tall', '', 'Curl up slowly'],
         commonMistakes: ['Swinging the hips'],
         coachTip: 'Squeeze at the top.',
       });
     expect(res.status).toBe(201);
     created.push(res.body.exercise.id);
-    expect(res.body.exercise).toMatchObject({
+    const ex = res.body.exercise;
+    expect(ex).toMatchObject({
       secondaryMuscles: ['Forearms'],
       instructions: ['Stand tall', 'Curl up slowly'],
       coachTip: 'Squeeze at the top.',
-      thumbnailUrl: 'http://localhost:8004/uploads/thumb.jpg',
+      thumbnailUrl: `${UP}/b.jpg`,
+      photoCount: 2,
+      videoCount: 2,
     });
-    expect(res.body.exercise.images).toHaveLength(2);
+    expect(ex.media.map((m: { url: string; provider: string | null; label: string | null }) => [m.url, m.provider, m.label])).toEqual([
+      [`${UP}/a.jpg`, null, null],
+      [`${UP}/b.jpg`, null, 'Top of the rep'],
+      [`${UP}/front.mp4`, 'upload', 'Front view'],
+      ['https://youtu.be/dQw4w9WgXcQ', 'youtube', null],
+    ]);
   });
 
-  it('clears optional fields with null and rejects bad input', async () => {
+  it('replaces the media list on edit and falls back to the first photo as thumbnail', async () => {
     const id = created[0];
-    const cleared = await request(app)
+    const res = await request(app)
       .patch(`/api/v1/admin/exercises/${id}`)
       .set(as(admin))
-      .send({ videoUrl: null, coachTip: '', thumbnailUrl: null, caloriesBurnedEstimate: null });
-    expect(cleared.status).toBe(200);
-    expect(cleared.body.exercise).toMatchObject({ videoUrl: null, coachTip: null, thumbnailUrl: null, caloriesBurnedEstimate: null });
+      .send({ media: [{ type: 'IMAGE', url: `${UP}/c.jpg` }, { type: 'IMAGE', url: `${UP}/a.jpg` }], coachTip: '', caloriesBurnedEstimate: null });
+    expect(res.status).toBe(200);
+    expect(res.body.exercise).toMatchObject({ thumbnailUrl: `${UP}/c.jpg`, videoCount: 0, photoCount: 2, coachTip: null, caloriesBurnedEstimate: null });
+    expect(await prisma.exerciseMedia.count({ where: { exerciseId: id } })).toBe(2);
 
-    const tooMany = await request(app)
-      .patch(`/api/v1/admin/exercises/${id}`)
-      .set(as(admin))
-      .send({ instructions: Array.from({ length: 21 }, (_, i) => `Step ${i}`) });
-    expect(tooMany.status).toBe(422);
+    const cleared = await request(app).patch(`/api/v1/admin/exercises/${id}`).set(as(admin)).send({ media: [] });
+    expect(cleared.body.exercise).toMatchObject({ thumbnailUrl: null, media: [] });
+  });
 
-    const badUrl = await request(app).patch(`/api/v1/admin/exercises/${id}`).set(as(admin)).send({ videoUrl: 'not a url' });
-    expect(badUrl.status).toBe(422);
+  it('rejects unsafe or invalid media and other bad input', async () => {
+    const id = created[0];
+    const send = (body: object) => request(app).patch(`/api/v1/admin/exercises/${id}`).set(as(admin)).send(body);
+
+    expect((await send({ media: [{ type: 'VIDEO', url: 'https://evil.example.com/x.mp4' }] })).status).toBe(422);
+    expect((await send({ media: [{ type: 'VIDEO', url: `${UP}/v.mp4`, isThumbnail: true }] })).status).toBe(422);
+    expect(
+      (await send({ media: [{ type: 'IMAGE', url: `${UP}/1.jpg`, isThumbnail: true }, { type: 'IMAGE', url: `${UP}/2.jpg`, isThumbnail: true }] })).status
+    ).toBe(422);
+    expect((await send({ media: Array.from({ length: 21 }, (_, i) => ({ type: 'IMAGE', url: `${UP}/${i}.jpg` })) })).status).toBe(422);
+    expect((await send({ instructions: Array.from({ length: 21 }, (_, i) => `Step ${i}`) })).status).toBe(422);
   });
 
   it('returns 409 when a rename collides, without losing categories', async () => {

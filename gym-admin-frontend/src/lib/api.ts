@@ -168,13 +168,24 @@ export interface AdminExercise {
   secondaryMuscles: string[];
   equipment: string[];
   caloriesBurnedEstimate: number | null;
+  media: ExerciseMediaItem[];
+  /** The flagged photo, else the first one. */
   thumbnailUrl: string | null;
-  images: string[];
-  videoUrl: string | null;
+  photoCount: number;
+  videoCount: number;
   instructions: string[];
   commonMistakes: string[];
   coachTip: string | null;
   categories: { id: string; name: string; slug: string }[];
+}
+
+export interface ExerciseMediaItem {
+  id: string;
+  type: "IMAGE" | "VIDEO";
+  url: string;
+  label: string | null;
+  isThumbnail: boolean;
+  provider: "upload" | "youtube" | "vimeo" | null;
 }
 
 export async function listExercises(params: { search?: string; page?: number; limit?: number }) {
@@ -205,9 +216,8 @@ export interface ExerciseInput {
   secondaryMuscles?: string[];
   equipment?: string[];
   caloriesBurnedEstimate?: number | null;
-  thumbnailUrl?: string | null;
-  images?: string[];
-  videoUrl?: string | null;
+  /** Replaces the whole list, in this order. */
+  media?: { type: "IMAGE" | "VIDEO"; url: string; label?: string | null; isThumbnail?: boolean }[];
   instructions?: string[];
   commonMistakes?: string[];
   coachTip?: string | null;

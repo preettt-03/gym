@@ -58,10 +58,22 @@ export interface Exercise {
   secondaryMuscles: string[];
   equipment: string[];
   caloriesBurnedEstimate: number | null;
+  instructions: string[];
+  media: ExerciseMedia[];
+  /** The flagged photo, else the first one. */
   thumbnailUrl: string | null;
-  images: string[];
-  videoUrl: string | null;
+  photoCount: number;
+  videoCount: number;
   categories: { id: string; name: string; slug: string }[];
+}
+
+export interface ExerciseMedia {
+  id: string;
+  type: "IMAGE" | "VIDEO";
+  url: string;
+  label: string | null;
+  isThumbnail: boolean;
+  provider: "upload" | "youtube" | "vimeo" | null;
 }
 
 export async function listExercises(params: {

@@ -154,13 +154,13 @@ export default function ExercisesPage() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col gap-4">
-        <div className="relative max-w-xl">
+      <div className="glass-card mt-6 flex flex-col gap-4 p-4 sm:p-5">
+        <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <Input
             type="search"
             aria-label="Search exercises"
-            placeholder="Search exercises..."
+            placeholder="Search by name or target muscle..."
             className="pl-11"
             value={search}
             onChange={(e) => {
@@ -169,6 +169,12 @@ export default function ExercisesPage() {
             }}
           />
         </div>
+        {items && (
+          <p className="-mb-1 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-gold" aria-live="polite">
+            {activeTab === "all" ? all.data?.pagination.total ?? items.length : items.length} exercise
+            {(activeTab === "all" ? all.data?.pagination.total ?? items.length : items.length) === 1 ? "" : "s"}
+          </p>
+        )}
         <ChipRow label="Muscle group">
           <Chip active={!muscleGroup} onClick={() => (setMuscleGroup(undefined), resetPage())}>
             All

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MUSCLE_GROUP_KEYS } from '@/lib/muscles';
+import { videoProvider } from '@/lib/video';
 
 const difficultyEnum = z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']);
 
@@ -39,13 +40,34 @@ const textList = (max: number, itemMax: number) =>
 // Optional text that an edit can clear by sending null.
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional().transform((v) => (v === '' ? null : v));
 
+export const MAX_PHOTOS = 20;
+export const MAX_VIDEOS = 10;
+
+const mediaItem = z
+  .object({
+    type: z.enum(['IMAGE', 'VIDEO']),
+    url,
+    label: z.string().trim().max(60).nullable().optional().transform((v) => v || null),
+    isThumbnail: z.boolean().optional().default(false),
+  })
+  .refine((m) => m.type === 'IMAGE' || videoProvider(m.url) !== null, {
+    message: 'Videos must be uploaded files or YouTube/Vimeo links',
+    path: ['url'],
+  })
+  .refine((m) => m.type === 'IMAGE' || !m.isThumbnail, { message: 'Only a photo can be the thumbnail', path: ['isThumbnail'] });
+
 const exerciseBody = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120),
   description: optionalText(2000),
-  videoUrl: url.nullable().optional(),
   gifUrl: url.nullable().optional(),
-  thumbnailUrl: url.nullable().optional(),
-  images: z.array(url).max(12, 'At most 12 gallery images').optional(),
+  // The whole list is replaced on save, in this order.
+  media: z
+    .array(mediaItem)
+    .max(30)
+    .refine((m) => m.filter((i) => i.type === 'IMAGE').length <= MAX_PHOTOS, `At most ${MAX_PHOTOS} photos`)
+    .refine((m) => m.filter((i) => i.type === 'VIDEO').length <= MAX_VIDEOS, `At most ${MAX_VIDEOS} videos`)
+    .refine((m) => m.filter((i) => i.isThumbnail).length <= 1, 'Only one photo can be the card thumbnail')
+    .optional(),
   difficulty: difficultyEnum.default('BEGINNER'),
   targetMuscle: z.string().trim().min(1, 'Primary muscle is required').max(60),
   secondaryMuscles: textList(10, 60).optional(),

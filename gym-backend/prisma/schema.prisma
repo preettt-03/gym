@@ -212,12 +212,7 @@ model Exercise {
   name                   String
   slug                   String     @unique
   description            String?
-  // An uploaded file (/uploads/...) or a YouTube/Vimeo link.
-  videoUrl               String?
   gifUrl                 String?
-  // Card / hero image; `images` is the gallery shown under the player.
-  thumbnailUrl           String?
-  images                 String[]   @default([])
 
   difficulty             Difficulty @default(BEGINNER)
   targetMuscle           String
@@ -237,6 +232,8 @@ model Exercise {
   deletedAt              DateTime?
 
   categories             ExerciseCategoryLink[]
+  // Photos and videos, in display order; one photo may be flagged as the card thumbnail.
+  media                  ExerciseMedia[]
   favorites              ExerciseFavorite[]
   views                  ExerciseView[]
   planExercises          WorkoutPlanExercise[]
@@ -246,6 +243,29 @@ model Exercise {
   @@index([difficulty])
   @@index([targetMuscle])
   @@map("exercises")
+}
+
+enum ExerciseMediaType {
+  IMAGE
+  VIDEO
+}
+
+model ExerciseMedia {
+  id          String            @id @default(uuid())
+  exerciseId  String
+  exercise    Exercise          @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  type        ExerciseMediaType
+  // An uploaded file (/uploads/...) or, for videos, a YouTube/Vimeo link.
+  url         String
+  // e.g. "Front view", "Side angle", "Common flaw".
+  label       String?
+  isThumbnail Boolean           @default(false)
+  position    Int
+
+  createdAt   DateTime          @default(now())
+
+  @@index([exerciseId, position])
+  @@map("exercise_media")
 }
 
 model ExerciseCategoryLink {

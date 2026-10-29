@@ -165,8 +165,23 @@ test.describe("Admin pages", () => {
     await dialog.getByLabel("Step 2", { exact: true }).fill("Curl up without swinging");
     await dialog.getByLabel("Mistake 1", { exact: true }).fill("Swinging the hips");
     await dialog.getByLabel("Coach's tip").fill("Squeeze hard at the top.");
-    await dialog.locator("#ex-thumbnail").setInputFiles({ name: "thumb.png", mimeType: "image/png", buffer: png });
-    await expect(dialog.getByRole("img", { name: "Thumbnail preview" })).toBeVisible();
+    // Two photos in one drop; pin the second as the card thumbnail and caption it.
+    await dialog.locator("#ex-photos").setInputFiles([
+      { name: "a.png", mimeType: "image/png", buffer: png },
+      { name: "b.png", mimeType: "image/png", buffer: png },
+    ]);
+    await expect(dialog.getByRole("button", { name: "Delete photo 2" })).toBeVisible();
+    await dialog.getByRole("button", { name: "Set photo 2 as card thumbnail" }).click();
+    await expect(dialog.getByRole("button", { name: "Photo 2 is the card thumbnail" })).toHaveAttribute("aria-pressed", "true");
+    await dialog.getByLabel("Caption for photo 2").fill("Top of the rep");
+
+    // A YouTube link, labelled as an angle; a non-YouTube link is refused.
+    await dialog.getByLabel("YouTube or Vimeo link").fill("https://example.com/video.mp4");
+    await dialog.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(page.getByText(/Paste a full YouTube or Vimeo video link/)).toBeVisible();
+    await dialog.getByLabel("YouTube or Vimeo link").fill("https://youtu.be/dQw4w9WgXcQ");
+    await dialog.getByRole("button", { name: "Add", exact: true }).click();
+    await dialog.getByLabel("Label for video 1").fill("Front view");
 
     await dialog.getByRole("button", { name: "Save exercise" }).click();
     await expect(dialog).toHaveCount(0);
@@ -176,9 +191,15 @@ test.describe("Admin pages", () => {
     await expect(card).toHaveCount(1);
     await expect(card.getByText("Biceps")).toBeVisible();
     await expect(card.getByText("Forearms")).toBeVisible();
+    await expect(card.getByText("1 video")).toBeVisible();
 
     await card.getByRole("button", { name: `Edit ${name}` }).click();
     await expect(dialog.getByLabel("Step 2", { exact: true })).toHaveValue("Curl up without swinging");
+    await expect(dialog.getByLabel("Caption for photo 2")).toHaveValue("Top of the rep");
+    await expect(dialog.getByLabel("Label for video 1")).toHaveValue("Front view");
+    // Reorder: photo 2 (the thumbnail) moves to the front and stays the thumbnail.
+    await dialog.getByRole("button", { name: "Move photo 2 earlier" }).click();
+    await expect(dialog.getByRole("button", { name: "Photo 1 is the card thumbnail" })).toBeVisible();
     await dialog.getByRole("button", { name: "Remove step 1" }).click();
     await dialog.getByRole("button", { name: "Save changes" }).click();
     await expect(dialog).toHaveCount(0);

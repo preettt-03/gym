@@ -2,7 +2,6 @@ import { apiClient } from "@/lib/api-client";
 import type { Exercise } from "@/lib/api";
 
 export interface ExerciseDetail extends Exercise {
-  instructions: string[];
   commonMistakes: string[];
   coachTip: string | null;
   gifUrl: string | null;

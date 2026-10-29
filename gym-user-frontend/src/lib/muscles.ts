@@ -15,3 +15,9 @@ export function inMuscleGroup(muscle: string, group: MuscleGroupKey) {
   const target = muscle.toLowerCase();
   return MUSCLE_GROUPS.find((g) => g.key === group)!.muscles.some((m) => m.toLowerCase() === target);
 }
+
+/** The library group an exercise's primary muscle belongs to, if any. */
+export function muscleGroupOf(muscle: string): MuscleGroupKey | null {
+  const target = muscle.toLowerCase();
+  return MUSCLE_GROUPS.find((g) => g.muscles.some((m) => m.toLowerCase() === target))?.key ?? null;
+}

@@ -1,8 +1,9 @@
-import { Difficulty, Exercise, ExerciseCategory, Prisma } from '@prisma/client';
+import { Difficulty, Exercise, ExerciseCategory, ExerciseMedia, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/slug';
 import { AppError } from '@/middlewares/errorHandler';
 import { MUSCLE_GROUPS, MuscleGroup } from '@/lib/muscles';
+import { videoProvider } from '@/lib/video';
 import { PaginationParams } from '@/lib/pagination';
 import { CreateExerciseInput, UpdateExerciseInput } from '@/features/exercises/exercises.schemas';
 
@@ -20,18 +21,42 @@ export interface ExerciseFilters {
   maxDuration?: number;
 }
 
-type ExerciseWithCategories = Exercise & {
+type ExerciseWithRelations = Exercise & {
   categories: { category: ExerciseCategory }[];
+  media: ExerciseMedia[];
 };
 
-function serializeExercise(exercise: ExerciseWithCategories) {
-  const { categories, ...rest } = exercise;
-  return { ...rest, categories: categories.map((link) => link.category) };
+// Media goes out in display order with the provider worked out, plus the
+// derived card thumbnail (the flagged photo, else the first one) and counts.
+function serializeExercise(exercise: ExerciseWithRelations) {
+  const { categories, media, ...rest } = exercise;
+  const items = media.map(({ id, type, url, label, isThumbnail }) => ({
+    id,
+    type,
+    url,
+    label,
+    isThumbnail,
+    provider: type === 'VIDEO' ? videoProvider(url) : null,
+  }));
+  const photos = items.filter((m) => m.type === 'IMAGE');
+  return {
+    ...rest,
+    categories: categories.map((link) => link.category),
+    media: items,
+    thumbnailUrl: (photos.find((p) => p.isThumbnail) ?? photos[0])?.url ?? null,
+    photoCount: photos.length,
+    videoCount: items.length - photos.length,
+  };
 }
 
 const includeCategories = {
   categories: { include: { category: true } },
+  media: { orderBy: { position: 'asc' } },
 } satisfies Prisma.ExerciseInclude;
+
+function mediaRows(media: NonNullable<CreateExerciseInput['media']>) {
+  return media.map((m, position) => ({ type: m.type, url: m.url, label: m.label, isThumbnail: m.isThumbnail, position }));
+}
 
 function buildWhere(filters: ExerciseFilters): Prisma.ExerciseWhereInput {
   const where: Prisma.ExerciseWhereInput = { deletedAt: null };
@@ -112,7 +137,7 @@ export async function getExerciseBySlug(slug: string, userId?: string) {
 }
 
 export async function createExercise(data: CreateExerciseInput) {
-  const { categoryIds, ...rest } = data;
+  const { categoryIds, media, ...rest } = data;
   const slug = slugify(data.name);
 
   const existing = await prisma.exercise.findUnique({ where: { slug } });
@@ -125,6 +150,7 @@ export async function createExercise(data: CreateExerciseInput) {
       categories: categoryIds?.length
         ? { create: categoryIds.map((categoryId) => ({ categoryId })) }
         : undefined,
+      media: media?.length ? { create: mediaRows(media) } : undefined,
     },
     include: includeCategories,
   });
@@ -136,7 +162,7 @@ export async function updateExercise(id: string, data: UpdateExerciseInput) {
   const exercise = await prisma.exercise.findUnique({ where: { id } });
   if (!exercise || exercise.deletedAt) throw new AppError('Exercise not found', 404);
 
-  const { categoryIds, ...rest } = data;
+  const { categoryIds, media, ...rest } = data;
 
   try {
     const updated = await prisma.exercise.update({
@@ -146,6 +172,7 @@ export async function updateExercise(id: string, data: UpdateExerciseInput) {
         slug: rest.name ? slugify(rest.name) : undefined,
         // Replaced in the same statement, so a failed update can't leave the links half-cleared.
         categories: categoryIds ? { deleteMany: {}, create: categoryIds.map((categoryId) => ({ categoryId })) } : undefined,
+        media: media ? { deleteMany: {}, create: mediaRows(media) } : undefined,
       },
       include: includeCategories,
     });

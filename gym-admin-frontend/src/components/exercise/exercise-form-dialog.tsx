@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { createExercise, updateExercise, type AdminExercise, type Difficulty, type ExerciseInput } from "@/lib/api";
@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { FieldError, FormAlert } from "@/components/ui/form-message";
-import { FieldLabel, GalleryField, ListEditor, TagInput, ThumbnailField, VideoField } from "@/components/exercise/form-fields";
+import { FieldLabel, ListEditor, TagInput } from "@/components/exercise/form-fields";
+import { PhotosManager, VideosManager, type PhotoItem, type VideoItem } from "@/components/exercise/media-manager";
+import { newKey } from "@/lib/exercise-media";
 
 interface FormState {
   name: string;
@@ -22,9 +24,8 @@ interface FormState {
   instructions: string[];
   commonMistakes: string[];
   coachTip: string;
-  thumbnailUrl: string | null;
-  images: string[];
-  videoUrl: string | null;
+  photos: PhotoItem[];
+  videos: VideoItem[];
 }
 
 function initial(ex: AdminExercise | null): FormState {
@@ -40,9 +41,8 @@ function initial(ex: AdminExercise | null): FormState {
     instructions: ex?.instructions.length ? ex.instructions : [""],
     commonMistakes: ex?.commonMistakes.length ? ex.commonMistakes : [""],
     coachTip: ex?.coachTip ?? "",
-    thumbnailUrl: ex?.thumbnailUrl ?? null,
-    images: ex?.images ?? [],
-    videoUrl: ex?.videoUrl ?? null,
+    photos: (ex?.media ?? []).filter((m) => m.type === "IMAGE").map((m) => ({ key: newKey(), url: m.url, label: m.label ?? "", isThumbnail: m.isThumbnail })),
+    videos: (ex?.media ?? []).filter((m) => m.type === "VIDEO").map((m) => ({ key: newKey(), url: m.url, label: m.label ?? "" })),
   };
 }
 
@@ -82,12 +82,19 @@ export function ExerciseFormDialog({ open, exercise, onClose }: { open: boolean;
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const editing = Boolean(exercise);
+  const [photosBusy, setPhotosBusy] = useState(false);
+  const [videosBusy, setVideosBusy] = useState(false);
+  const uploading = photosBusy || videosBusy;
+  const onPhotosBusy = useCallback((b: boolean) => setPhotosBusy(b), []);
+  const onVideosBusy = useCallback((b: boolean) => setVideosBusy(b), []);
 
   useEffect(() => {
     if (open) {
       setForm(initial(exercise));
       setErrors({});
       setServerError(null);
+      setPhotosBusy(false);
+      setVideosBusy(false);
     }
   }, [open, exercise]);
 
@@ -112,9 +119,10 @@ export function ExerciseFormDialog({ open, exercise, onClose }: { open: boolean;
         instructions: clean(form.instructions),
         commonMistakes: clean(form.commonMistakes),
         coachTip: form.coachTip.trim() || empty,
-        thumbnailUrl: form.thumbnailUrl ?? empty,
-        images: form.images,
-        videoUrl: form.videoUrl ?? empty,
+        media: [
+          ...form.photos.map((p) => ({ type: "IMAGE" as const, url: p.url, label: p.label.trim() || null, isThumbnail: p.isThumbnail })),
+          ...form.videos.map((v) => ({ type: "VIDEO" as const, url: v.url, label: v.label.trim() || null })),
+        ],
       };
       return exercise ? updateExercise(exercise.id, input) : createExercise(input);
     },
@@ -129,6 +137,7 @@ export function ExerciseFormDialog({ open, exercise, onClose }: { open: boolean;
 
   const submit = () => {
     setServerError(null);
+    if (uploading) return setServerError("Wait for the uploads to finish, then save.");
     const found = validate(form);
     setErrors(found);
     if (Object.keys(found).length) return;
@@ -151,9 +160,9 @@ export function ExerciseFormDialog({ open, exercise, onClose }: { open: boolean;
           <Button variant="glass" onClick={onClose} disabled={mutation.isPending}>
             Cancel
           </Button>
-          <Button type="submit" form="exercise-form" disabled={mutation.isPending}>
-            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {editing ? "Save changes" : "Save exercise"}
+          <Button type="submit" form="exercise-form" disabled={mutation.isPending || uploading}>
+            {(mutation.isPending || uploading) && <Loader2 className="h-4 w-4 animate-spin" />}
+            {uploading ? "Uploading..." : editing ? "Save changes" : "Save exercise"}
           </Button>
         </>
       }
@@ -276,21 +285,12 @@ export function ExerciseFormDialog({ open, exercise, onClose }: { open: boolean;
           </div>
         </Section>
 
-        <Section title="Media">
-          <div className="grid gap-5 md:grid-cols-[1fr_1.4fr]">
-            <div>
-              <FieldLabel>Thumbnail</FieldLabel>
-              <ThumbnailField value={form.thumbnailUrl} onChange={(v) => set("thumbnailUrl", v)} onError={mediaError} />
-            </div>
-            <div>
-              <FieldLabel hint="drag & drop · up to 12">Image gallery</FieldLabel>
-              <GalleryField value={form.images} onChange={(v) => set("images", v)} onError={mediaError} />
-            </div>
-            <div className="md:col-span-2">
-              <FieldLabel>Video</FieldLabel>
-              <VideoField value={form.videoUrl} onChange={(v) => set("videoUrl", v)} onError={mediaError} />
-            </div>
-          </div>
+        <Section title="Photos">
+          <PhotosManager value={form.photos} onChange={(v) => set("photos", v)} onError={mediaError} onBusy={onPhotosBusy} />
+        </Section>
+
+        <Section title="Videos">
+          <VideosManager value={form.videos} onChange={(v) => set("videos", v)} onError={mediaError} onBusy={onVideosBusy} />
         </Section>
 
         <FormAlert message={serverError} />

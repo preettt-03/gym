@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { AlertTriangle, ArrowLeft, Dumbbell, Flame, Sparkles, Target, Timer } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Dumbbell, Flame, ListOrdered, Sparkles, Target, Timer } from "lucide-react";
 import { getExercise } from "@/lib/exercise-api";
 import { DifficultyBadge } from "@/components/exercise/exercise-card";
 import { FavoriteButton } from "@/components/exercise/favorite-button";
 import { FormTipButton } from "@/components/exercise/form-tip-button";
-import { MediaPlayer } from "@/components/exercise/media-player";
+import { MediaShowcase } from "@/components/exercise/media-player";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -95,14 +95,15 @@ export default function ExerciseDetailPage() {
             </div>
 
             <div className="mt-8 grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-              <MediaPlayer name={exercise.name} videoUrl={exercise.videoUrl} thumbnailUrl={exercise.thumbnailUrl} images={exercise.images} />
+              <MediaShowcase name={exercise.name} targetMuscle={exercise.targetMuscle} media={exercise.media} />
 
               <aside className="flex flex-col gap-3" aria-label="Exercise specs">
-                <section className="rounded-2xl bg-linear-to-br from-gold-light via-gold to-gold-dark p-5 text-accent-foreground">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-75">Primary muscle</p>
-                  <p className="mt-1 flex items-center gap-2 font-display text-2xl font-bold uppercase">
-                    <Target className="h-5 w-5" /> {exercise.targetMuscle}
+                <section className="rounded-2xl bg-linear-to-br from-gold-light via-gold to-gold-dark p-5 text-accent-foreground shadow-[0_0_25px_rgba(229,192,123,0.2)]">
+                  <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] opacity-75">
+                    <Target className="h-3.5 w-3.5" /> Primary muscle
                   </p>
+                  <p className="mt-1 font-display text-3xl font-bold uppercase">{exercise.targetMuscle}</p>
+                  <p className="mt-1 text-xs opacity-80">Does most of the work through every rep.</p>
                 </section>
                 <section className="glass-card p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Secondary / assisting</p>
@@ -131,7 +132,9 @@ export default function ExerciseDetailPage() {
             <h2 className="mt-10 text-2xl font-bold uppercase">Details</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <section className="glass-card p-6">
-                <h3 className="text-xl font-semibold uppercase">How to do it</h3>
+                <h3 className="flex items-center gap-2 text-xl font-semibold uppercase">
+                  <ListOrdered className="h-5 w-5 text-gold" /> How to do it
+                </h3>
                 {exercise.instructions.length > 0 ? (
                   <ol className="mt-4 flex flex-col gap-4">
                     {exercise.instructions.map((step, i) => (
@@ -149,15 +152,15 @@ export default function ExerciseDetailPage() {
               </section>
 
               <section className="glass-card p-6">
-                <h3 className="text-xl font-semibold uppercase">Common mistakes</h3>
+                <h3 className="flex items-center gap-2 text-xl font-semibold uppercase">
+                  <AlertTriangle className="h-5 w-5 text-[#fab219]" /> Common mistakes
+                </h3>
                 {exercise.commonMistakes.length > 0 ? (
-                  <ul className="mt-4 flex flex-col gap-3">
+                  <ul className="mt-4 flex flex-col gap-2.5">
                     {exercise.commonMistakes.map((m, i) => (
-                      <li key={i} className="flex items-start gap-3 text-foreground/85">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fab219]/15" aria-hidden>
-                          <AlertTriangle className="h-3.5 w-3.5 text-[#fab219]" />
-                        </span>
-                        <span className="pt-0.5 leading-relaxed">{m}</span>
+                      <li key={i} className="flex items-start gap-3 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm leading-relaxed text-foreground/85">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#fab219]" aria-hidden />
+                        {m}
                       </li>
                     ))}
                   </ul>

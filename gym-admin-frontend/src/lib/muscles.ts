@@ -24,3 +24,10 @@ export const EQUIPMENT_SUGGESTIONS = [
   "Resistance band",
   "Medicine ball",
 ];
+
+/** Lower-case group key ("legs", "arms"...) for a primary muscle, for the placeholder figure. */
+export function muscleGroupOf(muscle: string) {
+  const target = muscle.toLowerCase();
+  const entry = Object.entries(MUSCLE_GROUPS).find(([, list]) => list.some((m) => m.toLowerCase() === target));
+  return entry ? (entry[0].toLowerCase() as "chest" | "back" | "legs" | "shoulders" | "arms" | "core") : null;
+}

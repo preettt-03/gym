@@ -10,7 +10,7 @@ test.describe("Public marketing pages", () => {
   test("exercise library is browsable without logging in", async ({ page }) => {
     await page.goto("/exercises");
     await expect(page.getByText("Exercise Library")).toBeVisible();
-    await expect(page.getByPlaceholder("Search exercises...")).toBeVisible();
+    await expect(page.getByLabel("Search exercises")).toBeVisible();
   });
 
   test("exercise cards open a detail page with instructions", async ({ page }) => {
