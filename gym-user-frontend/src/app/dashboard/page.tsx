@@ -8,6 +8,7 @@ import { getMotivationMessage, getNutritionSuggestion } from "@/lib/ai-api";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { RequireAuth } from "@/components/require-auth";
 import { useAuthStore } from "@/stores/auth-store";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 function AiInsightsCard() {
   const motivationQuery = useQuery({
@@ -75,7 +76,7 @@ function DashboardContent() {
       </motion.h1>
       <p className="mt-1 text-muted">Here&apos;s where you stand today.</p>
 
-      {isLoading && <p className="mt-8 text-muted">Loading dashboard...</p>}
+      {isLoading && <SkeletonList rows={3} className="mt-8" />}
       {isError && <p className="mt-8 text-danger">Could not load dashboard. Is the backend running?</p>}
 
       {data && (

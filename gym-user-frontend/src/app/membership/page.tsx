@@ -100,7 +100,7 @@ function MembershipContent() {
         amount: result.amount,
         currency: result.currency,
         order_id: result.orderId,
-        name: "Gym Platform",
+        name: "King's Fitness",
         description: "Membership purchase",
         handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           verifyMutation.mutate({

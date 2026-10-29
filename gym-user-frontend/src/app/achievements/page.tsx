@@ -80,7 +80,7 @@ function AchievementsContent() {
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full accent-gradient text-white">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full accent-gradient text-accent-foreground">
             <Flame className="h-6 w-6" />
           </div>
           <div>
@@ -89,7 +89,7 @@ function AchievementsContent() {
           </div>
         </Card>
         <Card className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full accent-gradient text-white">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full accent-gradient text-accent-foreground">
             <Award className="h-6 w-6" />
           </div>
           <div>

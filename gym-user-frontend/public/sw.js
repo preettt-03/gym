@@ -8,10 +8,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Gym Platform", body: event.data.text() };
+    payload = { title: "King's Fitness", body: event.data.text() };
   }
 
-  const title = payload.title || "Gym Platform";
+  const title = payload.title || "King's Fitness";
   const options = {
     body: payload.body,
     icon: "/icon-192.png",

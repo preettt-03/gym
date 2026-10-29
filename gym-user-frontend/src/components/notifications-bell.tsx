@@ -54,7 +54,7 @@ export function NotificationsBell() {
       </Button>
 
       {open && (
-        <div className="glass-panel absolute right-0 top-12 z-50 w-80 max-h-96 overflow-y-auto p-3">
+        <div className="glass-panel absolute -right-12 top-12 z-50 w-[min(20rem,calc(100vw-2rem))] max-h-96 sm:right-0 overflow-y-auto p-3">
           <div className="mb-2 flex items-center justify-between px-1">
             <span className="text-sm font-medium">Notifications</span>
             {Boolean(data?.unreadCount) && (

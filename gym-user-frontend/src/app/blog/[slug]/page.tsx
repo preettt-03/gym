@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { getBlogPost } from "@/lib/cms-api";
 import { Card, CardDescription } from "@/components/ui/card";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -16,7 +17,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16">
-      {isLoading && <p className="text-muted">Loading...</p>}
+      {isLoading && <SkeletonList rows={2} />}
       {isError && <p className="text-danger">Could not find this post.</p>}
 
       {post && (

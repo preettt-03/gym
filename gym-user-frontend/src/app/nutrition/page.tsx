@@ -9,6 +9,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/require-auth";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 function FoodSearch() {
   const [search, setSearch] = useState("");
@@ -104,7 +105,7 @@ function DailyLog() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daily-nutrition"] }),
   });
 
-  if (isLoading) return <p className="text-muted">Loading today&apos;s log...</p>;
+  if (isLoading) return <SkeletonList rows={2} />;
   if (!data) return null;
 
   return (

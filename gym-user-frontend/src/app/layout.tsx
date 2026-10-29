@@ -1,33 +1,35 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+import { BRAND } from "@/lib/brand";
 import { sharedOpenGraph } from "./shared-metadata";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const body = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const heading = Oswald({
+  variable: "--font-heading",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const SITE_NAME = "Gym Platform";
-const SITE_DESCRIPTION =
-  "Your all-in-one fitness companion — workout plans, diet tracking, progress photos, gym attendance, and an AI coach.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_NAME,
-    template: `%s | ${SITE_NAME}`,
+    default: BRAND.name,
+    template: `%s | ${BRAND.name}`,
   },
-  description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME,
+  description: BRAND.description,
+  applicationName: BRAND.name,
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -38,14 +40,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     ...sharedOpenGraph,
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
+    title: BRAND.name,
+    description: BRAND.description,
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
+    title: BRAND.name,
+    description: BRAND.description,
     images: ["/og-image.png"],
   },
   robots: {
@@ -55,7 +57,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6d5efc",
+  themeColor: "#0a0a0a",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
@@ -66,15 +69,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${body.variable} ${heading.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
         <Providers>
           <Navbar />
           <main className="flex-1">{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>

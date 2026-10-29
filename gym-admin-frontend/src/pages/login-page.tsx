@@ -5,14 +5,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { motion, useReducedMotion } from "framer-motion";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { loginAdmin } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
+import { FieldError, FormAlert } from "@/components/ui/form-message";
+import logo from "@/assets/logo.png";
+import authSide from "@/assets/auth-side.jpg";
 
 const schema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -22,12 +27,13 @@ export function LoginPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onTouched" });
 
   const mutation = useMutation({
     mutationFn: loginAdmin,
@@ -44,35 +50,86 @@ export function LoginPage() {
     },
   });
 
+  // Typing again means the last server error no longer applies.
+  const clearServerError = () => serverError && setServerError(null);
+  const pending = isSubmitting || mutation.isPending;
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardTitle>Gym Admin</CardTitle>
-        <CardDescription className="mt-1 mb-6">Sign in with your admin account.</CardDescription>
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="relative isolate hidden overflow-hidden lg:block">
+        <img src={authSide} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-background via-background/50 to-background/10" />
+        <div className="absolute inset-x-0 bottom-0 p-12">
+          <img src={logo} alt="" className="h-20 w-20" />
+          <p className="mt-6 max-w-md font-display text-4xl font-bold uppercase leading-tight">
+            Run your gym like a <span className="text-gold">king.</span>
+          </p>
+          <p className="mt-4 text-sm uppercase tracking-[0.3em] text-gold">Lift · Love · Repeat</p>
+        </div>
+      </div>
 
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) => {
-            setServerError(null);
-            mutation.mutate(values);
-          })}
+      <div className="flex items-center justify-center px-4 py-14 sm:px-8">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
         >
-          <div>
-            <Input placeholder="Email" type="email" {...register("email")} />
-            {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
-          </div>
-          <div>
-            <Input placeholder="Password" type="password" {...register("password")} />
-            {errors.password && <p className="mt-1 text-xs text-danger">{errors.password.message}</p>}
-          </div>
+          <img src={logo} alt="King's Fitness" className="mb-8 h-16 w-16 lg:hidden" />
+          <p className="eyebrow">King&apos;s Fitness</p>
+          <h1 className="mt-4 text-4xl font-bold uppercase">Admin panel</h1>
+          <p className="mt-2 text-muted">Sign in with your admin account.</p>
 
-          {serverError && <p className="text-sm text-danger">{serverError}</p>}
+          <form
+            noValidate
+            className="mt-8 flex flex-col gap-4"
+            onSubmit={handleSubmit((values) => {
+              setServerError(null);
+              mutation.mutate(values);
+            })}
+          >
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="username"
+                placeholder="Email"
+                aria-invalid={errors.email ? true : undefined}
+                aria-describedby="email-error"
+                {...register("email", { onChange: clearServerError })}
+              />
+              <FieldError id="email-error" message={errors.email?.message} />
+            </div>
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
+                Password
+              </label>
+              <PasswordInput
+                id="password"
+                autoComplete="current-password"
+                placeholder="Password"
+                aria-invalid={errors.password ? true : undefined}
+                aria-describedby="password-error"
+                {...register("password", { onChange: clearServerError })}
+              />
+              <FieldError id="password-error" message={errors.password?.message} />
+            </div>
 
-          <Button type="submit" disabled={isSubmitting || mutation.isPending} className="mt-2">
-            {mutation.isPending ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
-      </Card>
+            <FormAlert message={serverError} />
+
+            <Button type="submit" disabled={pending} className="mt-2 uppercase tracking-wider">
+              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {mutation.isPending ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
+
+          <p className="mt-8 flex items-center gap-2 text-xs text-muted">
+            <ShieldCheck className="h-4 w-4 text-gold" /> Restricted area — admin accounts only.
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 }

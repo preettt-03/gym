@@ -30,7 +30,7 @@ function RoomButton({
       onClick={onClick}
       className={cn(
         "flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition",
-        active ? "accent-gradient text-white" : "text-muted hover:bg-foreground/5 hover:text-foreground"
+        active ? "accent-gradient text-accent-foreground" : "text-muted hover:bg-foreground/5 hover:text-foreground"
       )}
     >
       {icon}
@@ -146,7 +146,7 @@ function ChatContent() {
                 <div
                   className={cn(
                     "max-w-[70%] rounded-2xl px-4 py-2 text-sm",
-                    m.senderId === currentUser?.id ? "accent-gradient text-white" : "glass-input"
+                    m.senderId === currentUser?.id ? "accent-gradient text-accent-foreground" : "glass-input"
                   )}
                 >
                   {m.senderId !== currentUser?.id && (

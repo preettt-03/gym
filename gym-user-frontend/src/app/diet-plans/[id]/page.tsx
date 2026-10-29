@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { getDietPlan, DietPlanMeal, MealType } from "@/lib/diet-api";
 import { Card, CardDescription } from "@/components/ui/card";
 import { RequireAuth } from "@/components/require-auth";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 const MEAL_LABELS: Record<MealType, string> = {
   BREAKFAST: "Breakfast",
@@ -57,7 +58,7 @@ function DietPlanDetailContent() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      {isLoading && <p className="text-muted">Loading plan...</p>}
+      {isLoading && <SkeletonList rows={3} />}
       {isError && <p className="text-danger">Could not load this plan.</p>}
 
       {plan && (

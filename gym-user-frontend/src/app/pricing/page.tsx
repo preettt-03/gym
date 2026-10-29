@@ -5,7 +5,7 @@ import { sharedOpenGraph } from "../shared-metadata";
 export const metadata: Metadata = {
   title: "Pricing",
   description: "Simple gym membership pricing. Cancel anytime. Compare plans and get started.",
-  openGraph: { ...sharedOpenGraph, title: "Membership Plans | Gym Platform", url: "/pricing" },
+  openGraph: { ...sharedOpenGraph, title: "Membership Plans | King's Fitness", url: "/pricing" },
 };
 
 export default function PricingPage() {

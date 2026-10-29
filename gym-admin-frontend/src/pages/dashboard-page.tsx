@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, ClipboardList, CreditCard, Dumbbell, UtensilsCrossed, Users } from "lucide-react";
 import { getAdminDashboard } from "@/lib/api";
 import { Card } from "@/components/ui/card";
+import { SkeletonGrid } from "@/components/ui/skeleton";
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
@@ -22,7 +23,7 @@ export function DashboardPage() {
       <h1 className="text-2xl font-semibold">Dashboard</h1>
       <p className="mt-1 text-muted">Platform overview.</p>
 
-      {isLoading && <p className="mt-8 text-muted">Loading...</p>}
+      {isLoading && <SkeletonGrid count={8} className="mt-8 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" itemClassName="h-28" />}
       {isError && <p className="mt-8 text-danger">Could not load dashboard.</p>}
 
       {data && (

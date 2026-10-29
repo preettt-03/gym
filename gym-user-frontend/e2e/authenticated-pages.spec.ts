@@ -24,13 +24,13 @@ test.describe("Authenticated feature pages", () => {
 
   test("workout plans page loads and offers AI generation", async ({ page }) => {
     await page.goto("/workout-plans");
-    await expect(page.getByText("Workout Plans")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Workout Plans" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Generate with AI/i })).toBeVisible();
   });
 
   test("diet plans page loads and offers AI generation", async ({ page }) => {
     await page.goto("/diet-plans");
-    await expect(page.getByText("Diet Plans")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Diet Plans" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Generate with AI/i })).toBeVisible();
   });
 

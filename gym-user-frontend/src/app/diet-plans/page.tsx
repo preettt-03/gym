@@ -8,6 +8,7 @@ import { listMyDietPlans, DietPlanSummary } from "@/lib/diet-api";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/require-auth";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 function PlanCard({ plan }: { plan: DietPlanSummary }) {
   return (
@@ -44,7 +45,7 @@ function DietPlansContent() {
         </Link>
       </div>
 
-      {isLoading && <p className="mt-8 text-muted">Loading plans...</p>}
+      {isLoading && <SkeletonList rows={3} className="mt-8" />}
       {isError && <p className="mt-8 text-danger">Could not load diet plans.</p>}
 
       {data && (

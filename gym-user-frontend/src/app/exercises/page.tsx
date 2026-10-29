@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+import { SkeletonGrid } from "@/components/ui/skeleton";
 
 const difficulties = ["BEGINNER", "INTERMEDIATE", "ADVANCED"] as const;
 
@@ -124,7 +125,7 @@ export default function ExercisesPage() {
         </div>
       </div>
 
-      {isLoading && <p className="mt-8 text-muted">Loading exercises...</p>}
+      {isLoading && <SkeletonGrid count={6} className="mt-8 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-44" />}
       {isError && <p className="mt-8 text-danger">Could not load exercises. Is the backend running?</p>}
       {data && data.items.length === 0 && <p className="mt-8 text-muted">No exercises match your filters.</p>}
 
@@ -141,7 +142,7 @@ export default function ExercisesPage() {
           >
             <Card className="flex h-full flex-col gap-3">
               <div className="flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full accent-gradient text-white">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full accent-gradient text-accent-foreground">
                   <Dumbbell className="h-4 w-4" />
                 </div>
                 <span

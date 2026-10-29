@@ -7,14 +7,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { Loader2 } from "lucide-react";
 import { verifyEmail } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FieldError, FormAlert } from "@/components/ui/form-message";
+import { AuthShell } from "@/components/auth-shell";
 
 const schema = z.object({
-  code: z.string().length(6, "Enter the 6-digit code"),
+  code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code from your email"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -30,7 +33,7 @@ function VerifyEmailForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onTouched" });
 
   const mutation = useMutation({
     mutationFn: (code: string) => verifyEmail({ email, code }),
@@ -45,14 +48,16 @@ function VerifyEmailForm() {
     },
   });
 
+  const pending = isSubmitting || mutation.isPending;
+
   return (
-    <Card className="w-full">
-      <CardTitle>Verify your email</CardTitle>
-      <CardDescription className="mt-1 mb-6">
-        We sent a 6-digit code to <span className="text-foreground">{email || "your email"}</span>.
-      </CardDescription>
+    <>
+      <p className="-mt-4 mb-6 text-sm text-muted">
+        We sent a 6-digit code to <span className="font-medium text-foreground">{email || "your email"}</span>.
+      </p>
 
       <form
+        noValidate
         className="flex flex-col gap-4"
         onSubmit={handleSubmit((values) => {
           setServerError(null);
@@ -60,26 +65,54 @@ function VerifyEmailForm() {
         })}
       >
         <div>
-          <Input placeholder="000000" maxLength={6} {...register("code")} />
-          {errors.code && <p className="mt-1 text-xs text-danger">{errors.code.message}</p>}
+          <label htmlFor="code" className="mb-1.5 block text-sm font-medium">
+            Verification code
+          </label>
+          <Input
+            id="code"
+            placeholder="000000"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            className="h-14 text-center font-display text-2xl tracking-[0.6em]"
+            aria-invalid={errors.code ? true : undefined}
+            aria-describedby="code-error"
+            {...register("code", {
+              // Keep the field digits-only, even for pasted codes like "123 456".
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                if (serverError) setServerError(null);
+              },
+            })}
+          />
+          <FieldError id="code-error" message={errors.code?.message} />
         </div>
 
-        {serverError && <p className="text-sm text-danger">{serverError}</p>}
+        <FormAlert message={serverError} />
 
-        <Button type="submit" disabled={isSubmitting || mutation.isPending}>
+        <Button type="submit" disabled={pending} className="uppercase tracking-wider">
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />}
           {mutation.isPending ? "Verifying..." : "Verify email"}
         </Button>
       </form>
-    </Card>
+    </>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16">
-      <Suspense>
+    <AuthShell title="Verify your email" subtitle="One last step before you start training.">
+      <Suspense
+        fallback={
+          <div className="flex flex-col gap-4" aria-label="Loading">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-14 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+        }
+      >
         <VerifyEmailForm />
       </Suspense>
-    </div>
+    </AuthShell>
   );
 }

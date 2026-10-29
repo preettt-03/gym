@@ -7,21 +7,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { isAxiosError } from "axios";
+import { Loader2 } from "lucide-react";
 import { loginUser } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
+import { FieldError, FormAlert } from "@/components/ui/form-message";
+import { AuthShell } from "@/components/auth-shell";
 import { GoogleSignInSection } from "@/components/google-sign-in-button";
 
 const schema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
+
+const UNVERIFIED = "Email not verified";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,8 +35,9 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onTouched" });
 
   const mutation = useMutation({
     mutationFn: loginUser,
@@ -45,46 +50,74 @@ export default function LoginPage() {
     },
   });
 
+  // Typing again means the last server error no longer applies.
+  const clearServerError = () => serverError && setServerError(null);
+  const pending = isSubmitting || mutation.isPending;
+
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-        <Card className="w-full">
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription className="mt-1 mb-6">Log in to continue your journey.</CardDescription>
+    <AuthShell title="Welcome back" subtitle="Log in to continue your journey.">
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={handleSubmit((values) => {
+          setServerError(null);
+          mutation.mutate(values);
+        })}
+      >
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
+            Email
+          </label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="Email"
+            aria-invalid={errors.email ? true : undefined}
+            aria-describedby="email-error"
+            {...register("email", { onChange: clearServerError })}
+          />
+          <FieldError id="email-error" message={errors.email?.message} />
+        </div>
+        <div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
+            Password
+          </label>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            placeholder="Password"
+            aria-invalid={errors.password ? true : undefined}
+            aria-describedby="password-error"
+            {...register("password", { onChange: clearServerError })}
+          />
+          <FieldError id="password-error" message={errors.password?.message} />
+        </div>
 
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={handleSubmit((values) => {
-              setServerError(null);
-              mutation.mutate(values);
-            })}
+        <FormAlert message={serverError} />
+        {serverError === UNVERIFIED && (
+          <Link
+            href={`/verify-email?email=${encodeURIComponent(getValues("email"))}`}
+            className="-mt-1 text-sm font-semibold text-gold hover:underline"
           >
-            <div>
-              <Input placeholder="Email" type="email" {...register("email")} />
-              {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
-            </div>
-            <div>
-              <Input placeholder="Password" type="password" {...register("password")} />
-              {errors.password && <p className="mt-1 text-xs text-danger">{errors.password.message}</p>}
-            </div>
+            Verify your email now →
+          </Link>
+        )}
 
-            {serverError && <p className="text-sm text-danger">{serverError}</p>}
+        <Button type="submit" disabled={pending} className="mt-2 uppercase tracking-wider">
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+          {mutation.isPending ? "Logging in..." : "Log in"}
+        </Button>
+      </form>
 
-            <Button type="submit" disabled={isSubmitting || mutation.isPending} className="mt-2">
-              {mutation.isPending ? "Logging in..." : "Log in"}
-            </Button>
-          </form>
+      <GoogleSignInSection onError={setServerError} />
 
-          <GoogleSignInSection onError={setServerError} />
-
-          <p className="mt-6 text-center text-sm text-muted">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-accent hover:underline">
-              Sign up
-            </Link>
-          </p>
-        </Card>
-      </motion.div>
-    </div>
+      <p className="mt-6 text-center text-sm text-muted">
+        Don&apos;t have an account?{" "}
+        <Link href="/register" className="font-semibold text-gold hover:underline">
+          Sign up
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

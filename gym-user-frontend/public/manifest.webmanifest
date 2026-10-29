@@ -1,12 +1,12 @@
 {
-  "name": "Gym Platform",
-  "short_name": "Gym Platform",
-  "description": "Your all-in-one fitness companion — workouts, diet plans, progress tracking, and an AI coach.",
+  "name": "King's Fitness",
+  "short_name": "King's Fitness",
+  "description": "Your King's Fitness companion \u2014 workouts, diet plans, progress tracking, and an AI coach.",
   "start_url": "/dashboard",
   "id": "/dashboard",
   "display": "standalone",
-  "background_color": "#0b0b14",
-  "theme_color": "#6d5efc",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 const STATUS_STYLES: Record<AccountStatus, string> = {
   ACTIVE: "bg-accent-2/15 text-accent-2",
@@ -48,7 +49,7 @@ export function UsersPage() {
         />
       </div>
 
-      {isLoading && <p className="mt-8 text-muted">Loading users...</p>}
+      {isLoading && <SkeletonList rows={5} className="mt-6" />}
 
       <div className="mt-6 flex flex-col gap-2">
         {data?.items.map((u: AdminUserListItem) => (

@@ -8,13 +8,13 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Gym Platform Admin", body: event.data.text() };
+    payload = { title: "King's Fitness Admin", body: event.data.text() };
   }
 
-  const title = payload.title || "Gym Platform Admin";
+  const title = payload.title || "King's Fitness Admin";
   const options = {
     body: payload.body,
-    icon: "/favicon.svg",
+    icon: "/icon-192.png",
     data: payload.data || {},
   };
 

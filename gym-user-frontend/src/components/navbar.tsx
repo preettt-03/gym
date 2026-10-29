@@ -1,68 +1,137 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Dumbbell } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { AccountMenu } from "@/components/account-menu";
-import { MarketingMenu } from "@/components/marketing-menu";
+import { MarketingMenu, MARKETING_LINKS } from "@/components/marketing-menu";
+import { Logo } from "@/components/logo";
 import { useAuthStore } from "@/stores/auth-store";
+import { cn } from "@/lib/utils";
+
+const PUBLIC_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/exercises", label: "Exercises" },
+  { href: "/pricing", label: "Pricing" },
+];
+
+const MEMBER_LINKS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/workout-plans", label: "Workouts" },
+  { href: "/diet-plans", label: "Diet" },
+  { href: "/nutrition", label: "Nutrition" },
+  { href: "/ai-coach", label: "AI Coach" },
+  { href: "/chat", label: "Chat" },
+];
+
+function isActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function Navbar() {
   const user = useAuthStore((s) => s.user);
-  const router = useRouter();
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const primaryLinks = user
+    ? [...MEMBER_LINKS, ...(user.role === "TRAINER" ? [{ href: "/trainer", label: "Trainees" }] : [])]
+    : PUBLIC_LINKS;
+  const mobileLinks = user ? [...primaryLinks, { href: "/exercises", label: "Exercises" }] : primaryLinks;
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   return (
-    <header className="sticky top-4 z-50 mx-auto mt-4 w-[95%] max-w-5xl">
-      <nav className="glass-panel flex items-center justify-between px-5 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <Dumbbell className="h-5 w-5 text-accent" />
-          <span>Gym Platform</span>
+    <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
+      <nav className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Main">
+        <Link href="/" aria-label="King's Fitness home" onClick={() => setMobileOpen(false)}>
+          <Logo preload />
         </Link>
 
-        <div className="flex items-center gap-3">
-          <Link href="/exercises" className="hidden text-sm text-muted hover:text-foreground sm:block">
-            Exercises
-          </Link>
+        <div className="hidden items-center gap-7 lg:flex">
+          {primaryLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={isActive(pathname, link.href) ? "page" : undefined}
+              className={cn(
+                "text-sm font-medium uppercase tracking-wider transition-colors hover:text-gold",
+                isActive(pathname, link.href) ? "text-gold" : "text-foreground/80"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
           <MarketingMenu />
+        </div>
+
+        <div className="flex items-center gap-2.5">
           {user ? (
             <>
-              <Link href="/dashboard" className="hidden text-sm text-muted hover:text-foreground sm:block">
-                Dashboard
-              </Link>
-              {user.role === "TRAINER" && (
-                <Link href="/trainer" className="hidden text-sm text-muted hover:text-foreground sm:block">
-                  Trainees
-                </Link>
-              )}
-              <Link href="/workout-plans" className="hidden text-sm text-muted hover:text-foreground md:block">
-                Workouts
-              </Link>
-              <Link href="/diet-plans" className="hidden text-sm text-muted hover:text-foreground md:block">
-                Diet
-              </Link>
-              <Link href="/nutrition" className="hidden text-sm text-muted hover:text-foreground md:block">
-                Nutrition
-              </Link>
-              <Link href="/chat" className="hidden text-sm text-muted hover:text-foreground md:block">
-                Chat
-              </Link>
-              <Link href="/ai-coach" className="hidden text-sm text-muted hover:text-foreground md:block">
-                AI Coach
-              </Link>
               <NotificationsBell />
               <AccountMenu />
             </>
           ) : (
-            <Button variant="glass" size="sm" onClick={() => router.push("/login")}>
-              Log in
-            </Button>
+            <>
+              <Link href="/login" className="hidden text-sm font-medium uppercase tracking-wider text-foreground/80 hover:text-gold sm:block">
+                Log in
+              </Link>
+              <Link href="/register" className={cn(buttonVariants({ size: "sm" }), "hidden uppercase tracking-wider sm:inline-flex")}>
+                Join now
+              </Link>
+            </>
           )}
-          <ThemeToggle />
+          <button
+            type="button"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border lg:hidden"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMobileOpen((o) => !o)}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </nav>
+
+      {mobileOpen && (
+        <div id="mobile-menu" className="h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-border bg-background px-4 pb-10 pt-4 lg:hidden">
+          <ul className="flex flex-col">
+            {[...mobileLinks, ...MARKETING_LINKS].map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "block border-b border-border py-3.5 font-display text-lg uppercase tracking-wider",
+                    isActive(pathname, link.href) ? "text-gold" : "text-foreground"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {!user && (
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Link href="/login" onClick={() => setMobileOpen(false)} className={buttonVariants({ variant: "outline" })}>
+                Log in
+              </Link>
+              <Link href="/register" onClick={() => setMobileOpen(false)} className={buttonVariants()}>
+                Join now
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

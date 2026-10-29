@@ -7,6 +7,7 @@ import { Flame, Users } from "lucide-react";
 import { listTrainees } from "@/lib/trainer-api";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { RequireAuth } from "@/components/require-auth";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 function TraineesContent() {
   const { data: trainees, isLoading, isError } = useQuery({ queryKey: ["trainer-trainees"], queryFn: listTrainees });
@@ -22,7 +23,7 @@ function TraineesContent() {
       </motion.h1>
       <p className="mt-1 text-muted">Trainees assigned to you by an admin.</p>
 
-      {isLoading && <p className="mt-8 text-muted">Loading trainees...</p>}
+      {isLoading && <SkeletonList rows={3} className="mt-8" />}
       {isError && <p className="mt-8 text-danger">Could not load trainees.</p>}
       {trainees?.length === 0 && (
         <Card className="mt-8">

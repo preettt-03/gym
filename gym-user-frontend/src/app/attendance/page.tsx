@@ -36,7 +36,7 @@ function AttendanceContent() {
       <p className="mt-1 text-muted">Check in when you arrive, check out when you leave.</p>
 
       <Card className="mt-8 flex flex-col items-center gap-4 py-10 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full accent-gradient text-white">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full accent-gradient text-accent-foreground">
           <QrCode className="h-9 w-9" />
         </div>
 

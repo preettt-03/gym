@@ -8,6 +8,7 @@ import { completeWorkoutDay, getWorkoutPlan, WorkoutPlanDay } from "@/lib/workou
 import { Card, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/require-auth";
+import { SkeletonList } from "@/components/ui/skeleton";
 
 function DayCard({ planId, day }: { planId: string; day: WorkoutPlanDay }) {
   const queryClient = useQueryClient();
@@ -90,7 +91,7 @@ function WorkoutPlanDetailContent() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      {isLoading && <p className="text-muted">Loading plan...</p>}
+      {isLoading && <SkeletonList rows={3} />}
       {isError && <p className="text-danger">Could not load this plan.</p>}
 
       {plan && (

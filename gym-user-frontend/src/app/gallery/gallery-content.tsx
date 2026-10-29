@@ -1,41 +1,50 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { listGalleryImages } from "@/lib/cms-api";
+import { PageHero } from "@/components/page-hero";
+import { Reveal } from "@/components/reveal";
 import { Card, CardDescription } from "@/components/ui/card";
+import { SkeletonGrid } from "@/components/ui/skeleton";
+import programEquipment from "@/assets/images/program-equipment.jpg";
 
 export function GalleryContent() {
   const { data: images, isLoading } = useQuery({ queryKey: ["gallery"], queryFn: listGalleryImages });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16">
-      <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-semibold">
-        Gallery
-      </motion.h1>
+    <>
+      <PageHero eyebrow="Gallery" title="Inside King's Fitness" description="A look at our floor, our members and the work they put in." image={programEquipment} />
 
-      {isLoading && <p className="mt-6 text-muted">Loading...</p>}
-      {images?.length === 0 && (
-        <Card className="mt-6">
-          <CardDescription>No photos yet.</CardDescription>
-        </Card>
-      )}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        {isLoading && <SkeletonGrid count={8} className="lg:grid-cols-4" />}
+        {images?.length === 0 && (
+          <Card className="mx-auto max-w-md text-center">
+            <CardDescription>No photos yet.</CardDescription>
+          </Card>
+        )}
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {images?.map((img, i) => (
-          <motion.div
-            key={img.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: Math.min(i * 0.03, 0.3) }}
-            className="glass-card overflow-hidden p-0"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.imageUrl} alt={img.caption ?? ""} className="aspect-square w-full object-cover" />
-            {img.caption && <div className="px-3 py-2 text-xs text-muted">{img.caption}</div>}
-          </motion.div>
-        ))}
-      </div>
-    </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {images?.map((img, i) => (
+            <Reveal key={img.id} delay={Math.min(i * 0.03, 0.3)}>
+              <figure className="group relative overflow-hidden rounded-2xl border border-border bg-surface-2">
+                {/* Gallery uploads can be hosted anywhere, so skip next/image's domain allowlist. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.imageUrl}
+                  alt={img.caption ?? ""}
+                  loading="lazy"
+                  className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                {img.caption && (
+                  <figcaption className="absolute inset-x-0 bottom-0 bg-linear-to-t from-background to-transparent px-3 pb-3 pt-8 text-xs">
+                    {img.caption}
+                  </figcaption>
+                )}
+              </figure>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }

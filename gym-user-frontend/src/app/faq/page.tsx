@@ -4,8 +4,8 @@ import { sharedOpenGraph } from "../shared-metadata";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "Frequently asked questions about Gym Platform membership, workouts, and features.",
-  openGraph: { ...sharedOpenGraph, title: "FAQ | Gym Platform", url: "/faq" },
+  description: "Frequently asked questions about King's Fitness membership, workouts, and features.",
+  openGraph: { ...sharedOpenGraph, title: "FAQ | King's Fitness", url: "/faq" },
 };
 
 export default function FaqPage() {

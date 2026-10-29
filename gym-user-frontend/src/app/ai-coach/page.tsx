@@ -19,7 +19,7 @@ function Bubble({ message }: { message: AiChatMessage }) {
       <div
         className={cn(
           "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm",
-          isUser ? "accent-gradient text-white" : "glass-card"
+          isUser ? "accent-gradient text-accent-foreground" : "glass-card"
         )}
       >
         {message.content}
