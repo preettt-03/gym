@@ -219,7 +219,10 @@ export async function login(email: string, password: string) {
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || user.deletedAt) {
-    throw new AppError('No account found with this email. Check the spelling or sign up.', 404, { code: 'USER_NOT_FOUND' });
+    // Counted like a wrong password so hammering unknown emails gets locked too.
+    const { locked: nowLocked } = await recordFailedLogin(email);
+    if (nowLocked) throw lockedError(LOGIN_LOCK_SECONDS);
+    throw new AppError('No user found with this account.', 404, { code: 'USER_NOT_FOUND' });
   }
   if (!user.passwordHash) {
     throw new AppError('This account uses Google sign-in. Continue with Google instead.', 400, { code: 'GOOGLE_ACCOUNT' });

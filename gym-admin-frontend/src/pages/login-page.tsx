@@ -28,8 +28,14 @@ function useCountdown(until: number | null) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!until) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
+    // Tick right away too — `now` may be stale from when the page loaded.
+    const tick = () => setNow(Date.now());
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 1000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(id);
+    };
   }, [until]);
   return until ? Math.max(0, Math.ceil((until - now) / 1000)) : 0;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -10,6 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { CheckCircle2, Loader2, Lock } from "lucide-react";
 import { loginUser } from "@/lib/api";
+import { clearLoginLock, getLoginLockSnapshot, lockLogin, parseLoginLock, recordLoginFailure, subscribeLoginLock } from "@/lib/login-lock";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,8 +41,14 @@ function useCountdown(until: number | null) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!until) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
+    // Tick right away too — `now` may be stale from when the page loaded.
+    const tick = () => setNow(Date.now());
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 1000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(id);
+    };
   }, [until]);
   return until ? Math.max(0, Math.ceil((until - now) / 1000)) : 0;
 }
@@ -51,8 +58,8 @@ function LoginForm() {
   const justReset = useSearchParams().get("reset") === "1";
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<LoginError | null>(null);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const lockSeconds = useCountdown(lockedUntil);
+  const lockRaw = useSyncExternalStore(subscribeLoginLock, getLoginLockSnapshot, () => null);
+  const lockSeconds = useCountdown(parseLoginLock(lockRaw).until || null);
   const locked = lockSeconds > 0;
 
   const {
@@ -65,25 +72,28 @@ function LoginForm() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
+      clearLoginLock();
       setSession(data.accessToken, data.user);
       router.push("/dashboard");
     },
     onError: (err) => {
       const error = readLoginError(err);
-      if (error.code === "LOGIN_LOCKED" && error.retryAfterSeconds) setLockedUntil(Date.now() + error.retryAfterSeconds * 1000);
+      if (error.code === "LOGIN_LOCKED") {
+        lockLogin(error.retryAfterSeconds ?? 30);
+        return setServerError(null);
+      }
+      if ((error.code === "USER_NOT_FOUND" || error.code === "WRONG_PASSWORD") && recordLoginFailure()) {
+        // The countdown takes over the message slot.
+        return setServerError(null);
+      }
       setServerError(error);
     },
   });
 
-  // Typing again means the last server error no longer applies — except the lock,
-  // which stays visible until its countdown runs out.
-  const clearServerError = () => serverError && serverError.code !== "LOGIN_LOCKED" && setServerError(null);
+  // Typing again means the last server error no longer applies.
+  const clearServerError = () => serverError && setServerError(null);
   const pending = isSubmitting || mutation.isPending;
-  const alert = locked
-    ? `Too many wrong attempts. Try again in ${lockSeconds} second${lockSeconds === 1 ? "" : "s"}.`
-    : serverError?.code === "LOGIN_LOCKED"
-      ? null
-      : serverError?.message ?? null;
+  const alert = locked ? `Too many failed attempts. Try again in ${lockSeconds} second${lockSeconds === 1 ? "" : "s"}.` : serverError?.message ?? null;
 
   return (
     <>
@@ -138,11 +148,6 @@ function LoginForm() {
         </div>
 
         <FormAlert message={alert} />
-        {serverError?.code === "USER_NOT_FOUND" && (
-          <Link href="/register" className="-mt-1 text-sm font-semibold text-gold hover:underline">
-            Create an account →
-          </Link>
-        )}
         {serverError?.code === "EMAIL_NOT_VERIFIED" && (
           <Link
             href={`/verify-email?email=${encodeURIComponent(getValues("email"))}`}

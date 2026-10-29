@@ -43,8 +43,22 @@ test.describe("Registration and login", () => {
     await page.getByPlaceholder("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(/No account found with this email/i)).toBeVisible();
-    await expect(page.getByRole("link", { name: /Create an account/ })).toBeVisible();
+    await expect(page.getByText("No user found with this account.")).toBeVisible();
+  });
+
+  test("locks the form after three failed attempts with different emails, even across a reload", async ({ page }) => {
+    await page.goto("/login");
+    const submit = page.locator("form").getByRole("button", { name: "Log in" });
+    for (let i = 0; i < 3; i++) {
+      await page.getByPlaceholder("Email").fill(uniqueTestEmail(`nobody-${i}`));
+      await page.getByPlaceholder("Password").fill(password);
+      await submit.click();
+      if (i < 2) await expect(page.getByText("No user found with this account.")).toBeVisible();
+    }
+
+    await expect(page.getByText(/Too many failed attempts\. Try again in \d+ seconds?/)).toBeVisible();
+    await page.reload();
+    await expect(page.locator("form").getByRole("button", { name: /Try again in \d+s/ })).toBeDisabled();
   });
 
   test("logs in with the correct password and reaches the dashboard", async ({ page }) => {
@@ -103,7 +117,7 @@ test.describe("Registration and login", () => {
     await page.getByPlaceholder("Password").fill("WrongPassword123");
     await submit.click();
 
-    await expect(page.getByText(/Too many wrong attempts\. Try again in \d+ seconds?/)).toBeVisible();
+    await expect(page.getByText(/Too many failed attempts\. Try again in \d+ seconds?/)).toBeVisible();
     await expect(page.locator("form").getByRole("button", { name: /Try again in \d+s/ })).toBeDisabled();
   });
 });

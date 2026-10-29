@@ -74,6 +74,18 @@ describe('Auth flow', () => {
     const res = await request(app).post('/api/v1/auth/login').send({ email: uniqueTestEmail('nobody'), password });
     expect(res.status).toBe(404);
     expect(res.body.error.details.code).toBe('USER_NOT_FOUND');
+    expect(res.body.error.message).toBe('No user found with this account.');
+  });
+
+  it('locks an unknown email after three attempts as well', async () => {
+    const nobody = uniqueTestEmail('nobody-locked');
+    const attempt = () => request(app).post('/api/v1/auth/login').send({ email: nobody, password });
+    expect((await attempt()).status).toBe(404);
+    expect((await attempt()).status).toBe(404);
+    const third = await attempt();
+    expect(third.status).toBe(429);
+    expect(third.body.error.details.code).toBe('LOGIN_LOCKED');
+    await redis.del(`login:lock:${nobody}`);
   });
 
   it('counts down wrong passwords, then locks the account for 30 seconds', async () => {
