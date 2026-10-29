@@ -10,13 +10,13 @@ import { getDashboard } from "@/lib/api";
 import {
   createProgressPhoto,
   deleteProgressPhoto,
+  PHOTO_URL_REFRESH_MS,
   listProgressPhotos,
   listWeightLogs,
   listWorkoutHistory,
   logWeight,
   PHOTO_MAX_BYTES,
   PHOTO_TYPES,
-  uploadProgressPhotoFile,
   type ProgressPhoto,
 } from "@/lib/progress-api";
 import { RequireAuth } from "@/components/require-auth";
@@ -188,10 +188,10 @@ function PhotosPanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
-  const { data: photos, isPending } = useQuery({ queryKey: ["progress-photos"], queryFn: listProgressPhotos });
+  const { data: photos, isPending } = useQuery({ queryKey: ["progress-photos"], queryFn: listProgressPhotos, refetchInterval: PHOTO_URL_REFRESH_MS });
 
   const upload = useMutation({
-    mutationFn: async (file: File) => createProgressPhoto(await uploadProgressPhotoFile(file), notes.trim() || undefined),
+    mutationFn: (file: File) => createProgressPhoto(file, notes.trim() || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress-photos"] });
       setNotes("");
@@ -210,7 +210,7 @@ function PhotosPanel() {
   return (
     <Panel icon={Camera} title="Progress photos" className="lg:col-span-3">
       <p className="flex items-center gap-2 text-xs text-muted">
-        <Lock className="h-3.5 w-3.5 text-gold" /> Only you can see your progress photos in the app.
+        <Lock className="h-3.5 w-3.5 text-gold" /> Your progress photos are private — only you can see them.
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <label htmlFor="photo-note" className="sr-only">

@@ -44,19 +44,20 @@ export async function listProgressPhotos() {
   return data.photos;
 }
 
-export async function uploadProgressPhotoFile(file: File) {
+// Photos are stored privately: the file goes straight to this endpoint (not the public
+// /uploads), and photoUrl comes back as a signed link that expires after an hour.
+export async function createProgressPhoto(file: File, notes?: string) {
   const formData = new FormData();
-  formData.append("file", file);
-  const { data } = await apiClient.post<{ url: string }>("/uploads", formData, {
+  formData.append("photo", file);
+  if (notes) formData.append("notes", notes);
+  const { data } = await apiClient.post<{ photo: ProgressPhoto }>("/progress-photos", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return data.url;
-}
-
-export async function createProgressPhoto(photoUrl: string, notes?: string) {
-  const { data } = await apiClient.post<{ photo: ProgressPhoto }>("/progress-photos", { photoUrl, notes });
   return data.photo;
 }
+
+// Re-fetch well before the signed links expire so images keep loading on a long-open page.
+export const PHOTO_URL_REFRESH_MS = 45 * 60 * 1000;
 
 export async function deleteProgressPhoto(id: string) {
   await apiClient.delete(`/progress-photos/${id}`);

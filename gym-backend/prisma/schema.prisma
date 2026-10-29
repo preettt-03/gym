@@ -419,9 +419,12 @@ model ProgressPhoto {
   id       String   @id @default(uuid())
   userId   String
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photoUrl String
-  takenAt  DateTime @default(now())
-  notes    String?
+  // Legacy public URL; new photos are private files referenced by storageKey
+  // and only ever handed out as short-lived signed URLs.
+  photoUrl   String?
+  storageKey String?  @unique
+  takenAt    DateTime @default(now())
+  notes      String?
 
   @@index([userId, takenAt])
   @@map("progress_photos")

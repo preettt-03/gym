@@ -77,6 +77,22 @@ test.describe("Authenticated feature pages", () => {
     await expect(page.getByRole("heading", { name: "Progress photos" })).toBeVisible();
   });
 
+  test("uploads a private progress photo that renders and can be deleted", async ({ page }) => {
+    await page.goto("/progress");
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+    await page.locator('input[type="file"]').setInputFiles({ name: "week1.png", mimeType: "image/png", buffer: png });
+
+    const img = page.getByRole("img", { name: "Progress photo" });
+    await expect(img).toBeVisible();
+    await expect(img).toHaveAttribute("src", /\/api\/v1\/progress-photos\/file\/.+sig=/);
+    // The signed link actually serves the image.
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+
+    await page.getByRole("button", { name: "Delete photo" }).click();
+    await page.getByRole("button", { name: /^Delete$/ }).click();
+    await expect(img).toHaveCount(0);
+  });
+
   test("logging out returns to a logged-out state", async ({ page }) => {
     await page.getByRole("button", { name: "Account menu" }).click();
     await page.getByRole("button", { name: /Log out/i }).click();

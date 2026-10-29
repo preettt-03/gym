@@ -12,8 +12,8 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+export const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
@@ -27,7 +27,7 @@ export const upload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE_BYTES },
   fileFilter: (_req, file, cb) => {
-    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    if (!IMAGE_MIME_TYPES.includes(file.mimetype)) {
       cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'Unsupported file type'));
       return;
     }

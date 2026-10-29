@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
+// Sent as multipart/form-data alongside the `photo` file, so every field arrives as a string.
 export const createProgressPhotoSchema = z.object({
   body: z.object({
-    // Upload the file via POST /api/v1/uploads first, then pass its returned url here.
-    photoUrl: z.string().url(),
     notes: z.string().trim().max(200).optional(),
     takenAt: z.string().datetime().optional(),
   }),
