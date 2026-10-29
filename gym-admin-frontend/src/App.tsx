@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { LoginPage } from "@/pages/login-page";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { UsersPage } from "@/pages/users-page";
+import { UserDetailPage } from "@/pages/user-detail-page";
 import { ExercisesPage } from "@/pages/exercises-page";
 import { FoodsPage } from "@/pages/foods-page";
 import { CategoriesPage } from "@/pages/categories-page";
@@ -33,6 +34,7 @@ function App() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/users/:id" element={<UserDetailPage />} />
         <Route path="/exercises" element={<ExercisesPage />} />
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />

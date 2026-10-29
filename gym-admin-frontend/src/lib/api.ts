@@ -72,6 +72,12 @@ export async function getDashboardAnalytics(days: AnalyticsRange) {
 export type Role = "ADMIN" | "TRAINER" | "USER";
 export type AccountStatus = "ACTIVE" | "SUSPENDED" | "BANNED";
 
+export interface PersonRef {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
 export interface AdminUserListItem {
   id: string;
   email: string;
@@ -80,18 +86,62 @@ export interface AdminUserListItem {
   accountStatus: AccountStatus;
   isEmailVerified: boolean;
   trainerId: string | null;
+  trainer: PersonRef | null;
   createdAt: string;
 }
 
-export async function listUsers(params: { page?: number; search?: string; role?: Role; accountStatus?: AccountStatus }) {
-  const { data } = await apiClient.get<{
-    items: AdminUserListItem[];
-    pagination: { total: number; page: number; totalPages: number };
-  }>("/admin/users", { params });
+export interface UserListResponse {
+  items: AdminUserListItem[];
+  pagination: { total: number; page: number; totalPages: number };
+  // Counts per role / status for the current search, ignoring those filters.
+  facets: { role: Partial<Record<Role, number>>; accountStatus: Partial<Record<AccountStatus, number>> };
+}
+
+export async function listUsers(params: { page?: number; limit?: number; search?: string; role?: Role; accountStatus?: AccountStatus }) {
+  const { data } = await apiClient.get<UserListResponse>("/admin/users", { params });
   return data;
 }
 
-export async function updateUser(id: string, patch: { role?: Role; accountStatus?: AccountStatus }) {
+export interface AdminUserDetail extends AdminUserListItem {
+  photoUrl: string | null;
+  age: number | null;
+  gender: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  targetWeightKg: number | null;
+  fitnessGoal: string | null;
+  experienceLevel: string | null;
+  activityLevel: string | null;
+  gymName: string | null;
+  xp: number;
+  coins: number;
+  updatedAt: string;
+  signInMethod: "GOOGLE" | "PASSWORD";
+  traineeCount: number;
+  latestWeight: { weightKg: number; loggedAt: string } | null;
+  activity: { workoutsCompleted30d: number; visits30d: number; mealsLogged7d: number };
+  memberships: { id: string; status: string; startDate: string; endDate: string; plan: { id: string; name: string } }[];
+  payments: {
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    gateway: string;
+    invoiceNumber: string | null;
+    createdAt: string;
+    plan: { name: string };
+  }[];
+  attendances: { id: string; checkInAt: string; checkOutAt: string | null; durationMinutes: number | null; method: string }[];
+  workoutPlanAssignments: { id: string; assignedAt: string; plan: { id: string; title: string } }[];
+  dietPlanAssignments: { id: string; assignedAt: string; dietPlan: { id: string; title: string } }[];
+}
+
+export async function getUserDetail(id: string) {
+  const { data } = await apiClient.get<{ user: AdminUserDetail }>(`/admin/users/${id}`);
+  return data.user;
+}
+
+export async function updateUser(id: string, patch: { role?: Role; accountStatus?: AccountStatus; trainerId?: string | null }) {
   const { data } = await apiClient.patch<{ user: AdminUserListItem }>(`/admin/users/${id}`, patch);
   return data.user;
 }

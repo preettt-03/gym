@@ -81,6 +81,21 @@ test.describe("Admin pages", () => {
     await expect(page.getByText(`Deleted ${name}`)).toBeVisible();
   });
 
+  test("users: filter by role and open the detail page", async ({ page }) => {
+    await page.getByRole("link", { name: "Users" }).click();
+    await page.getByRole("group", { name: "Filter by role" }).getByRole("button", { name: /Admins/ }).click();
+    const main = page.getByRole("main");
+    await expect(main.getByText("admin@gym.local")).toBeVisible();
+
+    await page.getByRole("link", { name: "Manage admin@gym.local" }).click();
+    await expect(page).toHaveURL(/\/users\/[0-9a-f-]{36}/);
+    await expect(page.getByRole("heading", { name: "Platform Admin" })).toBeVisible();
+    await expect(page.getByText("Gym visits (30 days)")).toBeVisible();
+    // Admins can't change their own access from the detail page.
+    await expect(page.getByText(/This is your account/)).toBeVisible();
+    await expect(page.getByLabel("Role")).toHaveCount(0);
+  });
+
   test("users page loads the user list", async ({ page }) => {
     await page.getByRole("link", { name: "Users" }).click();
     await expect(page).toHaveURL(/\/users/);
