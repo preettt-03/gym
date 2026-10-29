@@ -17,9 +17,9 @@ export const updateProfileSchema = z.object({
     photoUrl: z.string().url().optional(),
     age: z.number().int().min(1).max(120).optional(),
     gender: genderEnum.optional(),
-    heightCm: z.number().positive().optional(),
-    weightKg: z.number().positive().optional(),
-    targetWeightKg: z.number().positive().optional(),
+    heightCm: z.number().min(100, 'Height must be at least 100 cm').max(250, 'Height must be at most 250 cm').optional(),
+    weightKg: z.number().min(25, 'Weight must be at least 25 kg').max(300, 'Weight must be at most 300 kg').optional(),
+    targetWeightKg: z.number().min(25, 'Target must be at least 25 kg').max(300, 'Target must be at most 300 kg').optional(),
     fitnessGoal: fitnessGoalEnum.optional(),
     experienceLevel: experienceLevelEnum.optional(),
     activityLevel: activityLevelEnum.optional(),
@@ -32,7 +32,7 @@ export const updateProfileSchema = z.object({
 
 export const logWeightSchema = z.object({
   body: z.object({
-    weightKg: z.number().positive(),
+    weightKg: z.number().min(25, 'Weight must be at least 25 kg').max(300, 'Weight must be at most 300 kg'),
     loggedAt: z.string().datetime().optional(),
   }),
 });

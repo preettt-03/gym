@@ -2,18 +2,8 @@ import { MealType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
 import { scaleNutrition } from '@/lib/nutrition';
+import { gymDayRange } from '@/lib/gym-time';
 
-function startOfDay(date: Date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfDay(date: Date) {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
 
 export async function logFood(
   userId: string,
@@ -38,10 +28,10 @@ function roundTotals(totals: Record<string, number>) {
 }
 
 export async function listDailyLogs(userId: string, dateStr?: string) {
-  const date = dateStr ? new Date(dateStr) : new Date();
+  const { dateKey, start, end } = gymDayRange(dateStr);
 
   const logs = await prisma.nutritionLog.findMany({
-    where: { userId, loggedAt: { gte: startOfDay(date), lte: endOfDay(date) } },
+    where: { userId, loggedAt: { gte: start, lte: end } },
     include: { food: true },
     orderBy: { loggedAt: 'asc' },
   });
@@ -61,7 +51,7 @@ export async function listDailyLogs(userId: string, dateStr?: string) {
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodiumMg: 0 }
   );
 
-  return { date: startOfDay(date).toISOString().slice(0, 10), entries, totals: roundTotals(totals) };
+  return { date: dateKey, entries, totals: roundTotals(totals) };
 }
 
 export async function deleteLog(userId: string, id: string) {

@@ -57,3 +57,11 @@ export async function createProgressPhoto(photoUrl: string, notes?: string) {
   const { data } = await apiClient.post<{ photo: ProgressPhoto }>("/progress-photos", { photoUrl, notes });
   return data.photo;
 }
+
+export async function deleteProgressPhoto(id: string) {
+  await apiClient.delete(`/progress-photos/${id}`);
+}
+
+// Mirrors the server's upload rules so bad files fail fast in the browser.
+export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const PHOTO_MAX_BYTES = 5 * 1024 * 1024;

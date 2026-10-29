@@ -1,28 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { Socket } from "socket.io-client";
 import { useAuthStore } from "@/stores/auth-store";
-import { connectSocket, disconnectSocket } from "@/lib/socket-client";
+import { connectSocket, disconnectSocket, getSocket, subscribeSocket } from "@/lib/socket-client";
 
+// Shared socket for the logged-in session. The effect only connects or
+// disconnects; components read the singleton through useSyncExternalStore.
 export function useSocket(): Socket | null {
   const accessToken = useAuthStore((s) => s.accessToken);
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (!accessToken) {
-      disconnectSocket();
-      setSocket(null);
-      return;
-    }
-    const s = connectSocket(accessToken);
-    setSocket(s);
-
-    return () => {
-      // Intentionally do not disconnect here: the socket is a shared singleton
-      // that should persist across component unmounts within the same session.
-    };
+    if (accessToken) connectSocket(accessToken);
+    else disconnectSocket();
+    // Intentionally no cleanup: the socket should persist across component
+    // unmounts within the same session.
   }, [accessToken]);
 
-  return socket;
+  return useSyncExternalStore(subscribeSocket, getSocket, () => null);
 }

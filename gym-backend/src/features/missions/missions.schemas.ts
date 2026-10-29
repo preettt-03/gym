@@ -34,7 +34,7 @@ export const missionIdParamSchema = z.object({
 
 export const reportProgressSchema = z.object({
   params: z.object({ id: z.string().uuid() }),
-  body: z.object({ value: z.number().positive() }),
+  body: z.object({ value: z.number().positive().max(100_000, 'Value is too large') }),
 });
 
 export type MissionInput = z.infer<typeof missionBody>;

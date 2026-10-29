@@ -1,203 +1,297 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { motion } from "framer-motion";
-import { Bell, BellOff } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { isAxiosError } from "axios";
+import { Bell, BellOff, CheckCircle2, KeyRound, Loader2, Mail, Ruler, User } from "lucide-react";
 import { getMyProfile, updateMyProfile, type UpdateProfileInput } from "@/lib/profile-api";
-import {
-  getCurrentSubscription,
-  isPushSupported,
-  subscribeToPush,
-  unsubscribeFromPush,
-} from "@/lib/push-client";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { getCurrentSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 import { RequireAuth } from "@/components/require-auth";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FieldError } from "@/components/ui/form-message";
+import { ErrorNote, MemberHeader, MemberPage, Panel, selectClass } from "@/components/member/ui";
+import { cn } from "@/lib/utils";
 
-function PushNotificationsCard() {
-  const [supported, setSupported] = useState(true);
-  const [subscribed, setSubscribed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const PROFILE_KEY = ["my-profile"];
 
-  useEffect(() => {
-    if (!isPushSupported()) {
-      setSupported(false);
-      setLoading(false);
-      return;
-    }
-    getCurrentSubscription()
-      .then((sub) => setSubscribed(Boolean(sub)))
-      .finally(() => setLoading(false));
-  }, []);
+// Optional numeric field kept as text in the form; mirrors the API's limits.
+const optionalNumber = (label: string, min: number, max: number, unit = "") =>
+  z
+    .string()
+    .trim()
+    .refine((v) => v === "" || Number.isFinite(Number(v)), "Enter a number")
+    .refine((v) => v === "" || (Number(v) >= min && Number(v) <= max), `${label} should be between ${min} and ${max}${unit}`);
 
-  async function handleToggle() {
-    setError(null);
-    if (subscribed) {
-      await unsubscribeFromPush();
-      setSubscribed(false);
-      return;
-    }
-    const result = await subscribeToPush();
-    if (result.ok) {
-      setSubscribed(true);
-    } else {
-      setError(result.reason ?? "Could not enable notifications.");
-    }
-  }
+const schema = z.object({
+  name: z.string().trim().max(80, "Name is too long"),
+  age: optionalNumber("Age", 10, 100),
+  gender: z.string(),
+  heightCm: optionalNumber("Height", 100, 250, " cm"),
+  weightKg: optionalNumber("Weight", 25, 300, " kg"),
+  targetWeightKg: optionalNumber("Target weight", 25, 300, " kg"),
+  fitnessGoal: z.string(),
+  experienceLevel: z.string(),
+  activityLevel: z.string(),
+  gymName: z.string().trim().max(80, "Too long"),
+});
+type FormValues = z.infer<typeof schema>;
 
-  if (!supported || loading) return null;
+function toProfileInput(v: FormValues): UpdateProfileInput {
+  const num = (s: string) => (s ? Number(s) : undefined);
+  return {
+    name: v.name || undefined,
+    age: v.age ? Math.round(Number(v.age)) : undefined,
+    gender: (v.gender || undefined) as UpdateProfileInput["gender"],
+    heightCm: num(v.heightCm),
+    weightKg: num(v.weightKg),
+    targetWeightKg: num(v.targetWeightKg),
+    fitnessGoal: (v.fitnessGoal || undefined) as UpdateProfileInput["fitnessGoal"],
+    experienceLevel: (v.experienceLevel || undefined) as UpdateProfileInput["experienceLevel"],
+    activityLevel: (v.activityLevel || undefined) as UpdateProfileInput["activityLevel"],
+    gymName: v.gymName || undefined,
+  };
+}
 
+const OPTIONS = {
+  gender: [
+    ["MALE", "Male"],
+    ["FEMALE", "Female"],
+    ["OTHER", "Other / prefer not to say"],
+  ],
+  fitnessGoal: [
+    ["WEIGHT_LOSS", "Weight loss"],
+    ["MUSCLE_GAIN", "Muscle gain"],
+    ["MAINTENANCE", "Maintenance"],
+    ["ENDURANCE", "Endurance"],
+    ["GENERAL_FITNESS", "General fitness"],
+  ],
+  experienceLevel: [
+    ["BEGINNER", "Beginner"],
+    ["INTERMEDIATE", "Intermediate"],
+    ["ADVANCED", "Advanced"],
+  ],
+  activityLevel: [
+    ["SEDENTARY", "Sedentary — desk job, little exercise"],
+    ["LIGHTLY_ACTIVE", "Lightly active — 1–3 workouts / week"],
+    ["MODERATELY_ACTIVE", "Moderately active — 3–5 workouts / week"],
+    ["VERY_ACTIVE", "Very active — 6–7 workouts / week"],
+    ["EXTRA_ACTIVE", "Extra active — physical job + training"],
+  ],
+} as const;
+
+function Field({ id, label, error, children, hint }: { id: string; label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
-    <Card className="mt-6">
-      <CardTitle className="flex items-center gap-2">
-        {subscribed ? <Bell className="h-4 w-4 text-accent" /> : <BellOff className="h-4 w-4 text-muted" />}
-        Push notifications
-      </CardTitle>
-      <CardDescription className="mt-1 mb-3">
-        Get workout reminders, membership alerts, and trainer notes even when the app is closed.
-      </CardDescription>
-      <Button variant={subscribed ? "glass" : "default"} size="sm" onClick={handleToggle}>
-        {subscribed ? "Disable" : "Enable"} push notifications
-      </Button>
-      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
-    </Card>
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+        {label}
+      </label>
+      {children}
+      <FieldError id={`${id}-error`} message={error} />
+      {hint && !error && <p className="pt-1.5 text-xs text-muted">{hint}</p>}
+    </div>
   );
 }
 
-interface FormValues {
-  name: string;
-  age: string;
-  gender: UpdateProfileInput["gender"] | "";
-  heightCm: string;
-  weightKg: string;
-  targetWeightKg: string;
-  fitnessGoal: UpdateProfileInput["fitnessGoal"] | "";
-  experienceLevel: UpdateProfileInput["experienceLevel"] | "";
-  activityLevel: UpdateProfileInput["activityLevel"] | "";
-  gymName: string;
-}
+// Push state comes from the browser, so it's read through a query rather
+// than set inside an effect.
+function PushNotificationsPanel() {
+  const queryClient = useQueryClient();
+  const supported = typeof window !== "undefined" && isPushSupported();
+  const status = useQuery({
+    queryKey: ["push-subscription"],
+    queryFn: async () => Boolean(await getCurrentSubscription()),
+    enabled: supported,
+  });
+  const toggle = useMutation({
+    mutationFn: async () => {
+      if (status.data) {
+        await unsubscribeFromPush();
+        return false;
+      }
+      const result = await subscribeToPush();
+      if (!result.ok) throw new Error(result.reason ?? "Could not enable notifications.");
+      return true;
+    },
+    onSuccess: (on) => queryClient.setQueryData(["push-subscription"], on),
+  });
+  const on = Boolean(status.data);
 
-function toProfileInput(values: FormValues): UpdateProfileInput {
-  const input: UpdateProfileInput = {};
-  if (values.name) input.name = values.name;
-  if (values.age) input.age = Number(values.age);
-  if (values.gender) input.gender = values.gender;
-  if (values.heightCm) input.heightCm = Number(values.heightCm);
-  if (values.weightKg) input.weightKg = Number(values.weightKg);
-  if (values.targetWeightKg) input.targetWeightKg = Number(values.targetWeightKg);
-  if (values.fitnessGoal) input.fitnessGoal = values.fitnessGoal;
-  if (values.experienceLevel) input.experienceLevel = values.experienceLevel;
-  if (values.activityLevel) input.activityLevel = values.activityLevel;
-  if (values.gymName) input.gymName = values.gymName;
-  return input;
+  return (
+    <Panel icon={on ? Bell : BellOff} title="Notifications">
+      <p className="text-sm text-muted">Workout and diet reminders, membership alerts and messages from your trainer — even when the app is closed.</p>
+      {!supported ? (
+        <p className="mt-4 text-sm text-muted">This browser doesn&apos;t support push notifications. Try Chrome, Edge or the installed app.</p>
+      ) : status.isPending ? (
+        <Skeleton className="mt-4 h-10 w-48 rounded-xl" />
+      ) : (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <span className={cn("rounded-full px-3 py-1 text-xs", on ? "bg-success/10 text-success" : "bg-surface-2 text-muted")}>{on ? "On for this device" : "Off"}</span>
+          <Button variant={on ? "glass" : "default"} size="sm" disabled={toggle.isPending} onClick={() => toggle.mutate()}>
+            {toggle.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {on ? "Turn off" : "Turn on"} push notifications
+          </Button>
+        </div>
+      )}
+      {toggle.isError && (
+        <div className="mt-3">
+          <ErrorNote>{toggle.error instanceof Error ? toggle.error.message : "Could not change notifications."}</ErrorNote>
+        </div>
+      )}
+    </Panel>
+  );
 }
 
 function SettingsContent() {
   const queryClient = useQueryClient();
-  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getMyProfile });
+  const { data: profile, isPending } = useQuery({ queryKey: PROFILE_KEY, queryFn: getMyProfile });
 
-  const { register, handleSubmit, reset } = useForm<FormValues>();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isDirty },
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onTouched" });
 
   useEffect(() => {
-    if (profile) {
-      reset({
-        name: profile.name ?? "",
-        age: profile.age?.toString() ?? "",
-        gender: profile.gender ?? "",
-        heightCm: profile.heightCm?.toString() ?? "",
-        weightKg: profile.weightKg?.toString() ?? "",
-        targetWeightKg: profile.targetWeightKg?.toString() ?? "",
-        fitnessGoal: (profile.fitnessGoal as FormValues["fitnessGoal"]) ?? "",
-        experienceLevel: (profile.experienceLevel as FormValues["experienceLevel"]) ?? "",
-        activityLevel: (profile.activityLevel as FormValues["activityLevel"]) ?? "",
-        gymName: profile.gymName ?? "",
-      });
-    }
+    if (!profile) return;
+    reset({
+      name: profile.name ?? "",
+      age: profile.age?.toString() ?? "",
+      gender: profile.gender ?? "",
+      heightCm: profile.heightCm?.toString() ?? "",
+      weightKg: profile.weightKg?.toString() ?? "",
+      targetWeightKg: profile.targetWeightKg?.toString() ?? "",
+      fitnessGoal: profile.fitnessGoal ?? "",
+      experienceLevel: profile.experienceLevel ?? "",
+      activityLevel: profile.activityLevel ?? "",
+      gymName: profile.gymName ?? "",
+    });
   }, [profile, reset]);
 
-  const mutation = useMutation({
-    mutationFn: updateMyProfile,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+  const save = useMutation({
+    mutationFn: (values: FormValues) => updateMyProfile(toProfileInput(values)),
+    onSuccess: (_d, values) => {
+      queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      reset(values);
     },
   });
 
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-semibold">
-        Settings
-      </motion.h1>
-      <p className="mt-1 text-muted">Keep your fitness profile up to date for accurate calculations.</p>
+  const fieldProps = (name: keyof FormValues) => ({
+    id: name,
+    "aria-invalid": errors[name] ? true : undefined,
+    "aria-describedby": `${name}-error`,
+    ...register(name),
+  });
 
-      {profile && (
-        <Card className="mt-6">
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted">{profile.email}</div>
-            <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs text-accent">{profile.coins} coins</span>
-            <span className="rounded-full bg-accent-2/15 px-2.5 py-1 text-xs text-accent-2">{profile.xp} XP</span>
+  const select = (name: keyof typeof OPTIONS, placeholder: string) => (
+    <select className={selectClass} {...fieldProps(name)}>
+      <option value="">{placeholder}</option>
+      {OPTIONS[name].map(([value, label]) => (
+        <option key={value} value={value}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
+
+  return (
+    <MemberPage className="max-w-4xl">
+      <MemberHeader eyebrow="Account" title="Settings" description="Your profile powers the BMI, calorie and AI coach recommendations across the app." />
+
+      {isPending ? (
+        <Skeleton className="mt-8 h-96 rounded-2xl" />
+      ) : (
+        <form
+          noValidate
+          className="mt-8 flex flex-col gap-4"
+          onSubmit={handleSubmit((values) => save.mutate(values))}
+        >
+          <Panel icon={User} title="About you">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field id="name" label="Name" error={errors.name?.message}>
+                <Input autoComplete="name" placeholder="Name" {...fieldProps("name")} />
+              </Field>
+              <Field id="age" label="Age" error={errors.age?.message}>
+                <Input inputMode="numeric" placeholder="Age" {...fieldProps("age")} />
+              </Field>
+              <Field id="gender" label="Sex" hint="Used only for calorie and body-fat formulas.">
+                {select("gender", "Select")}
+              </Field>
+              <Field id="gymName" label="Home gym" error={errors.gymName?.message}>
+                <Input placeholder="Gym name" {...fieldProps("gymName")} />
+              </Field>
+            </div>
+          </Panel>
+
+          <Panel icon={Ruler} title="Body & goals">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field id="heightCm" label="Height (cm)" error={errors.heightCm?.message}>
+                <Input inputMode="decimal" placeholder="e.g. 172" {...fieldProps("heightCm")} />
+              </Field>
+              <Field id="weightKg" label="Weight (kg)" error={errors.weightKg?.message}>
+                <Input inputMode="decimal" placeholder="e.g. 74.5" {...fieldProps("weightKg")} />
+              </Field>
+              <Field id="targetWeightKg" label="Target weight (kg)" error={errors.targetWeightKg?.message}>
+                <Input inputMode="decimal" placeholder="e.g. 70" {...fieldProps("targetWeightKg")} />
+              </Field>
+              <Field id="fitnessGoal" label="Main goal">
+                {select("fitnessGoal", "Select a goal")}
+              </Field>
+              <Field id="experienceLevel" label="Experience">
+                {select("experienceLevel", "Select a level")}
+              </Field>
+              <Field id="activityLevel" label="Activity level">
+                {select("activityLevel", "Select")}
+              </Field>
+            </div>
+          </Panel>
+
+          <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/90 px-5 py-3 backdrop-blur-md">
+            <span className="text-sm text-muted" aria-live="polite">
+              {save.isSuccess && !isDirty ? (
+                <span className="flex items-center gap-1.5 text-success">
+                  <CheckCircle2 className="h-4 w-4" /> Saved
+                </span>
+              ) : save.isError ? (
+                <span className="text-danger">
+                  {isAxiosError(save.error) ? save.error.response?.data?.error?.message ?? "Could not save" : "Could not save"}
+                </span>
+              ) : isDirty ? (
+                "You have unsaved changes"
+              ) : (
+                "All changes saved"
+              )}
+            </span>
+            <Button type="submit" disabled={!isDirty || save.isPending} className="uppercase tracking-wider">
+              {save.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Save changes
+            </Button>
           </div>
-        </Card>
+        </form>
       )}
 
-      <Card className="mt-6">
-        <CardTitle>Profile</CardTitle>
-        <CardDescription className="mt-1 mb-4">
-          Used for BMI, BMR, and calorie calculations on your dashboard.
-        </CardDescription>
-
-        <form
-          className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-          onSubmit={handleSubmit((values) => mutation.mutate(toProfileInput(values)))}
-        >
-          <Input placeholder="Name" {...register("name")} />
-          <Input type="number" placeholder="Age" {...register("age")} />
-          <select className="glass-input h-11 px-4 text-sm" {...register("gender")}>
-            <option value="">Gender</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
-          </select>
-          <Input type="number" placeholder="Height (cm)" {...register("heightCm")} />
-          <Input type="number" step="0.1" placeholder="Weight (kg)" {...register("weightKg")} />
-          <Input type="number" step="0.1" placeholder="Target weight (kg)" {...register("targetWeightKg")} />
-          <select className="glass-input h-11 px-4 text-sm" {...register("fitnessGoal")}>
-            <option value="">Fitness goal</option>
-            <option value="WEIGHT_LOSS">Weight loss</option>
-            <option value="MUSCLE_GAIN">Muscle gain</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="ENDURANCE">Endurance</option>
-            <option value="GENERAL_FITNESS">General fitness</option>
-          </select>
-          <select className="glass-input h-11 px-4 text-sm" {...register("experienceLevel")}>
-            <option value="">Experience level</option>
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-          </select>
-          <select className="glass-input h-11 px-4 text-sm sm:col-span-2" {...register("activityLevel")}>
-            <option value="">Activity level</option>
-            <option value="SEDENTARY">Sedentary</option>
-            <option value="LIGHTLY_ACTIVE">Lightly active</option>
-            <option value="MODERATELY_ACTIVE">Moderately active</option>
-            <option value="VERY_ACTIVE">Very active</option>
-            <option value="EXTRA_ACTIVE">Extra active</option>
-          </select>
-          <Input placeholder="Gym name" className="sm:col-span-2" {...register("gymName")} />
-
-          <Button type="submit" className="sm:col-span-2" disabled={mutation.isPending}>
-            {mutation.isPending ? "Saving..." : "Save changes"}
-          </Button>
-          {mutation.isSuccess && <p className="text-sm text-accent-2 sm:col-span-2">Profile updated.</p>}
-        </form>
-      </Card>
-
-      <PushNotificationsCard />
-    </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <PushNotificationsPanel />
+        <Panel icon={KeyRound} title="Sign-in & security">
+          <p className="flex items-center gap-2 text-sm">
+            <Mail className="h-4 w-4 text-gold" /> {profile?.email ?? "—"}
+          </p>
+          <p className="mt-3 text-sm text-muted">To change your password we&apos;ll email you a reset code. You&apos;ll be signed out on every device.</p>
+          <Link
+            href="/forgot-password"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-4")}
+          >
+            Change password
+          </Link>
+        </Panel>
+      </div>
+    </MemberPage>
   );
 }
 

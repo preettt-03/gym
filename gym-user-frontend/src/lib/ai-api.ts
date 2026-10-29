@@ -46,6 +46,9 @@ export async function generateWorkoutPlan(input: {
   goal?: string;
   daysPerWeek: number;
   focusAreas?: string[];
+  sessionMinutes?: number;
+  equipment?: string[];
+  limitations?: string;
   save: boolean;
 }) {
   const { data } = await apiClient.post<

@@ -154,7 +154,15 @@ const workoutPlanJsonSchema = {
 
 export async function generateWorkoutPlan(
   userId: string,
-  input: { goal?: string; daysPerWeek: number; focusAreas?: string[]; save: boolean }
+  input: {
+    goal?: string;
+    daysPerWeek: number;
+    focusAreas?: string[];
+    sessionMinutes?: number;
+    equipment?: string[];
+    limitations?: string;
+    save: boolean;
+  }
 ) {
   const settings = await getSettings();
   assertEnabled(settings, 'WORKOUT_PLAN');
@@ -176,7 +184,7 @@ export async function generateWorkoutPlan(
     .map((e) => `${e.id} | ${e.name} | target: ${e.targetMuscle} | difficulty: ${e.difficulty} | equipment: ${e.equipment.join(',') || 'none'}`)
     .join('\n');
 
-  const prompt = `User profile:\n${contextText}\n\nRequested goal: ${input.goal || 'general fitness'}\nDays per week: ${input.daysPerWeek}\nFocus areas: ${input.focusAreas?.join(', ') || 'balanced full body'}\n\nAvailable exercises (id | name | target muscle | difficulty | equipment):\n${exerciseCatalog}\n\nDesign a single-week workout plan using ONLY exerciseId values from the list above. Include ${input.daysPerWeek} training days plus rest days to total 7 days for weekNumber 1. Respond with JSON matching the schema.`;
+  const prompt = `User profile:\n${contextText}\n\nRequested goal: ${input.goal || 'general fitness'}\nDays per week: ${input.daysPerWeek}\nFocus areas: ${input.focusAreas?.join(', ') || 'balanced full body'}\nSession length: ${input.sessionMinutes ? `about ${input.sessionMinutes} minutes` : 'not specified'}\nAvailable equipment: ${input.equipment?.length ? `${input.equipment.join(', ')} (only use exercises that need nothing else; bodyweight is always fine)` : 'full gym'}\nLimitations / injuries to work around: ${input.limitations || 'none reported'} — avoid exercises that could aggravate them and prefer safer alternatives.\n\nAvailable exercises (id | name | target muscle | difficulty | equipment):\n${exerciseCatalog}\n\nDesign a single-week workout plan using ONLY exerciseId values from the list above. Include ${input.daysPerWeek} training days plus rest days to total 7 days for weekNumber 1. Respond with JSON matching the schema.`;
 
   const plan = await callAi<{
     title: string;

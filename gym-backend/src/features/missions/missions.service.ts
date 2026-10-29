@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
 import { MissionInput, MissionUpdateInput } from '@/features/missions/missions.schemas';
@@ -64,37 +65,43 @@ export async function reportProgress(userId: string, missionId: string, value: n
     throw new AppError('Mission is not currently active', 400);
   }
 
-  const existing = await prisma.userMissionProgress.findUnique({
-    where: { userId_missionId: { userId, missionId } },
-  });
-  const currentValue = (existing?.currentValue ?? 0) + value;
-  const isCompleted = currentValue >= mission.targetValue;
-  const wasAlreadyCompleted = existing?.isCompleted ?? false;
-
-  const progress = await prisma.userMissionProgress.upsert({
-    where: { userId_missionId: { userId, missionId } },
-    update: {
-      currentValue,
-      isCompleted,
-      completedAt: isCompleted && !wasAlreadyCompleted ? now : existing?.completedAt,
-    },
-    create: { userId, missionId, currentValue, isCompleted, completedAt: isCompleted ? now : null },
-  });
-
-  if (isCompleted && !wasAlreadyCompleted) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { coins: { increment: mission.rewardCoins }, xp: { increment: mission.rewardXp } },
+  // Increment in the database so concurrent reports can't overwrite each other.
+  const increment = () =>
+    prisma.userMissionProgress.upsert({
+      where: { userId_missionId: { userId, missionId } },
+      update: { currentValue: { increment: value } },
+      create: { userId, missionId, currentValue: value },
     });
+  // Two first-ever reports can race on the create; the loser retries as an update.
+  const progress = await increment().catch((err) => {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') return increment();
+    throw err;
+  });
+  if (progress.isCompleted || progress.currentValue < mission.targetValue) return progress;
 
-    if (mission.rewardBadgeId) {
-      await prisma.userBadge.upsert({
-        where: { userId_badgeId: { userId, badgeId: mission.rewardBadgeId } },
-        update: {},
-        create: { userId, badgeId: mission.rewardBadgeId },
-      });
-    }
+  // Exactly one request can flip isCompleted, so the reward is paid once even
+  // when two reports cross the target at the same moment.
+  const { count } = await prisma.userMissionProgress.updateMany({
+    where: { userId, missionId, isCompleted: false },
+    data: { isCompleted: true, completedAt: now },
+  });
+  if (count === 1) {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { coins: { increment: mission.rewardCoins }, xp: { increment: mission.rewardXp } },
+      }),
+      ...(mission.rewardBadgeId
+        ? [
+            prisma.userBadge.upsert({
+              where: { userId_badgeId: { userId, badgeId: mission.rewardBadgeId } },
+              update: {},
+              create: { userId, badgeId: mission.rewardBadgeId },
+            }),
+          ]
+        : []),
+    ]);
   }
 
-  return progress;
+  return prisma.userMissionProgress.findUniqueOrThrow({ where: { userId_missionId: { userId, missionId } } });
 }

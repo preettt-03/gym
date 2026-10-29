@@ -2,7 +2,7 @@ import { Response, Router } from 'express';
 import { asyncHandler } from '@/middlewares/asyncHandler';
 import { validate } from '@/middlewares/validate';
 import { AuthedRequest, requireAuth } from '@/middlewares/auth';
-import { createProgressPhotoSchema } from '@/features/progress-photos/progress-photos.schemas';
+import { createProgressPhotoSchema, progressPhotoIdSchema } from '@/features/progress-photos/progress-photos.schemas';
 import * as service from '@/features/progress-photos/progress-photos.service';
 
 export const progressPhotosRouter = Router();
@@ -22,5 +22,14 @@ progressPhotosRouter.get(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const photos = await service.listProgressPhotos(req.user!.id);
     res.json({ photos });
+  })
+);
+
+progressPhotosRouter.delete(
+  '/:id',
+  validate(progressPhotoIdSchema),
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    await service.deleteProgressPhoto(req.user!.id, req.params.id);
+    res.status(204).send();
   })
 );

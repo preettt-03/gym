@@ -81,7 +81,7 @@ export interface DailyNutrition {
   totals: NutritionBreakdown;
 }
 
-export async function logFood(input: { foodId: string; quantityGrams: number; mealType?: MealType }) {
+export async function logFood(input: { foodId: string; quantityGrams: number; mealType?: MealType; loggedAt?: string }) {
   const { data } = await apiClient.post<{ log: NutritionLogEntry }>("/nutrition-logs", input);
   return data.log;
 }
@@ -94,3 +94,34 @@ export async function getDailyNutrition(date?: string) {
 export async function deleteNutritionLog(id: string) {
   await apiClient.delete(`/nutrition-logs/${id}`);
 }
+
+// Saves a plan exactly as previewed (e.g. an AI draft) as the member's own plan.
+export async function createDietPlan(plan: {
+  title: string;
+  description?: string;
+  estimatedCalories?: number;
+  meals: Array<{ mealType: string; title?: string; items: Array<{ foodId: string; quantityGrams: number }> }>;
+}) {
+  const { data } = await apiClient.post<{ plan: DietPlanDetail }>("/diet-plans", {
+    title: plan.title,
+    description: plan.description || undefined,
+    estimatedCalories: plan.estimatedCalories ? Math.round(plan.estimatedCalories) : undefined,
+    meals: plan.meals.map((m) => ({
+      mealType: m.mealType,
+      title: m.title || undefined,
+      items: m.items.filter((i) => i.quantityGrams > 0).map((i) => ({ foodId: i.foodId, quantityGrams: i.quantityGrams })),
+    })),
+  });
+  return data.plan;
+}
+
+export const MEAL_LABELS: Record<MealType, string> = {
+  BREAKFAST: "Breakfast",
+  LUNCH: "Lunch",
+  DINNER: "Dinner",
+  SNACKS: "Snacks",
+  PRE_WORKOUT: "Pre-workout",
+  POST_WORKOUT: "Post-workout",
+};
+
+export const MEAL_ORDER: MealType[] = ["BREAKFAST", "PRE_WORKOUT", "LUNCH", "SNACKS", "POST_WORKOUT", "DINNER"];

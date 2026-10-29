@@ -2,18 +2,21 @@ import { z } from 'zod';
 
 export const generateWorkoutPlanSchema = z.object({
   body: z.object({
-    goal: z.string().optional(),
+    goal: z.string().trim().max(200).optional(),
     daysPerWeek: z.number().int().min(1).max(7).default(3),
-    focusAreas: z.array(z.string()).optional(),
+    focusAreas: z.array(z.string().trim().min(1).max(40)).max(8).optional(),
+    sessionMinutes: z.number().int().min(15).max(180).optional(),
+    equipment: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+    limitations: z.string().trim().max(300).optional(),
     save: z.boolean().default(false),
   }),
 });
 
 export const generateDietPlanSchema = z.object({
   body: z.object({
-    goal: z.string().optional(),
+    goal: z.string().trim().max(200).optional(),
     mealsPerDay: z.number().int().min(1).max(6).default(3),
-    dietaryPreferences: z.array(z.string()).optional(),
+    dietaryPreferences: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
     save: z.boolean().default(false),
   }),
 });

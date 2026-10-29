@@ -2,86 +2,111 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Flame, Sparkles } from "lucide-react";
-import { listMyDietPlans, DietPlanSummary } from "@/lib/diet-api";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ChevronRight, Flame, Sparkles, UserCheck, UtensilsCrossed } from "lucide-react";
+import { listMyDietPlans, type DietPlanSummary } from "@/lib/diet-api";
 import { RequireAuth } from "@/components/require-auth";
-import { SkeletonList } from "@/components/ui/skeleton";
+import { buttonVariants } from "@/components/ui/button";
+import { SkeletonGrid } from "@/components/ui/skeleton";
+import { EmptyState, ErrorNote, MemberHeader, MemberPage } from "@/components/member/ui";
+import { cn } from "@/lib/utils";
 
-function PlanCard({ plan }: { plan: DietPlanSummary }) {
+function PlanCard({ plan, tag }: { plan: DietPlanSummary; tag: string }) {
   return (
-    <Link href={`/diet-plans/${plan.id}`}>
-      <Card className="flex h-full flex-col gap-2 transition hover:brightness-105">
-        <CardTitle>{plan.title}</CardTitle>
-        {plan.description && <CardDescription>{plan.description}</CardDescription>}
-        {plan.estimatedCalories && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-muted">
-            <Flame className="h-3.5 w-3.5" /> {plan.estimatedCalories} kcal/day
-          </div>
+    <article className="glass-card card-hover group relative flex h-full flex-col gap-3 p-5">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10">
+        <UtensilsCrossed className="h-5 w-5 text-gold" />
+      </span>
+      <div className="flex-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">{tag}</p>
+        <h3 className="mt-1 text-lg font-semibold uppercase leading-tight">
+          <Link href={`/diet-plans/${plan.id}`} className="outline-none after:absolute after:inset-0 after:rounded-[inherit]">
+            {plan.title}
+          </Link>
+        </h3>
+        {plan.description && <p className="mt-2 line-clamp-2 text-sm text-muted">{plan.description}</p>}
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted">
+        {plan.estimatedCalories ? (
+          <span className="flex items-center gap-1">
+            <Flame className="h-3.5 w-3.5" /> ~{plan.estimatedCalories} kcal / day
+          </span>
+        ) : (
+          <span />
         )}
-      </Card>
-    </Link>
+        <ChevronRight aria-hidden="true" className="h-4 w-4 text-gold transition-transform group-hover:translate-x-0.5" />
+      </div>
+    </article>
+  );
+}
+
+function Grid({ plans, tag }: { plans: DietPlanSummary[]; tag: string }) {
+  return (
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {plans.map((p) => (
+        <li key={p.id}>
+          <PlanCard plan={p} tag={tag} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
 function DietPlansContent() {
-  const { data, isLoading, isError } = useQuery({ queryKey: ["diet-plans"], queryFn: listMyDietPlans });
+  const { data, isPending, isError } = useQuery({ queryKey: ["diet-plans"], queryFn: listMyDietPlans });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-semibold">
-            Diet Plans
-          </motion.h1>
-          <p className="mt-1 text-muted">Plans assigned to you and plans you&apos;ve built yourself.</p>
-        </div>
-        <Link href="/diet-plans/generate">
-          <Button size="sm">
+    <MemberPage>
+      <MemberHeader
+        eyebrow="Nutrition"
+        title="Diet Plans"
+        description="Meal plans from your coach and ones you've generated. Open a plan to log its meals in one tap."
+        actions={
+          <Link href="/diet-plans/generate" className={cn(buttonVariants(), "uppercase tracking-wider")}>
             <Sparkles className="h-4 w-4" /> Generate with AI
-          </Button>
-        </Link>
-      </div>
+          </Link>
+        }
+      />
 
-      {isLoading && <SkeletonList rows={3} className="mt-8" />}
-      {isError && <p className="mt-8 text-danger">Could not load diet plans.</p>}
+      {isPending && <SkeletonGrid count={3} className="mt-8 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-44" />}
+      {isError && (
+        <div className="mt-8">
+          <ErrorNote>Could not load your diet plans. Please try again.</ErrorNote>
+        </div>
+      )}
 
       {data && (
-        <>
-          <section className="mt-8">
-            <h2 className="mb-3 text-sm font-medium text-muted uppercase tracking-wide">Assigned to you</h2>
+        <div className="mt-8 flex flex-col gap-10">
+          <section aria-labelledby="assigned-diets">
+            <h2 id="assigned-diets" className="mb-4 flex items-center gap-2 text-lg font-semibold uppercase">
+              <UserCheck className="h-5 w-5 text-gold" /> From your coach
+            </h2>
             {data.assignedPlans.length === 0 ? (
-              <Card>
-                <CardDescription>No diet plans assigned yet.</CardDescription>
-              </Card>
+              <EmptyState title="No diet plans assigned yet" description="Your trainer or an admin can assign one to you." />
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {data.assignedPlans.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} />
-                ))}
-              </div>
+              <Grid plans={data.assignedPlans} tag="Assigned" />
             )}
           </section>
-
-          <section className="mt-10">
-            <h2 className="mb-3 text-sm font-medium text-muted uppercase tracking-wide">Your custom plans</h2>
+          <section aria-labelledby="own-diets">
+            <h2 id="own-diets" className="mb-4 flex items-center gap-2 text-lg font-semibold uppercase">
+              <Sparkles className="h-5 w-5 text-gold" /> Your own plans
+            </h2>
             {data.ownedPlans.length === 0 ? (
-              <Card>
-                <CardDescription>You haven&apos;t built a custom diet plan yet.</CardDescription>
-              </Card>
+              <EmptyState
+                title="You haven't created a meal plan yet"
+                description="Share your goal and food preferences and the AI builds a day of meals from our food database."
+                action={
+                  <Link href="/diet-plans/generate" className={buttonVariants({ variant: "outline" })}>
+                    <Sparkles className="h-4 w-4" /> Build one with AI
+                  </Link>
+                }
+              />
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {data.ownedPlans.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} />
-                ))}
-              </div>
+              <Grid plans={data.ownedPlans} tag="Custom" />
             )}
           </section>
-        </>
+        </div>
       )}
-    </div>
+    </MemberPage>
   );
 }
 
