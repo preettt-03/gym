@@ -181,7 +181,7 @@ export async function login(email: string, password: string) {
   return { user: sanitizeUser(user), ...tokens };
 }
 
-export async function refresh(oldRefreshToken: string) {
+export async function refresh(oldRefreshToken: string, allowedRoles?: Role[]) {
   let payload;
   try {
     payload = verifyRefreshToken(oldRefreshToken);
@@ -196,6 +196,11 @@ export async function refresh(oldRefreshToken: string) {
 
   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
   if (!user) throw new AppError('Invalid refresh token', 401);
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // e.g. the admin was demoted: end this session instead of minting a token every route rejects.
+    await prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: new Date() } });
+    throw new AppError('Invalid refresh token', 401);
+  }
 
   // Rotation: revoke the used token before issuing a new pair
   await prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: new Date() } });
