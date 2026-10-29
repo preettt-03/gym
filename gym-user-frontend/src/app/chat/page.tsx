@@ -7,6 +7,7 @@ import { blockUser, listMessages, listMyRooms, reportMessage, sendMessageRest, t
 import { useSocket } from "@/hooks/use-socket";
 import { useAuthStore } from "@/stores/auth-store";
 import { RequireAuth } from "@/components/require-auth";
+import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,11 +50,14 @@ function MessageBubble({ message, mine }: { message: ChatMessage; mine: boolean 
 
   return (
     <li className={cn("group flex flex-col", mine && "items-end")}>
-      <div className={cn("max-w-[80%] rounded-2xl px-4 py-2.5 text-sm sm:max-w-[70%]", mine ? "rounded-br-md bg-gold text-accent-foreground" : "rounded-bl-md bg-surface-2")}>
-        {!mine && <p className="mb-0.5 text-xs font-semibold text-gold">{message.sender.name ?? message.sender.email}</p>}
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+      <div className={cn("flex max-w-[85%] items-end gap-2 sm:max-w-[75%]", mine && "flex-row-reverse")}>
+        {!mine && <Avatar photoUrl={message.sender.photoUrl} name={message.sender.name} email={message.sender.email} className="h-8 w-8" />}
+        <div className={cn("min-w-0 rounded-2xl px-4 py-2.5 text-sm", mine ? "rounded-br-md bg-gold text-accent-foreground" : "rounded-bl-md bg-surface-2")}>
+          {!mine && <p className="mb-0.5 text-xs font-semibold text-gold">{message.sender.name ?? message.sender.email}</p>}
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        </div>
       </div>
-      <div className={cn("mt-1 flex items-center gap-2 text-[11px] text-muted", mine && "flex-row-reverse")}>
+      <div className={cn("mt-1 flex items-center gap-2 text-[11px] text-muted", mine ? "flex-row-reverse" : "pl-10")}>
         <time dateTime={message.createdAt}>{time.format(new Date(message.createdAt))}</time>
         {!mine &&
           (report.isSuccess ? (

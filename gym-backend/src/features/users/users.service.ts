@@ -1,4 +1,8 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { Prisma } from '@prisma/client';
+import { env } from '@/config/env';
+import { UPLOAD_DIR } from '@/lib/upload';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
 import {
@@ -47,6 +51,29 @@ export async function getProfile(userId: string) {
 
 export async function updateProfile(userId: string, data: Prisma.UserUpdateInput) {
   return prisma.user.update({ where: { id: userId }, data, select: PROFILE_SELECT });
+}
+
+// Only files we stored ourselves are deleted (a Google sign-in photo is an external URL).
+async function removeOwnUpload(url: string | null) {
+  const prefix = `${env.PUBLIC_URL}/uploads/`;
+  if (!url?.startsWith(prefix)) return;
+  await fs.unlink(path.join(UPLOAD_DIR, path.basename(url.slice(prefix.length)))).catch(() => undefined);
+}
+
+// Profile photos are public on purpose (they appear next to chat messages), so
+// they live in the regular uploads folder rather than private storage.
+export async function setProfilePhoto(userId: string, filename: string) {
+  const { photoUrl: previous } = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { photoUrl: true } });
+  const user = await prisma.user.update({ where: { id: userId }, data: { photoUrl: `${env.PUBLIC_URL}/uploads/${filename}` }, select: PROFILE_SELECT });
+  await removeOwnUpload(previous);
+  return user;
+}
+
+export async function removeProfilePhoto(userId: string) {
+  const { photoUrl: previous } = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { photoUrl: true } });
+  const user = await prisma.user.update({ where: { id: userId }, data: { photoUrl: null }, select: PROFILE_SELECT });
+  await removeOwnUpload(previous);
+  return user;
 }
 
 export async function logWeight(userId: string, weightKg: number, loggedAt?: string) {

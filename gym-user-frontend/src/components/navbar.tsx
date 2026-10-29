@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, MessageSquare, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { AccountMenu } from "@/components/account-menu";
@@ -25,7 +25,6 @@ const MEMBER_LINKS = [
   { href: "/diet-plans", label: "Diet" },
   { href: "/nutrition", label: "Nutrition" },
   { href: "/ai-coach", label: "AI Coach" },
-  { href: "/chat", label: "Chat" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -77,6 +76,18 @@ export function Navbar() {
           {user ? (
             <>
               <NotificationsBell />
+              <Link
+                href="/chat"
+                aria-label="Chat"
+                aria-current={isActive(pathname, "/chat") ? "page" : undefined}
+                className={cn(
+                  buttonVariants({ variant: "glass", size: "sm" }),
+                  "h-9 w-9 p-0",
+                  isActive(pathname, "/chat") && "border-gold/50 text-gold"
+                )}
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Link>
               <AccountMenu />
             </>
           ) : (

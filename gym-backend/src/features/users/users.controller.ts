@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { AuthedRequest } from '@/middlewares/auth';
+import { AppError } from '@/middlewares/errorHandler';
 import * as service from '@/features/users/users.service';
 
 export async function me(req: AuthedRequest, res: Response) {
@@ -26,4 +27,15 @@ export async function weightLogs(req: AuthedRequest, res: Response) {
 export async function dashboard(req: AuthedRequest, res: Response) {
   const data = await service.getDashboard(req.user!.id);
   res.json(data);
+}
+
+export async function uploadPhoto(req: AuthedRequest, res: Response) {
+  if (!req.file) throw new AppError('Choose a photo to upload', 400);
+  const user = await service.setProfilePhoto(req.user!.id, req.file.filename);
+  res.json({ user });
+}
+
+export async function removePhoto(req: AuthedRequest, res: Response) {
+  const user = await service.removeProfilePhoto(req.user!.id);
+  res.json({ user });
 }

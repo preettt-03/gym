@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string | null;
+  photoUrl: string | null;
   age: number | null;
   gender: "MALE" | "FEMALE" | "OTHER" | null;
   heightCm: number | null;
@@ -37,5 +38,20 @@ export interface UpdateProfileInput {
 
 export async function updateMyProfile(input: UpdateProfileInput) {
   const { data } = await apiClient.patch<{ user: UserProfile }>("/users/me/profile", input);
+  return data.user;
+}
+
+// Profile photos are public (shown beside chat messages) — unlike progress photos.
+export async function uploadProfilePhoto(file: File) {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const { data } = await apiClient.put<{ user: UserProfile }>("/users/me/photo", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.user;
+}
+
+export async function removeProfilePhoto() {
+  const { data } = await apiClient.delete<{ user: UserProfile }>("/users/me/photo");
   return data.user;
 }

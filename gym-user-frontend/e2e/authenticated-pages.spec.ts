@@ -93,6 +93,29 @@ test.describe("Authenticated feature pages", () => {
     await expect(img).toHaveCount(0);
   });
 
+  test("chat lives in the header icons, not the nav links", async ({ page }) => {
+    await page.goto("/dashboard");
+    const nav = page.getByRole("navigation", { name: "Main" });
+    await expect(nav.getByRole("link", { name: "Chat", exact: true })).toHaveCount(1);
+    await nav.getByRole("link", { name: "Chat", exact: true }).click();
+    await expect(page).toHaveURL(/\/chat/);
+    await expect(nav.getByRole("link", { name: "Chat", exact: true })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("adds and removes a profile photo, which shows in the account menu", async ({ page }) => {
+    await page.goto("/settings");
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+    await page.getByLabel("Choose profile photo").setInputFiles({ name: "me.png", mimeType: "image/png", buffer: png });
+
+    await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible();
+    const menuAvatar = page.getByRole("button", { name: "Account menu" }).locator("img");
+    await expect(menuAvatar).toHaveAttribute("src", /\/uploads\/.+\.png$/);
+
+    await page.getByRole("button", { name: "Remove" }).click();
+    await expect(page.getByRole("button", { name: "Add photo" })).toBeVisible();
+    await expect(menuAvatar).toHaveCount(0);
+  });
+
   test("logging out returns to a logged-out state", async ({ page }) => {
     await page.getByRole("button", { name: "Account menu" }).click();
     await page.getByRole("button", { name: /Log out/i }).click();

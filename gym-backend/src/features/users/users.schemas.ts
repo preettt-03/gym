@@ -14,7 +14,6 @@ const activityLevelEnum = z.enum([
 export const updateProfileSchema = z.object({
   body: z.object({
     name: z.string().min(1).optional(),
-    photoUrl: z.string().url().optional(),
     age: z.number().int().min(1).max(120).optional(),
     gender: genderEnum.optional(),
     heightCm: z.number().min(100, 'Height must be at least 100 cm').max(250, 'Height must be at most 250 cm').optional(),

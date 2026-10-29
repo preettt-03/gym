@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { isAxiosError } from "axios";
-import { Bell, BellOff, CheckCircle2, KeyRound, Loader2, Mail, Ruler, User } from "lucide-react";
-import { getMyProfile, updateMyProfile, type UpdateProfileInput } from "@/lib/profile-api";
+import { Bell, BellOff, Camera, CheckCircle2, KeyRound, Loader2, Mail, Ruler, Trash2, User } from "lucide-react";
+import { getMyProfile, removeProfilePhoto, updateMyProfile, uploadProfilePhoto, type UpdateProfileInput, type UserProfile } from "@/lib/profile-api";
+import { Avatar } from "@/components/avatar";
 import { getCurrentSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 import { RequireAuth } from "@/components/require-auth";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -148,6 +149,68 @@ function PushNotificationsPanel() {
   );
 }
 
+// Mirrors the server's upload rules so bad files fail fast in the browser.
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+
+// Saved the moment a file is picked — separate from the form's Save button.
+function ProfilePhoto({ profile }: { profile: UserProfile }) {
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const onSaved = (user: UserProfile) => {
+    queryClient.setQueryData<UserProfile>(PROFILE_KEY, (old) => (old ? { ...old, photoUrl: user.photoUrl } : user));
+    if (fileRef.current) fileRef.current.value = "";
+  };
+  const onFailed = (err: unknown) =>
+    setError(isAxiosError(err) ? err.response?.data?.error?.message ?? "Couldn't update your photo" : "Couldn't update your photo");
+
+  const upload = useMutation({ mutationFn: uploadProfilePhoto, onSuccess: onSaved, onError: onFailed });
+  const remove = useMutation({ mutationFn: removeProfilePhoto, onSuccess: onSaved, onError: onFailed });
+  const busy = upload.isPending || remove.isPending;
+
+  const pick = (file?: File) => {
+    setError(null);
+    if (!file) return;
+    if (!PHOTO_TYPES.includes(file.type)) return setError("Use a JPG, PNG or WebP image.");
+    if (file.size > PHOTO_MAX_BYTES) return setError("That photo is over 5 MB — try a smaller one.");
+    upload.mutate(file);
+  };
+
+  return (
+    <div className="mb-6 flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
+      <div className="relative w-fit">
+        <Avatar photoUrl={profile.photoUrl} name={profile.name} email={profile.email} size="lg" className="ring-2 ring-gold/30" />
+        {busy && (
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
+            <Loader2 className="h-6 w-6 animate-spin text-gold" />
+          </span>
+        )}
+      </div>
+      <div>
+        <p className="font-semibold">Profile photo</p>
+        <p className="mt-0.5 text-xs text-muted">Shown on your account and next to your chat messages. JPG, PNG or WebP, up to 5 MB.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <input ref={fileRef} type="file" accept={PHOTO_TYPES.join(",")} className="hidden" aria-label="Choose profile photo" onChange={(e) => pick(e.target.files?.[0])} />
+          <Button type="button" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+            <Camera className="h-4 w-4" /> {profile.photoUrl ? "Change photo" : "Add photo"}
+          </Button>
+          {profile.photoUrl && (
+            <Button type="button" size="sm" variant="glass" disabled={busy} onClick={() => remove.mutate()}>
+              <Trash2 className="h-4 w-4" /> Remove
+            </Button>
+          )}
+        </div>
+        {error && (
+          <p role="alert" className="mt-2 text-xs text-danger">
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SettingsContent() {
   const queryClient = useQueryClient();
   const { data: profile, isPending } = useQuery({ queryKey: PROFILE_KEY, queryFn: getMyProfile });
@@ -216,6 +279,7 @@ function SettingsContent() {
           onSubmit={handleSubmit((values) => save.mutate(values))}
         >
           <Panel icon={User} title="About you">
+            {profile && <ProfilePhoto profile={profile} />}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="name" label="Name" error={errors.name?.message}>
                 <Input autoComplete="name" placeholder="Name" {...fieldProps("name")} />
