@@ -11,7 +11,7 @@ export interface ExerciseFilters {
   search?: string;
   category?: string;
   equipment?: string;
-  difficulty?: Difficulty;
+  difficulty?: Difficulty[];
   targetMuscle?: string;
   muscleGroup?: MuscleGroup;
   workoutType?: string;
@@ -74,7 +74,7 @@ function buildWhere(filters: ExerciseFilters): Prisma.ExerciseWhereInput {
   if (filters.equipment) {
     where.equipment = { hasSome: filters.equipment.split(',').map((e) => e.trim()) };
   }
-  if (filters.difficulty) where.difficulty = filters.difficulty;
+  if (filters.difficulty?.length) where.difficulty = { in: filters.difficulty };
   if (filters.targetMuscle) where.targetMuscle = { equals: filters.targetMuscle, mode: 'insensitive' };
   if (filters.muscleGroup) {
     // An exercise belongs to a group by its primary muscle only, so "Legs" doesn't

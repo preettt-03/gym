@@ -13,7 +13,7 @@ export async function list(req: AuthedRequest, res: Response) {
       search: q.search,
       category: q.category,
       equipment: q.equipment,
-      difficulty: q.difficulty as Difficulty | undefined,
+      difficulty: q.difficulty ? (q.difficulty.split(',') as Difficulty[]) : undefined,
       targetMuscle: q.targetMuscle,
       muscleGroup: q.muscleGroup as service.ExerciseFilters['muscleGroup'],
       workoutType: q.workoutType,

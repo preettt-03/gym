@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Clock, Heart, LayoutGrid, Search, Trash2 } f
 import { listExerciseCategories, listExercises, type Exercise } from "@/lib/api";
 import { clearRecentExercises, listRecentExercises } from "@/lib/exercise-api";
 import { ExerciseCard, difficultyLabel } from "@/components/exercise/exercise-card";
+import { Chip, ChipSlider, MultiSelectMenu } from "@/components/exercise/library-filters";
 import { useFavoriteExercises } from "@/components/exercise/favorite-button";
 import { inMuscleGroup, MUSCLE_GROUPS, type MuscleGroupKey } from "@/lib/muscles";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 
 const DIFFICULTIES = ["BEGINNER", "INTERMEDIATE", "ADVANCED"] as const;
+type Difficulty = (typeof DIFFICULTIES)[number];
 const PAGE_SIZE = 12;
 type Tab = "all" | "favorites" | "recent";
 
@@ -37,39 +39,13 @@ function useDebounced<T>(value: T, delay = 300) {
   return debounced;
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3.5 py-1.5 text-sm transition-colors",
-        active ? "border-gold bg-gold text-accent-foreground" : "border-border text-muted hover:border-gold/40 hover:text-foreground"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-// Labelled row of chips; scrolls sideways on phones instead of wrapping into a wall.
-function ChipRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div role="group" aria-label={label} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-      <span className="w-32 shrink-0 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.18em] text-muted">{label}</span>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&>*]:shrink-0">{children}</div>
-    </div>
-  );
-}
-
 // Client-side filter for the favourites / recent lists (they aren't paginated).
-function matches(e: Exercise, search: string, category?: string, difficulty?: string, muscleGroup?: MuscleGroupKey) {
+function matches(e: Exercise, search: string, category: string | undefined, difficulty: Difficulty[], muscleGroup?: MuscleGroupKey) {
   const term = search.toLowerCase();
   return (
     (!term || e.name.toLowerCase().includes(term) || e.targetMuscle.toLowerCase().includes(term)) &&
     (!category || e.categories.some((c) => c.slug === category)) &&
-    (!difficulty || e.difficulty === difficulty) &&
+    (!difficulty.length || difficulty.includes(e.difficulty)) &&
     (!muscleGroup || inMuscleGroup(e.targetMuscle, muscleGroup))
   );
 }
@@ -80,7 +56,7 @@ export default function ExercisesPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>();
-  const [difficulty, setDifficulty] = useState<string | undefined>();
+  const [difficulty, setDifficulty] = useState<Difficulty[]>([]);
   const [muscleGroup, setMuscleGroup] = useState<MuscleGroupKey | undefined>();
   const [page, setPage] = useState(1);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -91,7 +67,8 @@ export default function ExercisesPage() {
 
   const all = useQuery({
     queryKey: ["exercises", debouncedSearch, category, difficulty, muscleGroup, page],
-    queryFn: () => listExercises({ search: debouncedSearch || undefined, category, difficulty, muscleGroup, page, limit: PAGE_SIZE }),
+    queryFn: () =>
+      listExercises({ search: debouncedSearch || undefined, category, difficulty: difficulty.join(",") || undefined, muscleGroup, page, limit: PAGE_SIZE }),
     placeholderData: keepPreviousData,
     enabled: activeTab === "all",
   });
@@ -112,7 +89,7 @@ export default function ExercisesPage() {
     activeTab === "all"
       ? all.data?.items
       : (activeTab === "favorites" ? favorites.data : recent.data)?.filter((e) => matches(e, debouncedSearch, category, difficulty, muscleGroup));
-  const filtersActive = Boolean(debouncedSearch || category || difficulty || muscleGroup);
+  const filtersActive = Boolean(debouncedSearch || category || difficulty.length || muscleGroup);
 
   const emptyMessage =
     activeTab === "favorites" && !filtersActive
@@ -127,41 +104,40 @@ export default function ExercisesPage() {
       <h1 className="mt-3 text-4xl font-bold uppercase">Exercise Library</h1>
       <p className="mt-2 text-muted">Step-by-step instructions, target muscles and common mistakes — browse freely, no account needed.</p>
 
-      {isAuthed && (
-        <div role="tablist" aria-label="Exercise lists" className="mt-8 flex max-w-full overflow-x-auto rounded-xl border border-border bg-surface p-1 sm:inline-flex">
-          {(
-            [
-              ["all", "All", LayoutGrid],
-              ["favorites", `Favourites${favorites.data ? ` (${favorites.data.length})` : ""}`, Heart],
-              ["recent", "Recently viewed", Clock],
-            ] as const
-          ).map(([key, label, Icon]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === key}
-              onClick={() => setTab(key)}
-              className={cn(
-                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors sm:px-4",
-                activeTab === key ? "bg-gold text-accent-foreground" : "text-muted hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="glass-card mt-6 flex flex-col gap-4 p-4 sm:p-5">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+        {isAuthed && (
+          <div role="tablist" aria-label="Exercise lists" className="no-scrollbar flex max-w-full overflow-x-auto rounded-xl border border-border bg-surface p-1 sm:inline-flex">
+            {(
+              [
+                ["all", "All", LayoutGrid],
+                ["favorites", `Favourites${favorites.data ? ` (${favorites.data.length})` : ""}`, Heart],
+                ["recent", "Recently viewed", Clock],
+              ] as const
+            ).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === key}
+                onClick={() => setTab(key)}
+                className={cn(
+                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors sm:px-4",
+                  activeTab === key ? "bg-gold text-accent-foreground" : "text-muted hover:text-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="relative w-full sm:ml-auto sm:w-72">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <Input
             type="search"
             aria-label="Search exercises"
-            placeholder="Search by name or target muscle..."
-            className="pl-11"
+            placeholder="Search exercises..."
+            className="h-10 pl-10"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -169,44 +145,33 @@ export default function ExercisesPage() {
             }}
           />
         </div>
-        {items && (
-          <p className="-mb-1 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-gold" aria-live="polite">
-            {activeTab === "all" ? all.data?.pagination.total ?? items.length : items.length} exercise
-            {(activeTab === "all" ? all.data?.pagination.total ?? items.length : items.length) === 1 ? "" : "s"}
-          </p>
-        )}
-        <ChipRow label="Muscle group">
-          <Chip active={!muscleGroup} onClick={() => (setMuscleGroup(undefined), resetPage())}>
+      </div>
+
+      <div className="glass-card mt-3 flex items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4">
+        <span className="hidden shrink-0 text-xs font-semibold uppercase tracking-[0.18em] text-muted sm:block">Muscle group</span>
+        <ChipSlider label="Muscle group">
+          <Chip active={!muscleGroup && !category} onClick={() => (setMuscleGroup(undefined), setCategory(undefined), resetPage())}>
             All
           </Chip>
           {MUSCLE_GROUPS.map((g) => (
-            <Chip key={g.key} active={muscleGroup === g.key} onClick={() => (setMuscleGroup(g.key), resetPage())}>
+            <Chip key={g.key} active={muscleGroup === g.key} onClick={() => (setMuscleGroup(muscleGroup === g.key ? undefined : g.key), resetPage())}>
               {g.label}
             </Chip>
           ))}
-        </ChipRow>
-        <ChipRow label="Difficulty">
-          <Chip active={!difficulty} onClick={() => (setDifficulty(undefined), resetPage())}>
-            Any
-          </Chip>
-          {DIFFICULTIES.map((d) => (
-            <Chip key={d} active={difficulty === d} onClick={() => (setDifficulty(d), resetPage())}>
-              {difficultyLabel(d)}
+          {/* Admin-defined categories ride along in the same slider. */}
+          {categories && categories.length > 0 && <span aria-hidden className="mx-1 w-px shrink-0 self-stretch bg-border" />}
+          {categories?.map((c) => (
+            <Chip key={c.id} active={category === c.slug} onClick={() => (setCategory(category === c.slug ? undefined : c.slug), resetPage())}>
+              {c.name}
             </Chip>
           ))}
-        </ChipRow>
-        {categories && categories.length > 0 && (
-          <ChipRow label="Category">
-            <Chip active={!category} onClick={() => (setCategory(undefined), resetPage())}>
-              All
-            </Chip>
-            {categories.map((c) => (
-              <Chip key={c.id} active={category === c.slug} onClick={() => (setCategory(c.slug), resetPage())}>
-                {c.name}
-              </Chip>
-            ))}
-          </ChipRow>
-        )}
+        </ChipSlider>
+        <MultiSelectMenu
+          label="Difficulty"
+          options={DIFFICULTIES.map((d) => ({ value: d, label: difficultyLabel(d) }))}
+          value={difficulty}
+          onChange={(next) => (setDifficulty(next), resetPage())}
+        />
       </div>
 
       {activeTab === "recent" && recent.data && recent.data.length > 0 && (

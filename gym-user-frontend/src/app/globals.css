@@ -201,3 +201,11 @@ h3 {
 .gold-glow {
   box-shadow: 0 0 15px rgba(229, 192, 123, 0.15);
 }
+
+/* Scrollable strips that rely on arrows/drag instead of a visible scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -67,6 +67,32 @@ test.describe("Public marketing pages", () => {
     await expect(page.getByRole("heading", { name: "Coach's tip" })).toBeVisible();
   });
 
+  test("difficulty filter takes several levels at once", async ({ page }) => {
+    await page.goto("/exercises");
+    await page.getByRole("button", { name: "Difficulty" }).click();
+    await page.getByLabel("Beginner").check();
+    await page.getByLabel("Advanced").check();
+    await expect(page.getByRole("button", { name: /Difficulty\s*2/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByLabel("Beginner")).toHaveCount(0);
+
+    const badges = page.locator("article").getByText(/^(Beginner|Intermediate|Advanced)$/);
+    await expect(badges.first()).toBeVisible();
+    for (const level of await badges.allInnerTexts()) expect(["BEGINNER", "ADVANCED"]).toContain(level.toUpperCase());
+  });
+
+  test("muscle group chips slide with arrows when they don't fit", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto("/exercises");
+    const right = page.getByRole("button", { name: "Scroll muscle group right" });
+    await expect(right).toBeVisible();
+    await expect(page.getByRole("button", { name: "Scroll muscle group left" })).toHaveCount(0);
+    await right.click();
+    await expect(page.getByRole("button", { name: "Scroll muscle group left" })).toBeVisible();
+    await page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Core" }).click();
+    await expect(page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Core" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   test("manifest, robots, and sitemap are served", async ({ page }) => {
     const manifest = await page.request.get("/manifest.webmanifest");
     expect(manifest.status()).toBe(200);

@@ -11,7 +11,11 @@ export const listExercisesSchema = z.object({
     search: z.string().optional(),
     category: z.string().optional(),
     equipment: z.string().optional(),
-    difficulty: difficultyEnum.optional(),
+    // One level or several, comma-separated: "BEGINNER,ADVANCED".
+    difficulty: z
+      .string()
+      .regex(/^(BEGINNER|INTERMEDIATE|ADVANCED)(,(BEGINNER|INTERMEDIATE|ADVANCED))*$/, 'Use BEGINNER, INTERMEDIATE and/or ADVANCED')
+      .optional(),
     targetMuscle: z.string().optional(),
     muscleGroup: z.enum(MUSCLE_GROUP_KEYS).optional(),
     workoutType: z.string().optional(),
