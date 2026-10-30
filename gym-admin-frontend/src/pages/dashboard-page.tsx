@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { getAdminDashboard, getDashboardAnalytics, type AnalyticsRange } from "@/lib/api";
 import { AreaChart, ColumnChart, DataTable, Donut, type DonutSegment } from "@/components/charts";
-import { formatCompact } from "@/lib/format";
+import { formatCompact, displayName } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -250,8 +250,8 @@ export function DashboardPage() {
                   {a.expiringSoon.map((m) => (
                     <li key={m.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                       <div className="min-w-0">
-                        <Link to={`/users?search=${encodeURIComponent(m.user.email)}`} className="block truncate text-sm font-medium hover:text-gold">
-                          {m.user.name || m.user.email}
+                        <Link to={`/users/${m.user.id}`} className="block truncate text-sm font-medium hover:text-gold">
+                          {displayName(m.user)}
                         </Link>
                         <p className="truncate text-xs text-muted">{m.plan.name}</p>
                       </div>

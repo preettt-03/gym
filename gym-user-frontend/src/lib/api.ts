@@ -144,3 +144,22 @@ export async function getDashboard() {
   const { data } = await apiClient.get<DashboardData>("/users/me/dashboard");
   return data;
 }
+
+// ---------- Mobile number sign-in ----------
+
+export type PhoneMode = "login" | "signup";
+
+export async function getAuthMethods() {
+  const { data } = await apiClient.get<{ email: boolean; phone: boolean; google: boolean }>("/auth/methods");
+  return data;
+}
+
+export async function sendPhoneOtp(input: { phone: string; mode: PhoneMode; name?: string }) {
+  const { data } = await apiClient.post<{ phone: string; cooldownSeconds: number }>("/auth/phone/send-otp", input);
+  return data;
+}
+
+export async function verifyPhoneOtp(input: { phone: string; mode: PhoneMode; code: string }) {
+  const { data } = await apiClient.post<AuthResponse>("/auth/phone/verify", input);
+  return data;
+}

@@ -212,7 +212,7 @@ export function MedicalCard({ member }: { member: MemberDetail }) {
   const [data, setData] = useState<MedicalDetails | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ conditions: "", allergies: "", notes: "" });
+  const [form, setForm] = useState({ conditions: "", injuries: "", allergies: "", notes: "" });
 
   const reveal = async () => {
     setBusy(true);
@@ -228,7 +228,12 @@ export function MedicalCard({ member }: { member: MemberDetail }) {
   const save = async () => {
     setBusy(true);
     try {
-      await updateMedical(member.id, { medicalConditions: splitList(form.conditions), allergies: splitList(form.allergies), medicalNotes: form.notes.trim() || null });
+      await updateMedical(member.id, {
+        medicalConditions: splitList(form.conditions),
+        injuries: splitList(form.injuries),
+        allergies: splitList(form.allergies),
+        medicalNotes: form.notes.trim() || null,
+      });
       setData(await revealMedical(member.id));
       setEditing(false);
       toast.show("Medical details saved");
@@ -254,7 +259,7 @@ export function MedicalCard({ member }: { member: MemberDetail }) {
       {!data ? (
         <div className="flex flex-col items-center rounded-xl border border-dashed border-border px-4 py-8 text-center">
           <ShieldCheck className="h-8 w-8 text-gold/60" />
-          <p className="mt-2 text-sm">Medical conditions, allergies and clearance notes are private.</p>
+          <p className="mt-2 text-sm">Blood group, conditions, injuries, allergies and clearance notes are private.</p>
           <p className="mt-1 text-xs text-muted">Viewing them is recorded with your name and the time.</p>
           <Button variant="glass" size="sm" className="mt-4" disabled={busy} onClick={reveal}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />} Show medical details
@@ -270,7 +275,8 @@ export function MedicalCard({ member }: { member: MemberDetail }) {
         >
           {(
             [
-              ["conditions", "Conditions / injuries", "e.g. Asthma, ACL repair (2023)"],
+              ["conditions", "Medical conditions", "e.g. Asthma, Diabetes"],
+              ["injuries", "Injuries / health issues", "e.g. ACL repair (2023), Lower back pain"],
               ["allergies", "Allergies", "e.g. Peanuts"],
             ] as const
           ).map(([key, label, ph]) => (
@@ -298,8 +304,13 @@ export function MedicalCard({ member }: { member: MemberDetail }) {
         </form>
       ) : (
         <div className="flex flex-col gap-3 text-sm">
+          <div>
+            <p className="text-xs text-muted">Blood group</p>
+            <p className="mt-0.5 font-semibold">{data.bloodGroup ?? "Not recorded"}</p>
+          </div>
           {[
-            ["Conditions / injuries", data.medicalConditions],
+            ["Medical conditions", data.medicalConditions],
+            ["Injuries / health issues", data.injuries],
             ["Allergies", data.allergies],
           ].map(([label, list]) => (
             <div key={label as string}>
@@ -326,7 +337,7 @@ export function MedicalCard({ member }: { member: MemberDetail }) {
             size="sm"
             className="self-start"
             onClick={() => {
-              setForm({ conditions: data.medicalConditions.join(", "), allergies: data.allergies.join(", "), notes: data.medicalNotes ?? "" });
+              setForm({ conditions: data.medicalConditions.join(", "), injuries: data.injuries.join(", "), allergies: data.allergies.join(", "), notes: data.medicalNotes ?? "" });
               setEditing(true);
             }}
           >

@@ -69,7 +69,7 @@ test.describe("Member CRM page", () => {
 
     // Medical details stay hidden until asked for.
     await page.getByRole("button", { name: "Show medical details" }).click();
-    await expect(page.getByText("Conditions / injuries")).toBeVisible();
+    await expect(page.getByText("Injuries / health issues")).toBeVisible();
 
     // Printable card with a QR code.
     await page.getByRole("button", { name: "Member card" }).click();

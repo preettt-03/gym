@@ -43,12 +43,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormAlert } from "@/components/ui/form-message";
 import { apiErrorMessage } from "@/hooks/use-toast";
 import { Pill, ReasonDialog } from "@/components/member/shared";
+import { displayName } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const TAG_SUGGESTIONS = ["VIP", "Fee pending", "Knee issue", "Back issue", "Morning batch", "Evening batch", "Student", "New joinee"];
 
 function firstName(m: MemberDetail) {
-  return (m.name ?? m.email).split(/[\s@]/)[0];
+  return displayName(m).split(/[\s@]/)[0];
 }
 
 // ---------------------------------------------------------------------------
@@ -170,12 +171,13 @@ function TagsEditor({ member }: { member: MemberDetail }) {
 
 // ---------------------------------------------------------------------------
 
-type ProfileForm = Record<"name" | "phone" | "age" | "gender" | "heightCm" | "targetWeightKg" | "emergencyContactName" | "emergencyContactPhone" | "emergencyContactRelation", string>;
+type ProfileForm = Record<"name" | "phone" | "alternatePhone" | "age" | "gender" | "heightCm" | "targetWeightKg" | "emergencyContactName" | "emergencyContactPhone" | "emergencyContactRelation", string>;
 
 function EditProfileDialog({ member, open, onClose }: { member: MemberDetail; open: boolean; onClose: () => void }) {
   const initial = (): ProfileForm => ({
     name: member.name ?? "",
     phone: member.phone ?? "",
+    alternatePhone: member.alternatePhone ?? "",
     age: member.age ? String(member.age) : "",
     gender: member.gender ?? "",
     heightCm: member.heightCm ? String(member.heightCm) : "",
@@ -211,6 +213,7 @@ function EditProfileDialog({ member, open, onClose }: { member: MemberDetail; op
       {
         name: form.name.trim(),
         phone: form.phone.trim() || null,
+        alternatePhone: form.alternatePhone.trim() || null,
         age: num(form.age),
         gender: (form.gender || null) as ProfileInput["gender"],
         heightCm: num(form.heightCm),
@@ -261,6 +264,7 @@ function EditProfileDialog({ member, open, onClose }: { member: MemberDetail; op
         <div className="grid gap-4 sm:grid-cols-2">
           {field("name", "Full name", { "data-autofocus": true, maxLength: 80 } as React.InputHTMLAttributes<HTMLInputElement>)}
           {field("phone", "Phone", { inputMode: "tel", placeholder: "+91 98765 43210" })}
+          {field("alternatePhone", "Alternate phone", { inputMode: "tel" })}
           {field("age", "Age", { inputMode: "numeric" })}
           <div>
             <label htmlFor="pf-gender" className="mb-1.5 block text-sm font-medium">
@@ -358,7 +362,7 @@ function SecurityMenu({ member, isSelf }: { member: MemberDetail; isSelf: boolea
       {open && (
         <div role="menu" className="absolute right-0 top-12 z-40 w-60 rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-black/60">
           {item(LogOut, "Sign out of all devices", () => setDanger("logout"))}
-          {!member.isEmailVerified && item(Mail, verify.isPending ? "Sending code…" : "Resend verification email", () => verify.mutate())}
+          {member.email && !member.isEmailVerified && item(Mail, verify.isPending ? "Sending code…" : "Resend verification email", () => verify.mutate())}
           {member.signInMethod === "PASSWORD" && item(KeyRound, "Send password reset", () => setDanger("reset"))}
           {member.accountStatus === "ACTIVE"
             ? item(ShieldAlert, "Suspend account", () => setDanger("suspend"), "danger")
@@ -424,25 +428,34 @@ export function MemberHeader({ member, isSelf, onAssignPlan, onPrintCard }: { me
           <Avatar name={member.name} email={member.email} photoUrl={member.photoUrl} size="lg" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-2xl font-bold uppercase">{member.name ?? member.email}</h1>
+              <h1 className="truncate text-2xl font-bold uppercase">{displayName(member)}</h1>
               <button type="button" onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted hover:bg-gold/10 hover:text-gold" aria-label="Edit member details">
                 <Pencil className="h-4 w-4" />
               </button>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
-              <a href={`mailto:${member.email}`} className="flex items-center gap-1.5 hover:text-gold">
-                <Mail className="h-3.5 w-3.5" /> {member.email}
-              </a>
+              {member.email && (
+                <a href={`mailto:${member.email}`} className="flex items-center gap-1.5 hover:text-gold">
+                  <Mail className="h-3.5 w-3.5" /> {member.email}
+                </a>
+              )}
               {member.phone ? (
                 <>
-                  <a href={`tel:${member.phone}`} className="flex items-center gap-1.5 hover:text-gold">
+                  <a href={`tel:${member.phone}`} className="flex items-center gap-1.5 hover:text-gold" title={member.isPhoneVerified ? "Verified by OTP" : "Not verified yet"}>
                     <Phone className="h-3.5 w-3.5" /> {member.phone}
+                    {member.isPhoneVerified && <BadgeCheck className="h-3.5 w-3.5 text-success" aria-label="verified" />}
                   </a>
                   <a href={whatsAppLink(member.phone, `Hi ${firstName(member)}, `)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-success hover:underline">
                     <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                   </a>
                 </>
-              ) : (
+              ) : null}
+              {member.alternatePhone && (
+                <a href={`tel:${member.alternatePhone}`} className="flex items-center gap-1.5 hover:text-gold">
+                  <Phone className="h-3.5 w-3.5" /> Alt: {member.alternatePhone}
+                </a>
+              )}
+              {!member.phone && (
                 <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-[#fab219] hover:underline">
                   <Phone className="h-3.5 w-3.5" /> Add phone number
                 </button>
@@ -451,10 +464,12 @@ export function MemberHeader({ member, isSelf, onAssignPlan, onPrintCard }: { me
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <RoleBadge role={member.role} />
               <StatusBadge status={member.accountStatus} />
-              <Pill tone={member.isEmailVerified ? "success" : "warning"}>
-                {member.isEmailVerified ? <BadgeCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-                {member.isEmailVerified ? "Email verified" : "Email not verified"}
-              </Pill>
+              {member.email && (
+                <Pill tone={member.isEmailVerified ? "success" : "warning"}>
+                  {member.isEmailVerified ? <BadgeCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                  {member.isEmailVerified ? "Email verified" : "Email not verified"}
+                </Pill>
+              )}
               <Pill tone={member.membership?.status === "ACTIVE" ? "gold" : "muted"}>{membershipLabel}</Pill>
             </div>
             <div className="mt-3">

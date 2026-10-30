@@ -37,7 +37,7 @@ interface PeriodTotal {
 interface DashboardPerson {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
 }
 
 export interface DashboardAnalytics {
@@ -75,12 +75,14 @@ export type AccountStatus = "ACTIVE" | "SUSPENDED" | "BANNED";
 export interface PersonRef {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
+  phone?: string | null;
 }
 
 export interface AdminUserListItem {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   name: string | null;
   role: Role;
   accountStatus: AccountStatus;
@@ -265,7 +267,7 @@ export interface AdminChatChannel {
   id: string;
   name: string | null;
   createdAt: string;
-  members: { user: { id: string; name: string | null; email: string } }[];
+  members: { user: { id: string; name: string | null; email: string | null } }[];
 }
 
 export async function listChannels() {
@@ -335,7 +337,7 @@ export interface AdminAttendanceItem {
   checkOutAt: string | null;
   durationMinutes: number | null;
   method: string;
-  user: { id: string; name: string | null; email: string };
+  user: { id: string; name: string | null; email: string | null; phone?: string | null };
 }
 
 export async function listAllAttendance() {

@@ -26,6 +26,7 @@ export function AccountMenu() {
   const { data: profile } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile, enabled: Boolean(user) });
   const name = profile?.name ?? user?.name;
   const email = profile?.email ?? user?.email;
+  const contact = email ?? profile?.phone ?? user?.phone;
 
   return (
     <div className="relative">
@@ -45,7 +46,7 @@ export function AccountMenu() {
             <Avatar photoUrl={profile?.photoUrl} name={name} email={email} size="md" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{name ?? "Member"}</p>
-              <p className="truncate text-xs text-muted">{email}</p>
+              <p className="truncate text-xs text-muted">{contact}</p>
             </div>
           </div>
           <div className="flex flex-col gap-1">

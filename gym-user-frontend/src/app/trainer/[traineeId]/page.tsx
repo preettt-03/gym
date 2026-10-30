@@ -108,7 +108,7 @@ function OverviewTab({ traineeId }: { traineeId: string }) {
       </Panel>
 
       <div className="flex flex-col gap-4">
-        {p && (p.medicalConditions.length > 0 || p.allergies.length > 0) ? (
+        {p && (p.medicalConditions.length > 0 || p.allergies.length > 0 || p.injuries.length > 0) ? (
           <section className="rounded-2xl border border-[#fab219]/40 bg-[#fab219]/5 p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold uppercase">
               <AlertTriangle className="h-5 w-5 text-[#fab219]" /> Safety notes
@@ -116,6 +116,11 @@ function OverviewTab({ traineeId }: { traineeId: string }) {
             {p.medicalConditions.length > 0 && (
               <p className="mt-3 text-sm">
                 <span className="font-semibold">Medical:</span> {p.medicalConditions.join(", ")}
+              </p>
+            )}
+            {p.injuries.length > 0 && (
+              <p className="mt-2 text-sm">
+                <span className="font-semibold">Injuries:</span> {p.injuries.join(", ")}
               </p>
             )}
             {p.allergies.length > 0 && (
@@ -529,14 +534,14 @@ function TraineeDetailContent() {
       <header className="mt-6 flex items-center gap-4">
         {p ? (
           <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold/15 font-display text-2xl text-gold">
-            {(p.name || p.email).charAt(0).toUpperCase()}
+            {(p.name || p.email || "M").charAt(0).toUpperCase()}
           </span>
         ) : (
           <Skeleton className="h-16 w-16 rounded-full" />
         )}
         <div className="min-w-0">
-          {p ? <h1 className="truncate text-3xl font-bold uppercase sm:text-4xl">{p.name || p.email}</h1> : <Skeleton className="h-9 w-56" />}
-          {p && <p className="truncate text-sm text-muted">{p.email} · member since {date.format(new Date(p.createdAt))}</p>}
+          {p ? <h1 className="truncate text-3xl font-bold uppercase sm:text-4xl">{p.name || p.email || p.phone}</h1> : <Skeleton className="h-9 w-56" />}
+          {p && <p className="truncate text-sm text-muted">{p.email ?? p.phone} · member since {date.format(new Date(p.createdAt))}</p>}
         </div>
       </header>
 

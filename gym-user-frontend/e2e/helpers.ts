@@ -96,3 +96,27 @@ export async function deleteTrainerAndTrainee(trainerEmail: string, traineeEmail
     await client.end();
   }
 }
+
+/** In dev the backend logs SMS codes instead of texting them; read the newest one for a number. */
+export async function getLatestSmsCode(phoneE164: string): Promise<string> {
+  const { execSync } = await import("node:child_process");
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const logs = execSync("docker logs gym-backend --since 2m 2>&1", { encoding: "utf8" });
+    const matches = [...logs.matchAll(new RegExp(`\\[sms:stub\\] to=\\${phoneE164} code=(\\d{6})`, "g"))];
+    if (matches.length) return matches.at(-1)![1];
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  throw new Error(`No SMS code logged for ${phoneE164}`);
+}
+
+export async function deleteUserByPhone(phoneE164: string) {
+  const client = new Client({ connectionString: DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query(`DELETE FROM users WHERE phone = $1`, [phoneE164]);
+  } finally {
+    await client.end();
+  }
+}
+
+export const randomIndianMobile = () => `9${Math.floor(100000000 + Math.random() * 899999999)}`;

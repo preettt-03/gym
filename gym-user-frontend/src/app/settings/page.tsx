@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { isAxiosError } from "axios";
-import { Bell, BellOff, Camera, CheckCircle2, KeyRound, Loader2, Mail, Ruler, Trash2, User } from "lucide-react";
-import { getMyProfile, removeProfilePhoto, updateMyProfile, uploadProfilePhoto, type UpdateProfileInput, type UserProfile } from "@/lib/profile-api";
+import { BadgeCheck, Bell, BellOff, Camera, CheckCircle2, HeartPulse, KeyRound, Loader2, Mail, MapPin, Ruler, ShieldCheck, Smartphone, Trash2, User } from "lucide-react";
+import { BLOOD_GROUPS, getMyProfile, removeMyPhone, removeProfilePhoto, updateMyProfile, uploadProfilePhoto, type UpdateProfileInput, type UserProfile } from "@/lib/profile-api";
+import { ChipsInput } from "@/components/member/chips-input";
+import { ContactDialog } from "@/components/member/contact-dialog";
 import { Avatar } from "@/components/avatar";
 import { getCurrentSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 import { RequireAuth } from "@/components/require-auth";
@@ -41,14 +43,47 @@ const schema = z.object({
   experienceLevel: z.string(),
   activityLevel: z.string(),
   gymName: z.string().trim().max(80, "Too long"),
+  dateOfBirth: z.string(),
+  bloodGroup: z.string(),
+  alternatePhone: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || v.replace(/\D/g, "").length >= 10, "Enter a 10-digit mobile number"),
+  addressLine1: z.string().trim().max(120, "Too long"),
+  addressLine2: z.string().trim().max(120, "Too long"),
+  city: z.string().trim().max(60, "Too long"),
+  state: z.string().trim().max(60, "Too long"),
+  postalCode: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^[A-Za-z0-9 -]{3,10}$/.test(v), "Enter a valid PIN code"),
+  country: z.string().trim().max(60, "Too long"),
+  medicalConditions: z.array(z.string()),
+  allergies: z.array(z.string()),
+  injuries: z.array(z.string()),
 });
 type FormValues = z.infer<typeof schema>;
 
 function toProfileInput(v: FormValues): UpdateProfileInput {
   const num = (s: string) => (s ? Number(s) : undefined);
+  // Empty optional details are sent as null so clearing a field actually clears it.
+  const text = (s: string) => s.trim() || null;
   return {
     name: v.name || undefined,
-    age: v.age ? Math.round(Number(v.age)) : undefined,
+    // With a date of birth the server keeps age up to date itself.
+    age: !v.dateOfBirth && v.age ? Math.round(Number(v.age)) : undefined,
+    dateOfBirth: v.dateOfBirth || null,
+    bloodGroup: v.bloodGroup || null,
+    alternatePhone: text(v.alternatePhone),
+    addressLine1: text(v.addressLine1),
+    addressLine2: text(v.addressLine2),
+    city: text(v.city),
+    state: text(v.state),
+    postalCode: text(v.postalCode),
+    country: text(v.country),
+    medicalConditions: v.medicalConditions,
+    allergies: v.allergies,
+    injuries: v.injuries,
     gender: (v.gender || undefined) as UpdateProfileInput["gender"],
     heightCm: num(v.heightCm),
     weightKg: num(v.weightKg),
@@ -211,6 +246,105 @@ function ProfilePhoto({ profile }: { profile: UserProfile }) {
   );
 }
 
+const yearsAgo = (n: number) => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - n);
+  return d.toISOString().slice(0, 10);
+};
+
+function ageFrom(dob: string) {
+  const [y, m, d] = dob.split("-").map(Number);
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age -= 1;
+  return age;
+}
+
+function Verified({ ok }: { ok: boolean }) {
+  return ok ? (
+    <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] text-success">
+      <BadgeCheck className="h-3 w-3" /> Verified
+    </span>
+  ) : (
+    <span className="rounded-full bg-[#fab219]/10 px-2 py-0.5 text-[11px] text-[#fab219]">Not verified</span>
+  );
+}
+
+// Email, mobile and Google — every way the member can sign in, each changed through a code.
+function SignInPanel({ profile }: { profile: UserProfile }) {
+  const queryClient = useQueryClient();
+  const [dialog, setDialog] = useState<"email" | "phone" | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const remove = useMutation({
+    mutationFn: removeMyPhone,
+    onSuccess: (user) => {
+      queryClient.setQueryData(PROFILE_KEY, user);
+      setConfirmRemove(false);
+    },
+  });
+  const canRemovePhone = Boolean(profile.email || profile.hasGoogle);
+
+  const row = (icon: React.ReactNode, label: string, value: string | null, verified: boolean, kind: "email" | "phone") => (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 first:pt-0">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted">{label}</p>
+        <p className="flex flex-wrap items-center gap-2 truncate text-sm font-medium">
+          {value ?? <span className="font-normal text-muted">Not added</span>}
+          {value && <Verified ok={verified} />}
+        </p>
+      </div>
+      <Button size="sm" variant="glass" onClick={() => setDialog(kind)}>
+        {value ? "Change" : "Add"}
+      </Button>
+    </li>
+  );
+
+  return (
+    <Panel icon={KeyRound} title="Sign-in & contact">
+      <ul className="divide-y divide-border">
+        {row(<Mail className="h-4 w-4" />, "Email", profile.email, profile.isEmailVerified, "email")}
+        {row(<Smartphone className="h-4 w-4" />, "Mobile number", profile.phone, profile.isPhoneVerified, "phone")}
+        {profile.hasGoogle && (
+          <li className="flex items-center gap-3 py-3 text-sm">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold/10 font-bold text-gold">G</span>
+            <span className="flex-1">Google account linked</span>
+            <Verified ok />
+          </li>
+        )}
+      </ul>
+      {profile.phone && canRemovePhone && (
+        <div className="mt-1 text-xs">
+          {confirmRemove ? (
+            <span className="flex flex-wrap items-center gap-2">
+              Remove this number? You won&apos;t be able to log in with it.
+              <Button size="sm" variant="destructive" className="h-7" disabled={remove.isPending} onClick={() => remove.mutate()}>
+                Remove
+              </Button>
+              <Button size="sm" variant="glass" className="h-7" onClick={() => setConfirmRemove(false)}>
+                Keep
+              </Button>
+            </span>
+          ) : (
+            <button type="button" onClick={() => setConfirmRemove(true)} className="text-muted hover:text-danger">
+              Remove mobile number
+            </button>
+          )}
+        </div>
+      )}
+      {profile.email && (
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="text-sm text-muted">To change your password we&apos;ll email you a reset code. You&apos;ll be signed out on every device.</p>
+          <Link href="/forgot-password" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-3")}>
+            Change password
+          </Link>
+        </div>
+      )}
+      {dialog && <ContactDialog kind={dialog} current={dialog === "email" ? profile.email : profile.phone} onClose={() => setDialog(null)} />}
+    </Panel>
+  );
+}
+
 function SettingsContent() {
   const queryClient = useQueryClient();
   const { data: profile, isPending } = useQuery({ queryKey: PROFILE_KEY, queryFn: getMyProfile });
@@ -236,6 +370,18 @@ function SettingsContent() {
       experienceLevel: profile.experienceLevel ?? "",
       activityLevel: profile.activityLevel ?? "",
       gymName: profile.gymName ?? "",
+      dateOfBirth: profile.dateOfBirth?.slice(0, 10) ?? "",
+      bloodGroup: profile.bloodGroup ?? "",
+      alternatePhone: profile.alternatePhone ?? "",
+      addressLine1: profile.addressLine1 ?? "",
+      addressLine2: profile.addressLine2 ?? "",
+      city: profile.city ?? "",
+      state: profile.state ?? "",
+      postalCode: profile.postalCode ?? "",
+      country: profile.country ?? "India",
+      medicalConditions: profile.medicalConditions ?? [],
+      allergies: profile.allergies ?? [],
+      injuries: profile.injuries ?? [],
     });
   }, [profile, reset]);
 
@@ -254,6 +400,11 @@ function SettingsContent() {
     "aria-describedby": `${name}-error`,
     ...register(name),
   });
+
+  const dateOfBirth = useWatch({ control, name: "dateOfBirth" });
+  const chips = (name: "medicalConditions" | "allergies" | "injuries", placeholder: string, suggestions: string[]) => (
+    <Controller control={control} name={name} render={({ field }) => <ChipsInput id={name} value={field.value ?? []} onChange={field.onChange} placeholder={placeholder} suggestions={suggestions} />} />
+  );
 
   const select = (name: keyof typeof OPTIONS, placeholder: string) => (
     <FormSelect
@@ -284,14 +435,54 @@ function SettingsContent() {
               <Field id="name" label="Name" error={errors.name?.message}>
                 <Input autoComplete="name" placeholder="Name" {...fieldProps("name")} />
               </Field>
-              <Field id="age" label="Age" error={errors.age?.message}>
-                <Input inputMode="numeric" placeholder="Age" {...fieldProps("age")} />
+              <Field id="dateOfBirth" label="Date of birth" hint={dateOfBirth ? `Age ${ageFrom(dateOfBirth)} — updates automatically.` : undefined}>
+                <Input type="date" min={yearsAgo(100)} max={yearsAgo(10)} {...fieldProps("dateOfBirth")} />
               </Field>
+              {!dateOfBirth && (
+                <Field id="age" label="Age" error={errors.age?.message} hint="Or add your date of birth instead.">
+                  <Input inputMode="numeric" placeholder="Age" {...fieldProps("age")} />
+                </Field>
+              )}
               <Field id="gender" label="Sex" hint="Used only for calorie and body-fat formulas.">
                 {select("gender", "Select")}
               </Field>
+              <Field id="bloodGroup" label="Blood group" hint="Useful to staff in an emergency.">
+                <FormSelect
+                  control={control}
+                  name="bloodGroup"
+                  id="bloodGroup"
+                  placeholder="Select"
+                  options={[{ value: "", label: "Not set" }, ...BLOOD_GROUPS.map((g) => ({ value: g, label: g }))]}
+                />
+              </Field>
+              <Field id="alternatePhone" label="Alternate mobile" error={errors.alternatePhone?.message} hint="A second number we can reach you on.">
+                <Input type="tel" inputMode="tel" placeholder="98765 43210" {...fieldProps("alternatePhone")} />
+              </Field>
               <Field id="gymName" label="Home gym" error={errors.gymName?.message}>
                 <Input placeholder="Gym name" {...fieldProps("gymName")} />
+              </Field>
+            </div>
+          </Panel>
+
+          <Panel icon={MapPin} title="Address">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field id="addressLine1" label="House / flat, street" error={errors.addressLine1?.message}>
+                <Input autoComplete="address-line1" placeholder="e.g. 12, MG Road" {...fieldProps("addressLine1")} />
+              </Field>
+              <Field id="addressLine2" label="Area / landmark" error={errors.addressLine2?.message}>
+                <Input autoComplete="address-line2" placeholder="e.g. Near Hanuman Mandir" {...fieldProps("addressLine2")} />
+              </Field>
+              <Field id="city" label="City / town" error={errors.city?.message}>
+                <Input autoComplete="address-level2" placeholder="e.g. Fatehabad" {...fieldProps("city")} />
+              </Field>
+              <Field id="state" label="State" error={errors.state?.message}>
+                <Input autoComplete="address-level1" placeholder="e.g. Madhya Pradesh" {...fieldProps("state")} />
+              </Field>
+              <Field id="postalCode" label="PIN code" error={errors.postalCode?.message}>
+                <Input autoComplete="postal-code" inputMode="numeric" placeholder="e.g. 453551" {...fieldProps("postalCode")} />
+              </Field>
+              <Field id="country" label="Country" error={errors.country?.message}>
+                <Input autoComplete="country-name" {...fieldProps("country")} />
               </Field>
             </div>
           </Panel>
@@ -315,6 +506,24 @@ function SettingsContent() {
               </Field>
               <Field id="activityLevel" label="Activity level">
                 {select("activityLevel", "Select")}
+              </Field>
+            </div>
+          </Panel>
+
+          <Panel icon={HeartPulse} title="Health">
+            <p className="-mt-1 mb-4 flex items-start gap-2 text-xs text-muted">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+              Private. Shared only with your trainer and, when needed, gym staff — so workouts and diet plans stay safe for you.
+            </p>
+            <div className="grid gap-4">
+              <Field id="medicalConditions" label="Medical conditions">
+                {chips("medicalConditions", "e.g. Asthma — press Enter to add", ["Asthma", "Diabetes", "High blood pressure", "Thyroid", "PCOS", "Heart condition"])}
+              </Field>
+              <Field id="injuries" label="Injuries / health issues">
+                {chips("injuries", "e.g. Lower back pain", ["Lower back pain", "Knee pain", "Shoulder injury", "Slip disc", "Neck pain"])}
+              </Field>
+              <Field id="allergies" label="Allergies">
+                {chips("allergies", "e.g. Peanuts", ["Peanuts", "Lactose", "Gluten", "Shellfish", "Eggs"])}
               </Field>
             </div>
           </Panel>
@@ -344,18 +553,7 @@ function SettingsContent() {
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <PushNotificationsPanel />
-        <Panel icon={KeyRound} title="Sign-in & security">
-          <p className="flex items-center gap-2 text-sm">
-            <Mail className="h-4 w-4 text-gold" /> {profile?.email ?? "—"}
-          </p>
-          <p className="mt-3 text-sm text-muted">To change your password we&apos;ll email you a reset code. You&apos;ll be signed out on every device.</p>
-          <Link
-            href="/forgot-password"
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-4")}
-          >
-            Change password
-          </Link>
-        </Panel>
+        {profile && <SignInPanel profile={profile} />}
       </div>
     </MemberPage>
   );

@@ -13,6 +13,15 @@ export interface MemberAlert {
 /** Everything the member page shows: the base detail plus CRM fields and insights. */
 export interface MemberDetail extends AdminUserDetail {
   phone: string | null;
+  isPhoneVerified: boolean;
+  alternatePhone: string | null;
+  dateOfBirth: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string | null;
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   emergencyContactRelation: string | null;
@@ -66,6 +75,7 @@ export interface ProfileInput {
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   emergencyContactRelation?: string | null;
+  alternatePhone?: string | null;
 }
 
 export const updateMemberProfile = (id: string, input: ProfileInput) => apiClient.patch(`${base(id)}/profile`, input);
@@ -147,11 +157,13 @@ export const deleteNote = (id: string, noteId: string) => apiClient.delete(`${ba
 export interface MedicalDetails {
   medicalConditions: string[];
   allergies: string[];
+  injuries: string[];
+  bloodGroup: string | null;
   medicalNotes: string | null;
   viewLog: { at: string; by: string }[];
 }
 export const revealMedical = (id: string) => apiClient.post<{ medical: MedicalDetails }>(`${base(id)}/medical/reveal`).then((r) => r.data.medical);
-export const updateMedical = (id: string, input: { medicalConditions?: string[]; allergies?: string[]; medicalNotes?: string | null }) =>
+export const updateMedical = (id: string, input: { medicalConditions?: string[]; allergies?: string[]; injuries?: string[]; medicalNotes?: string | null }) =>
   apiClient.patch(`${base(id)}/medical`, input);
 
 export interface TimelineItem {

@@ -38,16 +38,16 @@ function TraineeCard({ trainee }: { trainee: Trainee }) {
     <article className="glass-card card-hover relative flex h-full flex-col gap-4 p-5">
       <div className="flex items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold/15 font-display text-lg text-gold">
-          {(trainee.name || trainee.email).charAt(0).toUpperCase()}
+          {(trainee.name || trainee.email || "M").charAt(0).toUpperCase()}
         </span>
         <div className="min-w-0">
           <h2 className="truncate text-lg font-semibold">
             <Link href={`/trainer/${trainee.id}`} className="outline-none after:absolute after:inset-0 after:rounded-[inherit]">
-              {trainee.name || trainee.email}
+              {trainee.name || trainee.email || trainee.phone}
             </Link>
           </h2>
           <p className="truncate text-xs text-muted">
-            {[humanize(trainee.fitnessGoal), humanize(trainee.experienceLevel)].filter(Boolean).join(" · ") || trainee.email}
+            {[humanize(trainee.fitnessGoal), humanize(trainee.experienceLevel)].filter(Boolean).join(" · ") || trainee.email || trainee.phone}
           </p>
         </div>
       </div>
@@ -123,7 +123,7 @@ function TraineesContent() {
   const term = search.trim().toLowerCase();
   const needAttention = trainees?.filter((t) => attentionReasons(t).length > 0).length ?? 0;
   const visible = trainees
-    ?.filter((t) => !term || (t.name ?? "").toLowerCase().includes(term) || t.email.toLowerCase().includes(term))
+    ?.filter((t) => !term || (t.name ?? "").toLowerCase().includes(term) || (t.email ?? "").toLowerCase().includes(term))
     .filter((t) => !onlyAttention || attentionReasons(t).length > 0)
     .sort((a, b) => attentionReasons(b).length - attentionReasons(a).length);
 

@@ -7,6 +7,7 @@ import { getMemberDetail } from "@/lib/member-api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { humanize } from "@/lib/format";
+import { fmtDate } from "@/lib/member-ui";
 import { MemberHeader, RiskBanner } from "@/components/member/header";
 import { MembershipCard, PaymentsCard, RecordPaymentDialog } from "@/components/member/membership";
 import { AccessCard, AssignPlanDialog, FacilityCard, PlansCard, PtCard } from "@/components/member/training";
@@ -102,7 +103,7 @@ export function UserDetailPage() {
                     ["Goal", humanize(member.fitnessGoal)],
                     ["Experience", humanize(member.experienceLevel)],
                     ["Activity", humanize(member.activityLevel)],
-                    ["Age", member.age ? String(member.age) : "—"],
+                    ["Age", member.dateOfBirth ? `${member.age ?? "—"} (born ${fmtDate.format(new Date(member.dateOfBirth))})` : member.age ? String(member.age) : "—"],
                     ["Height", member.heightCm ? `${member.heightCm} cm` : "—"],
                     ["Target weight", member.targetWeightKg ? `${member.targetWeightKg} kg` : "—"],
                   ].map(([label, value]) => (
@@ -111,6 +112,12 @@ export function UserDetailPage() {
                       <dd className="truncate">{value}</dd>
                     </div>
                   ))}
+                  <div className="col-span-2 min-w-0">
+                    <dt className="text-xs text-muted">Address</dt>
+                    <dd className="whitespace-pre-line">
+                      {[member.addressLine1, member.addressLine2, [member.city, member.state, member.postalCode].filter(Boolean).join(", "), member.country].filter(Boolean).join("\n") || "—"}
+                    </dd>
+                  </div>
                 </dl>
               </Panel>
             </div>

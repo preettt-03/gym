@@ -3,7 +3,8 @@ import { persist } from "zustand/middleware";
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   name: string | null;
   role: "ADMIN" | "TRAINER" | "USER";
   isEmailVerified: boolean;

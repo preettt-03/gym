@@ -5,7 +5,8 @@ import type { DietPlanSummary } from "@/lib/diet-api";
 export interface Trainee {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   photoUrl: string | null;
   fitnessGoal: string | null;
   experienceLevel: string | null;
@@ -21,7 +22,8 @@ export interface Trainee {
 export interface TraineeProfile {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   photoUrl: string | null;
   age: number | null;
   gender: string | null;
@@ -33,6 +35,8 @@ export interface TraineeProfile {
   activityLevel: string | null;
   medicalConditions: string[];
   allergies: string[];
+  injuries: string[];
+  bloodGroup: string | null;
   createdAt: string;
 }
 

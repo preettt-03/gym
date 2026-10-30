@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormAlert } from "@/components/ui/form-message";
 import { apiErrorMessage } from "@/hooks/use-toast";
 import { Empty, Panel, Pill } from "@/components/member/shared";
-import { humanize, ROLE_LABEL } from "@/lib/format";
+import { displayName, humanize, ROLE_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -354,8 +354,8 @@ export function AccessCard({ member, isSelf }: { member: MemberDetail; isSelf: b
                   placeholder={trainers.isPending ? "Loading trainers..." : "No trainer"}
                   options={[
                     { value: "", label: "No trainer" },
-                    ...(member.trainer && !trainers.data?.items.some((t) => t.id === member.trainer!.id) ? [{ value: member.trainer.id, label: member.trainer.name ?? member.trainer.email }] : []),
-                    ...(trainers.data?.items.map((t) => ({ value: t.id, label: t.name ?? t.email })) ?? []),
+                    ...(member.trainer && !trainers.data?.items.some((t) => t.id === member.trainer!.id) ? [{ value: member.trainer.id, label: displayName(member.trainer) }] : []),
+                    ...(trainers.data?.items.map((t) => ({ value: t.id, label: displayName(t) })) ?? []),
                   ]}
                 />
                 <Button variant="glass" disabled={trainerId === (member.trainerId ?? "") || update.isPending} onClick={() => update.mutate({ trainerId: trainerId || null })}>

@@ -30,7 +30,8 @@ const envSchema = z.object({
   //   msg91  → MSG91_AUTH_KEY + MSG91_OTP_TEMPLATE_ID (DLT-approved template with an ##otp## variable)
   //   twilio → TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER
   // Unset outside production = codes are written to the server log instead.
-  SMS_PROVIDER: z.enum(['msg91', 'twilio']).optional(),
+  // An empty value (copied from .env.sample) means "not set".
+  SMS_PROVIDER: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['msg91', 'twilio']).optional()),
   MSG91_AUTH_KEY: z.string().optional(),
   MSG91_OTP_TEMPLATE_ID: z.string().optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),

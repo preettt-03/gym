@@ -15,3 +15,6 @@ export const STATUS_LABEL: Record<AccountStatus, string> = { ACTIVE: "Active", S
 // Enum-ish API values like WEIGHT_LOSS -> "Weight loss".
 export const humanize = (value: string | null | undefined) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, " ") : "—";
+
+/** Best label for a person: name, else email, else phone (mobile-only members have no email). */
+export const displayName = (p: { name: string | null; email?: string | null; phone?: string | null }) => p.name || p.email || p.phone || "Member";

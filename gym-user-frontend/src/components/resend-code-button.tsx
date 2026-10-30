@@ -14,9 +14,11 @@ const DEFAULT_COOLDOWN = 60;
 export function ResendCodeButton({
   onResend,
   startCoolingDown = false,
+  channel = "email",
 }: {
-  onResend: () => Promise<CodeSentResponse>;
+  onResend: () => Promise<CodeSentResponse | { cooldownSeconds: number }>;
   startCoolingDown?: boolean;
+  channel?: "email" | "sms";
 }) {
   const { remaining, start } = useCooldown(startCoolingDown ? DEFAULT_COOLDOWN : 0);
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
@@ -25,7 +27,7 @@ export function ResendCodeButton({
     mutationFn: onResend,
     onSuccess: (data) => {
       start(data.cooldownSeconds ?? DEFAULT_COOLDOWN);
-      setStatus({ ok: true, text: "A new code is on its way. Check your inbox and spam folder." });
+      setStatus({ ok: true, text: channel === "sms" ? "A new code is on its way by SMS." : "A new code is on its way. Check your inbox and spam folder." });
     },
     onError: (err) => {
       setStatus({

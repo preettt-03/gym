@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { Printer } from "lucide-react";
 import type { MemberDetail } from "@/lib/member-api";
 import { fmtDate, memberCode } from "@/lib/member-ui";
+import { displayName } from "@/lib/format";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
@@ -16,7 +17,7 @@ export function MemberCardDialog({ member, open, onClose }: { member: MemberDeta
   }, [open, member.id]);
 
   const m = member.membership;
-  const initials = (member.name ?? member.email).split(/[\s@]/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");
+  const initials = displayName(member).split(/[\s@]/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");
 
   return (
     <Dialog

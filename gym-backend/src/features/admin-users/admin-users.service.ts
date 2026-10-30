@@ -7,6 +7,7 @@ import { getMemberInsights } from '@/features/admin-users/member-crm.service';
 const LIST_SELECT = {
   id: true,
   email: true,
+  phone: true,
   name: true,
   role: true,
   accountStatus: true,
@@ -28,6 +29,8 @@ export async function listUsers(filters: UserFilters, pagination: PaginationPara
     where.OR = [
       { name: { contains: filters.search, mode: 'insensitive' } },
       { email: { contains: filters.search, mode: 'insensitive' } },
+      // Numbers are stored as +91XXXXXXXXXX; match on the digits typed.
+      ...(filters.search.replace(/\D/g, '').length >= 4 ? [{ phone: { contains: filters.search.replace(/\D/g, '') } }] : []),
     ];
   }
   if (filters.role) where.role = filters.role;

@@ -121,7 +121,7 @@ export async function getDashboardAnalytics(days: AnalyticsRange) {
         id: true,
         endDate: true,
         plan: { select: { name: true } },
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
       },
     }),
     prisma.payment.findMany({
@@ -134,7 +134,7 @@ export async function getDashboardAnalytics(days: AnalyticsRange) {
         currency: true,
         createdAt: true,
         plan: { select: { name: true } },
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
       },
     }),
   ]);

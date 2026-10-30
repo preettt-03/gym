@@ -10,7 +10,7 @@ export interface ChatRoom {
 }
 
 export interface DirectRoom extends ChatRoom {
-  otherUser: { id: string; name: string | null; email: string } | null;
+  otherUser: { id: string; name: string | null; email: string | null } | null;
 }
 
 export interface ChatMessage {
@@ -22,7 +22,7 @@ export interface ChatMessage {
   mediaUrl: string | null;
   isPinned: boolean;
   createdAt: string;
-  sender: { id: string; name: string | null; email: string; photoUrl: string | null };
+  sender: { id: string; name: string | null; email: string | null; photoUrl: string | null };
 }
 
 export async function listMyRooms() {

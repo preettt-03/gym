@@ -21,7 +21,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiErrorMessage, useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Avatar, RoleBadge, StatusBadge } from "@/components/user-badges";
-import { ROLE_LABEL, STATUS_LABEL } from "@/lib/format";
+import { ROLE_LABEL, STATUS_LABEL, displayName } from "@/lib/format";
 
 const ROLES: Role[] = ["USER", "TRAINER", "ADMIN"];
 const STATUSES: AccountStatus[] = ["ACTIVE", "SUSPENDED", "BANNED"];
@@ -170,10 +170,10 @@ export function UsersPage() {
                     <Avatar name={u.name} email={u.email} />
                     <div className="min-w-0">
                       <Link to={`/users/${u.id}`} className="block truncate font-medium hover:text-gold">
-                        {u.name ?? u.email}
+                        {displayName(u)}
                         {isSelf && <span className="ml-2 text-xs font-normal text-muted">(you)</span>}
                       </Link>
-                      <div className="truncate text-xs text-muted">{u.email}</div>
+                      <div className="truncate text-xs text-muted">{[u.email, u.phone].filter(Boolean).join(" · ")}</div>
                       {u.trainer && <div className="truncate text-xs text-muted">Trainer: {u.trainer.name ?? u.trainer.email}</div>}
                     </div>
                   </div>

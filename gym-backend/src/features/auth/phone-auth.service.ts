@@ -23,7 +23,7 @@ export async function sendPhoneOtp(rawPhone: string, mode: PhoneMode, name?: str
   const phone = requirePhone(rawPhone);
   const existing = await findByPhone(phone);
 
-  if (mode === 'login' && !existing) throw new AppError('No account with this number. Sign up instead.', 404, { code: 'USER_NOT_FOUND' });
+  if (mode === 'login' && !existing) throw new AppError('No user found with this number.', 404, { code: 'USER_NOT_FOUND' });
   if (mode === 'signup' && existing) throw new AppError('This number is already registered. Log in instead.', 409, { code: 'PHONE_TAKEN' });
   if (existing && existing.accountStatus !== 'ACTIVE') throw new AppError(`Account is ${existing.accountStatus.toLowerCase()}`, 403);
 
@@ -47,7 +47,7 @@ export async function verifyPhoneOtp(rawPhone: string, code: string, mode: Phone
       throw err;
     }
   } else {
-    if (!user) throw new AppError('No account with this number. Sign up instead.', 404, { code: 'USER_NOT_FOUND' });
+    if (!user) throw new AppError('No user found with this number.', 404, { code: 'USER_NOT_FOUND' });
     if (user.accountStatus !== 'ACTIVE') throw new AppError(`Account is ${user.accountStatus.toLowerCase()}`, 403);
     // Admin-entered numbers become verified the first time the member proves them.
     if (!user.isPhoneVerified) user = await prisma.user.update({ where: { id: user.id }, data: { isPhoneVerified: true } });

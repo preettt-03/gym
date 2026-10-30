@@ -17,14 +17,14 @@ export function StatusBadge({ status }: { status: AccountStatus }) {
   return <span className={cn("rounded-full px-2.5 py-1 text-xs", STATUS_STYLES[status])}>{STATUS_LABEL[status]}</span>;
 }
 
-export function Avatar({ name, email, photoUrl, size = "md" }: { name: string | null; email: string; photoUrl?: string | null; size?: "md" | "lg" }) {
+export function Avatar({ name, email, photoUrl, size = "md" }: { name: string | null; email: string | null; photoUrl?: string | null; size?: "md" | "lg" }) {
   const cls = size === "lg" ? "h-16 w-16 text-2xl" : "h-10 w-10";
   if (photoUrl) {
     return <img src={photoUrl} alt="" className={cn("shrink-0 rounded-full object-cover", cls)} />;
   }
   return (
     <span className={cn("flex shrink-0 items-center justify-center rounded-full bg-gold/15 font-display text-gold", cls)}>
-      {(name || email).charAt(0).toUpperCase()}
+      {(name || email || "M").charAt(0).toUpperCase()}
     </span>
   );
 }
