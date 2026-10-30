@@ -24,7 +24,10 @@ const MEMBER_LINKS = [
   { href: "/workout-plans", label: "Workouts" },
   { href: "/diet-plans", label: "Diet" },
   { href: "/nutrition", label: "Nutrition" },
+  { href: "/exercises", label: "Exercises" },
   { href: "/ai-coach", label: "AI Coach" },
+  // Members see their own plan plus the plans they can buy or renew.
+  { href: "/membership", label: "Plans" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -39,7 +42,6 @@ export function Navbar() {
   const primaryLinks = user
     ? [...MEMBER_LINKS, ...(user.role === "TRAINER" ? [{ href: "/trainer", label: "Trainees" }] : [])]
     : PUBLIC_LINKS;
-  const mobileLinks = user ? [...primaryLinks, { href: "/exercises", label: "Exercises" }] : primaryLinks;
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -55,14 +57,14 @@ export function Navbar() {
           <Logo preload />
         </Link>
 
-        <div className="hidden items-center gap-7 lg:flex">
+        <div className="hidden items-center gap-4 lg:flex xl:gap-7">
           {primaryLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               aria-current={isActive(pathname, link.href) ? "page" : undefined}
               className={cn(
-                "text-sm font-medium uppercase tracking-wider transition-colors hover:text-gold",
+                "whitespace-nowrap text-sm font-medium uppercase tracking-wider transition-colors hover:text-gold",
                 isActive(pathname, link.href) ? "text-gold" : "text-foreground/80"
               )}
             >
@@ -116,7 +118,7 @@ export function Navbar() {
       {mobileOpen && (
         <div id="mobile-menu" className="h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-border bg-background px-4 pb-10 pt-4 lg:hidden">
           <ul className="flex flex-col">
-            {[...mobileLinks, ...MARKETING_LINKS].map((link) => (
+            {[...primaryLinks, ...MARKETING_LINKS].map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
