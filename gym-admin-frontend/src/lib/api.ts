@@ -141,7 +141,7 @@ export async function getUserDetail(id: string) {
   return data.user;
 }
 
-export async function updateUser(id: string, patch: { role?: Role; accountStatus?: AccountStatus; trainerId?: string | null }) {
+export async function updateUser(id: string, patch: { role?: Role; accountStatus?: AccountStatus; trainerId?: string | null; reason?: string }) {
   const { data } = await apiClient.patch<{ user: AdminUserListItem }>(`/admin/users/${id}`, patch);
   return data.user;
 }
@@ -152,8 +152,9 @@ export async function sendPasswordReset(id: string) {
   return data;
 }
 
-export async function deleteUser(id: string) {
-  await apiClient.delete(`/admin/users/${id}`);
+// The reason isn't stored on the user; the audit log keeps it with the request.
+export async function deleteUser(id: string, reason?: string) {
+  await apiClient.delete(`/admin/users/${id}`, { data: reason ? { reason } : undefined });
 }
 
 export type Difficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";

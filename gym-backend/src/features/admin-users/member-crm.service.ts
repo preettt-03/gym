@@ -394,6 +394,7 @@ export async function updateMedical(id: string, data: { medicalConditions?: stri
 type TimelineItem = { id: string; kind: 'CHECK_IN' | 'WORKOUT' | 'PAYMENT' | 'PLAN' | 'PT' | 'ADMIN'; at: Date; title: string; detail?: string | null };
 
 const money = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const METHOD_LABEL: Record<string, string> = { CASH: 'Cash', UPI: 'UPI', CARD: 'Card', RAZORPAY: 'Razorpay', STRIPE: 'Stripe', WALLET: 'Wallet' };
 
 // Turns an audit entry about this member into a readable line; null = shown elsewhere / not interesting.
 function describeAdminAction(path: string, method: string, details: Prisma.JsonValue): string | null {
@@ -444,7 +445,7 @@ export async function getTimeline(id: string, before?: Date, limit = 25) {
   const items: TimelineItem[] = [
     ...visits.map((v) => ({ id: `v-${v.id}`, kind: 'CHECK_IN' as const, at: v.checkInAt, title: 'Checked in', detail: [v.method === 'ADMIN_APPROVED' ? 'at the desk' : v.method === 'QR' ? 'by QR' : 'by RFID', v.durationMinutes ? `${v.durationMinutes} min` : null].filter(Boolean).join(' · ') })),
     ...workouts.map((w) => ({ id: `w-${w.id}`, kind: 'WORKOUT' as const, at: w.completedAt!, title: 'Workout completed', detail: [w.plan?.title, w.day?.title].filter(Boolean).join(' · ') || null })),
-    ...payments.map((p) => ({ id: `p-${p.id}`, kind: 'PAYMENT' as const, at: p.createdAt, title: `${p.status === 'COMPLETED' ? 'Paid' : p.status.charAt(0) + p.status.slice(1).toLowerCase()} ${money(p.amount)}`, detail: `${p.plan.name} · ${p.gateway}` })),
+    ...payments.map((p) => ({ id: `p-${p.id}`, kind: 'PAYMENT' as const, at: p.createdAt, title: `${p.status === 'COMPLETED' ? 'Paid' : p.status.charAt(0) + p.status.slice(1).toLowerCase()} ${money(p.amount)}`, detail: `${p.plan.name} · ${METHOD_LABEL[p.gateway] ?? p.gateway}` })),
     ...workoutPlans.map((a) => ({ id: `wp-${a.id}`, kind: 'PLAN' as const, at: a.assignedAt, title: 'Workout plan assigned', detail: `${a.plan.title}${a.isActive ? '' : ' (later removed)'}` })),
     ...dietPlans.map((a) => ({ id: `dp-${a.id}`, kind: 'PLAN' as const, at: a.assignedAt, title: 'Diet plan assigned', detail: `${a.dietPlan.title}${a.isActive ? '' : ' (later removed)'}` })),
     ...pt.map((s) => ({ id: `pt-${s.id}`, kind: 'PT' as const, at: s.completedAt, title: 'PT session completed', detail: s.trainer ? `with ${s.trainer.name ?? s.trainer.email}` : null })),

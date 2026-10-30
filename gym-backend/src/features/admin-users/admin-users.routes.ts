@@ -45,7 +45,8 @@ adminUsersRouter.patch(
   validate(schemas.updateUserSchema),
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     if (req.body.role !== undefined || req.body.accountStatus !== undefined) forbidSelf(req, 'change the role or status of');
-    res.json({ user: await service.updateUser(req.params.id, req.body) });
+    const { reason: _reason, ...patch } = req.body;
+    res.json({ user: await service.updateUser(req.params.id, patch) });
   })
 );
 

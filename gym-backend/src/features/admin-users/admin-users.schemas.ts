@@ -20,6 +20,8 @@ export const updateUserSchema = z.object({
     role: z.enum(['ADMIN', 'TRAINER', 'USER']).optional(),
     accountStatus: z.enum(['ACTIVE', 'SUSPENDED', 'BANNED']).optional(),
     trainerId: z.string().uuid().nullable().optional(),
+    // Not stored on the user — kept so the audit log records why.
+    reason: z.string().trim().max(200).optional(),
   }),
 });
 
