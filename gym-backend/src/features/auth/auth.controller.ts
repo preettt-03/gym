@@ -53,8 +53,8 @@ export async function resendOtp(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-  const { email, password } = req.body;
-  const { user, accessToken, refreshToken } = await authService.login(email, password);
+  const { identifier, email, password } = req.body;
+  const { user, accessToken, refreshToken } = await authService.login(identifier ?? email, password);
   if (isAdminClient(req) && user.role !== 'ADMIN') {
     await authService.logout(refreshToken);
     throw new AppError('This account does not have admin access.', 403);
@@ -100,8 +100,22 @@ export async function googleLogin(req: Request, res: Response) {
 }
 
 export async function sendPhoneOtp(req: Request, res: Response) {
-  const { phone, mode, name } = req.body;
-  res.json(await phoneAuth.sendPhoneOtp(phone, mode, name));
+  const { phone, mode, name, password } = req.body;
+  res.json(await phoneAuth.sendPhoneOtp(phone, mode, name, password));
+}
+
+export async function sendLoginOtp(req: Request, res: Response) {
+  res.json(await phoneAuth.sendLoginOtp(req.body.identifier));
+}
+
+export async function verifyLoginOtp(req: Request, res: Response) {
+  const { user, accessToken, refreshToken } = await phoneAuth.verifyLoginOtp(req.body.identifier, req.body.code);
+  if (isAdminClient(req) && user.role !== 'ADMIN') {
+    await authService.logout(refreshToken);
+    throw new AppError('This account does not have admin access.', 403);
+  }
+  setRefreshCookie(req, res, refreshToken);
+  res.json({ user, accessToken });
 }
 
 export async function verifyPhoneOtp(req: Request, res: Response) {

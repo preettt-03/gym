@@ -8,6 +8,7 @@ import { AppError } from '@/middlewares/errorHandler';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@/lib/jwt';
 import { generateOtp, hashOtp } from '@/lib/otp';
 import { sendMail } from '@/lib/mailer';
+import { parseIdentifier } from '@/lib/identifier';
 import { redis } from '@/lib/redis';
 import { logger } from '@/config/logger';
 
@@ -15,7 +16,7 @@ const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const OTP_TTL_MS = 10 * 60 * 1000;
 export const OTP_RESEND_COOLDOWN_SECONDS = 60;
 const OTP_MAX_ATTEMPTS = 5;
-const PASSWORD_SALT_ROUNDS = 12;
+export const PASSWORD_SALT_ROUNDS = 12;
 
 const googleClient = env.GOOGLE_CLIENT_ID ? new OAuth2Client(env.GOOGLE_CLIENT_ID) : null;
 
@@ -219,24 +220,29 @@ async function clearFailedLogins(email: string) {
 
 // Errors carry a machine-readable `details.code` so the apps can react (link to
 // sign-up, show a countdown) without matching on message text.
-export async function login(email: string, password: string) {
-  const locked = await lockSecondsLeft(email);
+export async function login(rawIdentifier: string, password: string) {
+  // Email or mobile number in the same box; lock-outs key on the normalised value.
+  const id = parseIdentifier(rawIdentifier);
+  const key = id.value;
+  const locked = await lockSecondsLeft(key);
   if (locked) throw lockedError(locked);
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = id.kind === 'email' ? await prisma.user.findUnique({ where: { email: id.value } }) : await prisma.user.findFirst({ where: { phone: id.value, deletedAt: null } });
   if (!user || user.deletedAt) {
-    // Counted like a wrong password so hammering unknown emails gets locked too.
-    const { locked: nowLocked } = await recordFailedLogin(email);
+    // Counted like a wrong password so hammering unknown accounts gets locked too.
+    const { locked: nowLocked } = await recordFailedLogin(key);
     if (nowLocked) throw lockedError(LOGIN_LOCK_SECONDS);
     throw new AppError('No user found with this account.', 404, { code: 'USER_NOT_FOUND' });
   }
   if (!user.passwordHash) {
-    throw new AppError('This account uses Google sign-in. Continue with Google instead.', 400, { code: 'GOOGLE_ACCOUNT' });
+    throw user.googleId
+      ? new AppError('This account uses Google sign-in. Continue with Google instead.', 400, { code: 'GOOGLE_ACCOUNT' })
+      : new AppError('No password set for this account — log in with a one-time code instead.', 400, { code: 'NO_PASSWORD' });
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
-    const { attemptsLeft, locked: nowLocked } = await recordFailedLogin(email);
+    const { attemptsLeft, locked: nowLocked } = await recordFailedLogin(key);
     if (nowLocked) throw lockedError(LOGIN_LOCK_SECONDS);
     throw new AppError(
       `Incorrect password. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left before a ${LOGIN_LOCK_SECONDS}-second lock.`,
@@ -244,9 +250,10 @@ export async function login(email: string, password: string) {
       { code: 'WRONG_PASSWORD', attemptsLeft }
     );
   }
-  await clearFailedLogins(email);
+  await clearFailedLogins(key);
 
-  if (!user.isEmailVerified) throw new AppError('Email not verified', 403, { code: 'EMAIL_NOT_VERIFIED' });
+  // Mobile sign-ups prove their number before the account exists; email ones verify after.
+  if (id.kind === 'email' && !user.isEmailVerified) throw new AppError('Email not verified', 403, { code: 'EMAIL_NOT_VERIFIED' });
   if (user.accountStatus !== 'ACTIVE') {
     throw new AppError(`Account is ${user.accountStatus.toLowerCase()}`, 403, { code: 'ACCOUNT_INACTIVE' });
   }

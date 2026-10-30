@@ -9,7 +9,7 @@ const ADMIN_PASSWORD = "Admin@12345";
 test.describe("Authenticated feature pages", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(ADMIN_EMAIL);
+    await page.getByLabel("Email or mobile number").fill(ADMIN_EMAIL);
     await page.getByPlaceholder("Password").fill(ADMIN_PASSWORD);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);

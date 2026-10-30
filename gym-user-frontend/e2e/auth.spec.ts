@@ -12,7 +12,7 @@ test.describe("Registration and login", () => {
   test("registers, verifies email via OTP, and reaches the dashboard", async ({ page }) => {
     await page.goto("/register");
     await page.getByPlaceholder("Full name").fill("E2E Tester");
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByLabel("Email or mobile number").fill(email);
     await page.getByPlaceholder("Password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
 
@@ -29,7 +29,7 @@ test.describe("Registration and login", () => {
 
   test("rejects login with a wrong password", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByLabel("Email or mobile number").fill(email);
     await page.getByPlaceholder("Password").fill("WrongPassword123");
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
@@ -39,7 +39,7 @@ test.describe("Registration and login", () => {
 
   test("says when no account exists for the email", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(uniqueTestEmail("nobody"));
+    await page.getByLabel("Email or mobile number").fill(uniqueTestEmail("nobody"));
     await page.getByPlaceholder("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
@@ -50,7 +50,7 @@ test.describe("Registration and login", () => {
     await page.goto("/login");
     const submit = page.locator("form").getByRole("button", { name: "Log in" });
     for (let i = 0; i < 3; i++) {
-      await page.getByPlaceholder("Email").fill(uniqueTestEmail(`nobody-${i}`));
+      await page.getByLabel("Email or mobile number").fill(uniqueTestEmail(`nobody-${i}`));
       await page.getByPlaceholder("Password").fill(password);
       await submit.click();
       if (i < 2) await expect(page.getByText("No user found with this account.")).toBeVisible();
@@ -63,7 +63,7 @@ test.describe("Registration and login", () => {
 
   test("logs in with the correct password and reaches the dashboard", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByLabel("Email or mobile number").fill(email);
     await page.getByPlaceholder("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
@@ -93,7 +93,7 @@ test.describe("Registration and login", () => {
     await expect(page).toHaveURL(/\/login\?reset=1/);
     await expect(page.getByText("Password updated")).toBeVisible();
 
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByLabel("Email or mobile number").fill(email);
     await page.getByPlaceholder("Password").fill(newPassword);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
@@ -107,7 +107,7 @@ test.describe("Registration and login", () => {
   // Runs last: it leaves this account locked for 30 seconds.
   test("locks login for 30 seconds after three wrong passwords", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByLabel("Email or mobile number").fill(email);
     const submit = page.locator("form").getByRole("button", { name: "Log in" });
     for (const left of [/2 attempts left/, /1 attempt left/]) {
       await page.getByPlaceholder("Password").fill("WrongPassword123");

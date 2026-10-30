@@ -18,7 +18,7 @@ test.describe("Trainer panel", () => {
 
   test("coach sees the trainee, reviews tabs and keeps a private note", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(trainerEmail);
+    await page.getByLabel("Email or mobile number").fill(trainerEmail);
     await page.getByPlaceholder("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
@@ -48,7 +48,7 @@ test.describe("Trainer panel", () => {
 
   test("members can't open the trainer area", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(traineeEmail);
+    await page.getByLabel("Email or mobile number").fill(traineeEmail);
     await page.getByPlaceholder("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);

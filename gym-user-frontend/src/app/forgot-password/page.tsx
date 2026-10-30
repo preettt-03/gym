@@ -68,6 +68,10 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
+      <p className="mt-4 text-xs text-muted">
+        Signed up with a mobile number? Choose <span className="font-semibold text-foreground">“Log in with a one-time code”</span> on the log-in page — we&apos;ll text you a code instead.
+      </p>
+
       <Link href="/login" className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-gold">
         <ArrowLeft className="h-4 w-4" /> Back to log in
       </Link>

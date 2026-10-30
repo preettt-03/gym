@@ -9,16 +9,13 @@ test.describe("Mobile number sign-up and login", () => {
     await deleteUserByPhone(e164);
   });
 
-  test("signs up with a mobile number, then logs back in with an SMS code", async ({ page }) => {
+  test("signs up with a mobile number and password, then logs in with either", async ({ page }) => {
     await page.goto("/register");
-    await page.getByRole("tab", { name: "Mobile number" }).click();
-    await page.getByRole("button", { name: "Send code" }).click();
-    await expect(page.getByText("Name is required")).toBeVisible();
-
     await page.getByLabel("Full name").fill("E2E Phone Member");
-    await page.getByLabel("Mobile number").fill(mobile);
-    await page.getByRole("button", { name: "Send code" }).click();
-    await expect(page.getByText(/We sent a 6-digit code/)).toBeVisible();
+    await page.getByLabel("Email or mobile number").fill(mobile);
+    await page.getByPlaceholder("Password").fill("MobilePass123");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page.getByText(/We sent a 6-digit code by SMS/)).toBeVisible();
 
     await page.getByLabel("Verification code").fill("000000");
     await page.getByRole("button", { name: "Verify & create account" }).click();
@@ -29,12 +26,23 @@ test.describe("Mobile number sign-up and login", () => {
     await expect(page).toHaveURL(/\/settings/);
     await expect(page.getByText(e164)).toBeVisible();
 
-    // Log out and back in with the number.
+    // Mobile number + password, from the same box an email would go in.
     await page.getByRole("button", { name: "Account menu" }).click();
     await page.getByRole("button", { name: /Log out/i }).click();
-    await page.goto("/login?method=phone");
-    await page.getByLabel("Mobile number").fill(`+91 ${mobile}`);
-    await page.getByRole("button", { name: "Send code" }).click();
+    await page.goto("/login");
+    await page.getByLabel("Email or mobile number").fill(`+91 ${mobile}`);
+    await page.getByPlaceholder("Password").fill("MobilePass123");
+    await page.locator("form").getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    // …or with a one-time code instead of the password.
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("button", { name: /Log out/i }).click();
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Log in with a one-time code instead" }).click();
+    await expect(page.getByPlaceholder("Password")).toHaveCount(0);
+    await page.getByLabel("Email or mobile number").fill(mobile);
+    await page.getByRole("button", { name: "Send login code" }).click();
     await page.getByLabel("Verification code").fill(await getLatestSmsCode(e164));
     await page.getByRole("button", { name: "Verify & log in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
@@ -42,10 +50,10 @@ test.describe("Mobile number sign-up and login", () => {
 
   test("tells you when no account uses the number", async ({ page }) => {
     await page.goto("/login");
-    await page.getByRole("tab", { name: "Mobile number" }).click();
-    await page.getByLabel("Mobile number").fill(randomIndianMobile());
-    await page.getByRole("button", { name: "Send code" }).click();
-    await expect(page.getByText("No user found with this number.")).toBeVisible();
+    await page.getByLabel("Email or mobile number").fill(randomIndianMobile());
+    await page.getByPlaceholder("Password").fill("Whatever123");
+    await page.locator("form").getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByText("No user found with this account.")).toBeVisible();
   });
 });
 
@@ -62,7 +70,7 @@ test.describe("Profile details", () => {
 
   test("saves date of birth, blood group, address and health details", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByLabel("Email or mobile number").fill(email);
     await page.getByPlaceholder("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Log in" }).click();
     await page.waitForURL(/dashboard/);

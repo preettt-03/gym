@@ -33,12 +33,15 @@ describe('Mobile number sign-in and contact changes', () => {
   });
 
   it('signs up with just a mobile number', async () => {
-    const send = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: `${mobile.slice(0, 5)} ${mobile.slice(5)}`, mode: 'signup', name: 'Phone Person' });
+    const noPassword = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: mobile, mode: 'signup', name: 'Phone Person' });
+    expect(noPassword.status).toBe(422);
+
+    const send = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: `${mobile.slice(0, 5)} ${mobile.slice(5)}`, mode: 'signup', name: 'Phone Person', password: 'MobilePass123' });
     expect(send.status).toBe(200);
     expect(send.body).toMatchObject({ cooldownSeconds: 60 });
     expect(send.body.phone).toMatch(/•+.*\d{4}$/);
 
-    const again = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: mobile, mode: 'signup', name: 'Phone Person' });
+    const again = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: mobile, mode: 'signup', name: 'Phone Person', password: 'MobilePass123' });
     expect(again.status).toBe(429);
 
     const wrong = await request(app).post('/api/v1/auth/phone/verify').send({ phone: mobile, mode: 'signup', code: '000000' });
@@ -58,7 +61,7 @@ describe('Mobile number sign-in and contact changes', () => {
 
   it('logs in by OTP, and refuses unknown or duplicate numbers', async () => {
     await clearCooldowns(e164);
-    expect((await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: mobile, mode: 'signup', name: 'Again' })).status).toBe(409);
+    expect((await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: mobile, mode: 'signup', name: 'Again', password: 'Whatever123' })).status).toBe(409);
     const unknown = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: randomMobile(), mode: 'login' });
     expect(unknown.status).toBe(404);
     expect(unknown.body.error.details.code).toBe('USER_NOT_FOUND');
@@ -69,6 +72,29 @@ describe('Mobile number sign-in and contact changes', () => {
     const res = await request(app).post('/api/v1/auth/phone/verify').send({ phone: mobile, mode: 'login', code });
     expect(res.status).toBe(200);
     expect(res.body.user.id).toBe(userId);
+  });
+
+  it('logs in with mobile number and password, from one email-or-mobile box', async () => {
+    const res = await request(app).post('/api/v1/auth/login').send({ identifier: `+91 ${mobile}`, password: 'MobilePass123' });
+    expect(res.status).toBe(200);
+    expect(res.body.user.id).toBe(userId);
+    const wrong = await request(app).post('/api/v1/auth/login').send({ identifier: mobile, password: 'nope-nope' });
+    expect(wrong.body.error.details).toMatchObject({ code: 'WRONG_PASSWORD', attemptsLeft: 2 });
+    await redis.del(`login:fail:${e164}`);
+    expect((await request(app).post('/api/v1/auth/login').send({ identifier: 'not-a-thing', password: 'x' })).status).toBe(422);
+  });
+
+  it('logs in with a one-time code sent to the mobile number instead of the password', async () => {
+    await clearCooldowns(e164);
+    const sent = await request(app).post('/api/v1/auth/otp/send').send({ identifier: mobile });
+    expect(sent.status).toBe(200);
+    expect(sent.body).toMatchObject({ channel: 'sms', cooldownSeconds: 60 });
+    const code = await pinCode('otp-login', e164);
+    const res = await request(app).post('/api/v1/auth/otp/verify').send({ identifier: mobile, code });
+    expect(res.status).toBe(200);
+    expect(res.body.user.id).toBe(userId);
+    const unknown = await request(app).post('/api/v1/auth/otp/send').send({ identifier: randomMobile() });
+    expect(unknown.body.error.details.code).toBe('USER_NOT_FOUND');
   });
 
   it('burns a code after five wrong guesses', async () => {
@@ -128,6 +154,24 @@ describe('Mobile number sign-in and contact changes', () => {
     expect(res.status).toBe(409);
     await prisma.user.delete({ where: { id: onlyPhone.id } });
     await deleteTestUser(other.email!);
+  });
+
+  it('emails a login code to email accounts and tells password-less accounts to use one', async () => {
+    const email = uniqueTestEmail('otp-email');
+    extraEmails.push(email);
+    await prisma.user.create({ data: { email, role: Role.USER, isEmailVerified: false } });
+    const noPassword = await request(app).post('/api/v1/auth/login').send({ identifier: email, password: 'Anything123' });
+    expect(noPassword.body.error.details.code).toBe('NO_PASSWORD');
+
+    const sent = await request(app).post('/api/v1/auth/otp/send').send({ identifier: email });
+    expect(sent.body).toMatchObject({ channel: 'email' });
+    expect(sent.body.sentTo).toMatch(/•+@example\.com$/);
+    const code = await pinCode('otp-login', email);
+    const res = await request(app).post('/api/v1/auth/otp/verify').send({ identifier: email, code });
+    expect(res.status).toBe(200);
+    // Getting the code proves the email.
+    expect((await prisma.user.findUniqueOrThrow({ where: { email } })).isEmailVerified).toBe(true);
+    await clearCooldowns(email);
   });
 
   it('reports which sign-in methods are available', async () => {

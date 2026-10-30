@@ -21,3 +21,5 @@ authRouter.post('/google', validate(schemas.googleLoginSchema), asyncHandler(con
 authRouter.get('/methods', asyncHandler(controller.methods));
 authRouter.post('/phone/send-otp', validate(schemas.phoneSendOtpSchema), asyncHandler(controller.sendPhoneOtp));
 authRouter.post('/phone/verify', validate(schemas.phoneVerifySchema), asyncHandler(controller.verifyPhoneOtp));
+authRouter.post('/otp/send', validate(schemas.otpLoginSendSchema), asyncHandler(controller.sendLoginOtp));
+authRouter.post('/otp/verify', validate(schemas.otpLoginVerifySchema), asyncHandler(controller.verifyLoginOtp));

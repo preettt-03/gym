@@ -16,7 +16,8 @@ export async function verifyEmail(input: { email: string; code: string }) {
   return data;
 }
 
-export async function loginUser(input: { email: string; password: string }) {
+// `identifier` is whatever the member typed: an email or a mobile number.
+export async function loginUser(input: { identifier: string; password: string }) {
   const { data } = await apiClient.post<AuthResponse>("/auth/login", input);
   return data;
 }
@@ -154,7 +155,7 @@ export async function getAuthMethods() {
   return data;
 }
 
-export async function sendPhoneOtp(input: { phone: string; mode: PhoneMode; name?: string }) {
+export async function sendPhoneOtp(input: { phone: string; mode: PhoneMode; name?: string; password?: string }) {
   const { data } = await apiClient.post<{ phone: string; cooldownSeconds: number }>("/auth/phone/send-otp", input);
   return data;
 }
@@ -163,3 +164,24 @@ export async function verifyPhoneOtp(input: { phone: string; mode: PhoneMode; co
   const { data } = await apiClient.post<AuthResponse>("/auth/phone/verify", input);
   return data;
 }
+
+// ---------- One-time-code login (email or mobile) ----------
+
+export interface CodeSent {
+  channel: "email" | "sms";
+  sentTo: string;
+  cooldownSeconds: number;
+}
+
+export async function sendLoginOtp(identifier: string) {
+  const { data } = await apiClient.post<CodeSent>("/auth/otp/send", { identifier });
+  return data;
+}
+
+export async function verifyLoginOtp(identifier: string, code: string) {
+  const { data } = await apiClient.post<AuthResponse>("/auth/otp/verify", { identifier, code });
+  return data;
+}
+
+/** The sign-in box takes either; anything with an @ is treated as an email. */
+export const isEmailIdentifier = (value: string) => value.includes("@");

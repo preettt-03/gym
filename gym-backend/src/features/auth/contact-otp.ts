@@ -6,7 +6,7 @@ import { AppError } from '@/middlewares/errorHandler';
 // One-time codes for proving a phone number or email that isn't on an account
 // yet (mobile sign-up / sign-in, adding a number, changing an email). Kept in
 // Redis — nothing touches the users table until the code checks out.
-export type ContactPurpose = 'phone-login' | 'phone-signup' | 'add-phone' | 'change-email';
+export type ContactPurpose = 'phone-login' | 'phone-signup' | 'add-phone' | 'change-email' | 'otp-login';
 
 const TTL_SECONDS = 10 * 60;
 export const CONTACT_OTP_COOLDOWN_SECONDS = 60;
