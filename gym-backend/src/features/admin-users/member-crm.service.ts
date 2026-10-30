@@ -160,9 +160,17 @@ export async function getMemberInsights(id: string, createdAt: Date) {
 // Profile, tags, locker / RFID
 // ---------------------------------------------------------------------------
 
-export async function updateMemberProfile(id: string, data: Prisma.UserUpdateInput) {
+export async function updateMemberProfile(id: string, data: Prisma.UserUpdateInput & { phone?: string | null }) {
   await assertMember(id);
-  await prisma.user.update({ where: { id }, data });
+  const current = await prisma.user.findUniqueOrThrow({ where: { id }, select: { phone: true } });
+  // A number typed in at the desk is unproven until the member logs in with it.
+  const phoneChanged = data.phone !== undefined && data.phone !== current.phone;
+  try {
+    await prisma.user.update({ where: { id }, data: { ...data, ...(phoneChanged ? { isPhoneVerified: false } : {}) } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') throw new AppError('This phone number belongs to another member', 409);
+    throw err;
+  }
 }
 
 /** Trimmed, de-duplicated (case-insensitively) tag list. */
@@ -332,6 +340,7 @@ export async function revokeSessions(id: string) {
 
 export async function resendVerification(id: string) {
   const user = await assertMember(id);
+  if (!user.email) throw new AppError('This member has no email address', 409);
   if (user.isEmailVerified) throw new AppError('This email is already verified', 409);
   await resendOtp(user.email, OtpPurpose.EMAIL_VERIFICATION);
   return user.email;
@@ -371,7 +380,7 @@ export async function deleteNote(id: string, noteId: string) {
 export async function revealMedical(id: string) {
   await assertMember(id);
   const [user, views] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id }, select: { medicalConditions: true, allergies: true, medicalNotes: true } }),
+    prisma.user.findUniqueOrThrow({ where: { id }, select: { medicalConditions: true, allergies: true, injuries: true, bloodGroup: true, medicalNotes: true } }),
     prisma.auditLog.findMany({
       where: { entityType: 'users', entityId: id, path: { endsWith: '/medical/reveal' }, statusCode: { lt: 400 } },
       orderBy: { createdAt: 'desc' },
@@ -382,7 +391,7 @@ export async function revealMedical(id: string) {
   return { ...user, viewLog: views.map((v) => ({ at: v.createdAt, by: v.admin.name ?? v.admin.email })) };
 }
 
-export async function updateMedical(id: string, data: { medicalConditions?: string[]; allergies?: string[]; medicalNotes?: string | null }) {
+export async function updateMedical(id: string, data: { medicalConditions?: string[]; allergies?: string[]; injuries?: string[]; medicalNotes?: string | null }) {
   await assertMember(id);
   await prisma.user.update({ where: { id }, data });
 }

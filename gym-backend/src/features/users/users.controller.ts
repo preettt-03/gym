@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthedRequest } from '@/middlewares/auth';
 import { AppError } from '@/middlewares/errorHandler';
 import * as service from '@/features/users/users.service';
+import * as contact from '@/features/auth/phone-auth.service';
 
 export async function me(req: AuthedRequest, res: Response) {
   const user = await service.getProfile(req.user!.id);
@@ -38,4 +39,27 @@ export async function uploadPhoto(req: AuthedRequest, res: Response) {
 export async function removePhoto(req: AuthedRequest, res: Response) {
   const user = await service.removeProfilePhoto(req.user!.id);
   res.json({ user });
+}
+
+export async function sendPhoneOtp(req: AuthedRequest, res: Response) {
+  res.json(await contact.sendAddPhoneOtp(req.user!.id, req.body.phone));
+}
+
+export async function verifyPhone(req: AuthedRequest, res: Response) {
+  await contact.verifyAddPhone(req.user!.id, req.body.phone, req.body.code);
+  res.json({ user: await service.getProfile(req.user!.id) });
+}
+
+export async function removePhone(req: AuthedRequest, res: Response) {
+  await contact.removePhone(req.user!.id);
+  res.json({ user: await service.getProfile(req.user!.id) });
+}
+
+export async function sendEmailOtp(req: AuthedRequest, res: Response) {
+  res.json(await contact.sendChangeEmailOtp(req.user!.id, req.body.email));
+}
+
+export async function verifyEmailChange(req: AuthedRequest, res: Response) {
+  await contact.verifyChangeEmail(req.user!.id, req.body.email, req.body.code);
+  res.json({ user: await service.getProfile(req.user!.id) });
 }

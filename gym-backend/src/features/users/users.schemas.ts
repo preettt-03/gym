@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizePhone } from '@/lib/phone';
 
 const genderEnum = z.enum(['MALE', 'FEMALE', 'OTHER']);
 const fitnessGoalEnum = z.enum(['WEIGHT_LOSS', 'MUSCLE_GAIN', 'MAINTENANCE', 'ENDURANCE', 'GENERAL_FITNESS']);
@@ -10,6 +11,23 @@ const activityLevelEnum = z.enum([
   'VERY_ACTIVE',
   'EXTRA_ACTIVE',
 ]);
+
+export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
+
+const healthList = z
+  .array(z.string().trim().max(80, 'Keep each item under 80 characters'))
+  .max(20, 'At most 20 items')
+  .transform((list) => [...new Set(list.filter(Boolean))]);
+const optionalText = (max: number) =>
+  z.string().trim().max(max).transform((v) => v || null).nullable().optional();
+
+/** Whole years from a YYYY-MM-DD date to today. */
+export function yearsSince(date: string, now = new Date()) {
+  const [y, m, d] = date.split('-').map(Number);
+  let age = now.getFullYear() - y;
+  if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age -= 1;
+  return age;
+}
 
 export const updateProfileSchema = z.object({
   body: z.object({
@@ -24,10 +42,50 @@ export const updateProfileSchema = z.object({
     activityLevel: activityLevelEnum.optional(),
     gymName: z.string().optional(),
     gymBranch: z.string().optional(),
-    medicalConditions: z.array(z.string()).optional(),
-    allergies: z.array(z.string()).optional(),
+    medicalConditions: healthList.optional(),
+    allergies: healthList.optional(),
+    injuries: healthList.optional(),
+    dateOfBirth: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+      .refine((d) => {
+        const age = yearsSince(d);
+        return age >= 10 && age <= 100;
+      }, 'Date of birth should make you between 10 and 100 years old')
+      .nullable()
+      .optional(),
+    bloodGroup: z.enum(BLOOD_GROUPS).nullable().optional(),
+    alternatePhone: z
+      .string()
+      .trim()
+      .transform((v, ctx) => {
+        if (!v) return null;
+        const phone = normalizePhone(v);
+        if (!phone) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid mobile number' });
+        return phone;
+      })
+      .nullable()
+      .optional(),
+    addressLine1: optionalText(120),
+    addressLine2: optionalText(120),
+    city: optionalText(60),
+    state: optionalText(60),
+    postalCode: z
+      .string()
+      .trim()
+      .regex(/^$|^[A-Za-z0-9 -]{3,10}$/, 'Enter a valid PIN / postal code')
+      .transform((v) => v || null)
+      .nullable()
+      .optional(),
+    country: optionalText(60),
   }),
 });
+
+const contactBody = { phone: z.string().trim().min(6, 'Enter the mobile number').max(20) };
+export const sendPhoneOtpSchema = z.object({ body: z.object(contactBody) });
+export const verifyPhoneSchema = z.object({ body: z.object({ ...contactBody, code: z.string().trim().length(6, 'Enter the 6-digit code') }) });
+export const sendEmailOtpSchema = z.object({ body: z.object({ email: z.string().trim().email('Enter a valid email') }) });
+export const verifyEmailChangeSchema = z.object({ body: z.object({ email: z.string().trim().email(), code: z.string().trim().length(6, 'Enter the 6-digit code') }) });
 
 export const logWeightSchema = z.object({
   body: z.object({

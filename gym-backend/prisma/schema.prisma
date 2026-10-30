@@ -49,7 +49,8 @@ enum ActivityLevel {
 
 model User {
   id            String    @id @default(uuid())
-  email         String    @unique
+  // Optional: members can sign up with just a mobile number.
+  email         String?   @unique
   passwordHash  String?
   googleId      String?   @unique
   name          String?
@@ -76,7 +77,20 @@ model User {
   medicalNotes      String?
 
   // Front-desk CRM details, managed from the admin member page.
-  phone                    String?
+  // E.164 (+919876543210). Unique because it doubles as a login.
+  phone                    String?  @unique
+  isPhoneVerified          Boolean  @default(false)
+  alternatePhone           String?
+  dateOfBirth              DateTime? @db.Date
+  bloodGroup               String?
+  // Member-reported injuries / health issues (alongside medicalConditions and allergies).
+  injuries                 String[] @default([])
+  addressLine1             String?
+  addressLine2             String?
+  city                     String?
+  state                    String?
+  postalCode               String?
+  country                  String?
   emergencyContactName     String?
   emergencyContactPhone    String?
   emergencyContactRelation String?

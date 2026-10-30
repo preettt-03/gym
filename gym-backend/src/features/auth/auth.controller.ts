@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { OtpPurpose } from '@prisma/client';
 import { env } from '@/config/env';
 import * as authService from '@/features/auth/auth.service';
+import * as phoneAuth from '@/features/auth/phone-auth.service';
+import { isPhoneAuthAvailable } from '@/lib/sms';
 import { AppError } from '@/middlewares/errorHandler';
 
 const REFRESH_COOKIE = 'refreshToken';
@@ -95,4 +97,25 @@ export async function googleLogin(req: Request, res: Response) {
   const { user, accessToken, refreshToken } = await authService.googleLogin(idToken);
   setRefreshCookie(req, res, refreshToken);
   res.json({ user, accessToken });
+}
+
+export async function sendPhoneOtp(req: Request, res: Response) {
+  const { phone, mode, name } = req.body;
+  res.json(await phoneAuth.sendPhoneOtp(phone, mode, name));
+}
+
+export async function verifyPhoneOtp(req: Request, res: Response) {
+  const { phone, mode, code } = req.body;
+  const { user, accessToken, refreshToken } = await phoneAuth.verifyPhoneOtp(phone, code, mode);
+  if (isAdminClient(req) && user.role !== 'ADMIN') {
+    await authService.logout(refreshToken);
+    throw new AppError('This account does not have admin access.', 403);
+  }
+  setRefreshCookie(req, res, refreshToken);
+  res.status(mode === 'signup' ? 201 : 200).json({ user, accessToken });
+}
+
+/** Lets the sign-in pages show only the methods that will actually work. */
+export async function methods(_req: Request, res: Response) {
+  res.json({ email: true, phone: isPhoneAuthAvailable, google: Boolean(env.GOOGLE_CLIENT_ID) });
 }

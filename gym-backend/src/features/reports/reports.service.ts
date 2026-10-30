@@ -9,7 +9,7 @@ interface DateRange {
 interface ReportData {
   title: string;
   headers: string[];
-  rows: (string | number)[][];
+  rows: (string | number | null)[][];
 }
 
 function dateWhere(field: string, range: DateRange): Prisma.DateTimeFilter | undefined {
@@ -135,7 +135,7 @@ export async function getDietReport(): Promise<ReportData> {
     orderBy: { createdAt: 'desc' },
   });
 
-  const rows: (string | number)[][] = [];
+  const rows: (string | number | null)[][] = [];
   for (const plan of plans) {
     if (plan.source === 'USER' && plan.owner) {
       rows.push([plan.title, plan.source, plan.owner.email, plan.estimatedCalories ?? '']);

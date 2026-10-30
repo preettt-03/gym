@@ -9,6 +9,7 @@ import { parsePagination } from '@/lib/pagination';
 import { buildInvoice } from '@/features/payments/payments.service';
 import { sendInvoicePdf } from '@/features/payments/invoice-pdf';
 import * as crm from '@/features/admin-users/member-crm.service';
+import { normalizePhone } from '@/lib/phone';
 
 // Front-desk CRM actions on one member: /api/v1/admin/users/:id/...
 // Every non-GET request here is written to the audit log (with its body, so
@@ -20,11 +21,15 @@ const idParams = z.object({ id: z.string().uuid() });
 const withBody = <T extends z.ZodTypeAny>(body: T) => validate(z.object({ params: idParams, body }));
 const idOnly = validate(z.object({ params: idParams }));
 
+// Same E.164 form the member app uses, so a desk-entered number works for OTP login.
 const phone = z
   .string()
   .trim()
-  .regex(/^\+?[0-9][0-9\s-]{6,17}$/, 'Enter a valid phone number, e.g. +91 98765 43210')
-  .transform((v) => v.replace(/[\s-]/g, ''));
+  .transform((v, ctx) => {
+    const normalized = normalizePhone(v);
+    if (!normalized) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid phone number, e.g. +91 98765 43210' });
+    return normalized ?? v;
+  });
 const optional = <T extends z.ZodTypeAny>(schema: T) => z.union([schema, z.literal('').transform(() => null), z.null()]).optional();
 const reason = z.string().trim().min(3, 'Give a short reason').max(200);
 const futureDate = z.coerce.date();
@@ -47,6 +52,8 @@ adminMemberCrmRouter.patch(
         emergencyContactName: optional(z.string().trim().max(80)),
         emergencyContactPhone: optional(phone),
         emergencyContactRelation: optional(z.string().trim().max(40)),
+        alternatePhone: optional(phone),
+        bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).nullable().optional(),
       })
       .refine((b) => Object.keys(b).length > 0, 'Nothing to update')
   ),
@@ -263,7 +270,7 @@ const healthList = z.array(z.string().trim().min(1).max(80)).max(20);
 
 adminMemberCrmRouter.patch(
   '/:id/medical',
-  withBody(z.object({ medicalConditions: healthList.optional(), allergies: healthList.optional(), medicalNotes: optional(z.string().trim().max(2000)) })),
+  withBody(z.object({ medicalConditions: healthList.optional(), allergies: healthList.optional(), injuries: healthList.optional(), medicalNotes: optional(z.string().trim().max(2000)) })),
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     await crm.updateMedical(req.params.id, req.body);
     res.json({ ok: true });

@@ -14,7 +14,7 @@ export async function getInvoice(userId: string, paymentId: string) {
 export async function buildInvoice(userId: string, paymentId: string) {
   const payment = await prisma.payment.findFirst({
     where: { id: paymentId, userId },
-    include: { plan: true, user: { select: { name: true, email: true } } },
+    include: { plan: true, user: { select: { name: true, email: true, phone: true } } },
   });
   if (!payment) throw new AppError('Payment not found', 404);
 

@@ -2,7 +2,7 @@ import { Response } from 'express';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 
-type Cell = string | number;
+type Cell = string | number | null;
 
 function escapeCsv(val: Cell) {
   const str = String(val ?? '');

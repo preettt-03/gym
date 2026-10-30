@@ -26,6 +26,17 @@ const envSchema = z.object({
 
   GOOGLE_CLIENT_ID: z.string().optional(),
 
+  // SMS for mobile-number sign-in. Pick a provider and fill in its keys:
+  //   msg91  → MSG91_AUTH_KEY + MSG91_OTP_TEMPLATE_ID (DLT-approved template with an ##otp## variable)
+  //   twilio → TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER
+  // Unset outside production = codes are written to the server log instead.
+  SMS_PROVIDER: z.enum(['msg91', 'twilio']).optional(),
+  MSG91_AUTH_KEY: z.string().optional(),
+  MSG91_OTP_TEMPLATE_ID: z.string().optional(),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_FROM_NUMBER: z.string().optional(),
+
   // Google AI Studio (Gemini) API key. Optional — AI features degrade gracefully
   // with a clear "AI features not configured" error when absent, rather than crashing.
   GEMINI_API_KEY: z.string().optional(),

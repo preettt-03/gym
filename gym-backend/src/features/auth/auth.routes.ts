@@ -18,3 +18,6 @@ authRouter.post('/logout', asyncHandler(controller.logout));
 authRouter.post('/forgot-password', validate(schemas.emailOnlySchema), asyncHandler(controller.forgotPassword));
 authRouter.post('/reset-password', validate(schemas.resetPasswordSchema), asyncHandler(controller.resetPassword));
 authRouter.post('/google', validate(schemas.googleLoginSchema), asyncHandler(controller.googleLogin));
+authRouter.get('/methods', asyncHandler(controller.methods));
+authRouter.post('/phone/send-otp', validate(schemas.phoneSendOtpSchema), asyncHandler(controller.sendPhoneOtp));
+authRouter.post('/phone/verify', validate(schemas.phoneVerifySchema), asyncHandler(controller.verifyPhoneOtp));

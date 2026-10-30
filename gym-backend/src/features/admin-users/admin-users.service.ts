@@ -93,6 +93,15 @@ export async function getUserDetail(id: string) {
       coins: true,
       updatedAt: true,
       phone: true,
+      isPhoneVerified: true,
+      alternatePhone: true,
+      dateOfBirth: true,
+      addressLine1: true,
+      addressLine2: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      country: true,
       emergencyContactName: true,
       emergencyContactPhone: true,
       emergencyContactRelation: true,
@@ -210,7 +219,8 @@ export async function deleteUser(id: string) {
   }
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }),
+    // Free the number (it's a login), the locker and the key fob for whoever comes next.
+    prisma.user.update({ where: { id }, data: { deletedAt: new Date(), phone: null, isPhoneVerified: false, lockerNumber: null, rfidTagId: null } }),
     prisma.refreshToken.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } }),
   ]);
 }

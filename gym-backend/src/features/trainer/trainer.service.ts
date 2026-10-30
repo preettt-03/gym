@@ -103,6 +103,8 @@ export async function getTraineeProfile(trainerId: string, traineeId: string) {
       experienceLevel: true,
       activityLevel: true,
       medicalConditions: true,
+      injuries: true,
+      bloodGroup: true,
       allergies: true,
       createdAt: true,
     },

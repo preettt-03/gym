@@ -19,7 +19,7 @@ const PASSWORD_SALT_ROUNDS = 12;
 
 const googleClient = env.GOOGLE_CLIENT_ID ? new OAuth2Client(env.GOOGLE_CLIENT_ID) : null;
 
-function sanitizeUser(user: User) {
+export function sanitizeUser(user: User) {
   const { passwordHash, ...rest } = user;
   return rest;
 }
@@ -30,7 +30,7 @@ function hashRefreshToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-async function issueTokens(user: Pick<User, 'id' | 'role'>) {
+export async function issueTokens(user: Pick<User, "id" | "role">) {
   const accessToken = signAccessToken({ sub: user.id, role: user.role });
   const refreshToken = signRefreshToken({ sub: user.id, role: user.role });
 
@@ -304,6 +304,7 @@ export async function sendAdminPasswordReset(userId: string) {
     throw new AppError('A reset email was sent less than a minute ago. Try again shortly.', 429);
   }
 
+  if (!user.email) throw new AppError('This member has no email — they sign in with their mobile number', 409);
   // Unlike self-service flows, the admin needs to know if the email didn't go out.
   const delivered = await issueOtp(user.id, user.email, OtpPurpose.PASSWORD_RESET, { waitForDelivery: true });
   if (!delivered) throw new AppError("Couldn't send the reset email. Check the mail settings and try again in a minute.", 502);
@@ -353,8 +354,10 @@ export async function googleLogin(idToken: string) {
         isEmailVerified: true,
       },
     });
-  } else if (!user.googleId) {
-    user = await prisma.user.update({ where: { id: user.id }, data: { googleId: payload.sub } });
+  } else {
+    if (user.deletedAt) throw new AppError('This account was removed. Contact the gym to restore it.', 403);
+    if (user.accountStatus !== 'ACTIVE') throw new AppError(`Account is ${user.accountStatus.toLowerCase()}`, 403);
+    if (!user.googleId) user = await prisma.user.update({ where: { id: user.id }, data: { googleId: payload.sub, isEmailVerified: true } });
   }
 
   const tokens = await issueTokens(user);

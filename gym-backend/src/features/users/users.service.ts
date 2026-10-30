@@ -5,6 +5,7 @@ import { env } from '@/config/env';
 import { UPLOAD_DIR } from '@/lib/upload';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
+import { yearsSince } from '@/features/users/users.schemas';
 import {
   bmiCategory,
   calculateBmi,
@@ -39,6 +40,19 @@ const PROFILE_SELECT = {
   allergies: true,
   coins: true,
   xp: true,
+  phone: true,
+  isPhoneVerified: true,
+  alternatePhone: true,
+  dateOfBirth: true,
+  bloodGroup: true,
+  injuries: true,
+  addressLine1: true,
+  addressLine2: true,
+  city: true,
+  state: true,
+  postalCode: true,
+  country: true,
+  googleId: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;
@@ -46,11 +60,20 @@ const PROFILE_SELECT = {
 export async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: PROFILE_SELECT });
   if (!user) throw new AppError('User not found', 404);
-  return user;
+  return present(user);
 }
 
-export async function updateProfile(userId: string, data: Prisma.UserUpdateInput) {
-  return prisma.user.update({ where: { id: userId }, data, select: PROFILE_SELECT });
+export async function updateProfile(userId: string, input: Prisma.UserUpdateInput & { dateOfBirth?: string | null }) {
+  const { dateOfBirth, ...data } = input;
+  // A date of birth keeps `age` (used by every calculator) correct automatically.
+  const dob = dateOfBirth === undefined ? {} : dateOfBirth === null ? { dateOfBirth: null } : { dateOfBirth: new Date(`${dateOfBirth}T00:00:00Z`), age: yearsSince(dateOfBirth) };
+  const user = await prisma.user.update({ where: { id: userId }, data: { ...data, ...dob }, select: PROFILE_SELECT });
+  return present(user);
+}
+
+// googleId is only used to tell the app how the member signs in.
+function present<T extends { googleId: string | null }>({ googleId, ...user }: T) {
+  return { ...user, hasGoogle: Boolean(googleId) };
 }
 
 // Only files we stored ourselves are deleted (a Google sign-in photo is an external URL).

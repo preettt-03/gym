@@ -4,7 +4,7 @@ import PDFDocument from 'pdfkit';
 interface InvoiceData {
   invoiceNumber: string | null;
   issuedAt: Date;
-  billedTo: { name: string | null; email: string };
+  billedTo: { name: string | null; email: string | null; phone?: string | null };
   plan: { name: string; durationDays: number };
   amount: number;
   currency: string;
@@ -50,7 +50,7 @@ export function sendInvoicePdf(res: Response, invoice: InvoiceData) {
     .fontSize(10)
     .font('Helvetica')
     .text(invoice.billedTo.name || 'Member', 50, 174)
-    .text(invoice.billedTo.email, 50, 189);
+    .text(invoice.billedTo.email ?? invoice.billedTo.phone ?? '', 50, 189);
 
   const tableTop = 230;
   doc.fontSize(10).font('Helvetica-Bold');
