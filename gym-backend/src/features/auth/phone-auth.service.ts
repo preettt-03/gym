@@ -3,7 +3,7 @@ import { Prisma, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
 import { maskPhone, normalizePhone } from '@/lib/phone';
-import { isPhoneAuthAvailable, sendOtpSms } from '@/lib/sms';
+import { devCode, isPhoneAuthAvailable, sendOtpSms } from '@/lib/sms';
 import { sendMail } from '@/lib/mailer';
 import { CONTACT_OTP_COOLDOWN_SECONDS, consumeContactOtp, issueContactOtp } from '@/features/auth/contact-otp';
 import { issueTokens, PASSWORD_SALT_ROUNDS, sanitizeUser } from '@/features/auth/auth.service';
@@ -33,7 +33,7 @@ export async function sendPhoneOtp(rawPhone: string, mode: PhoneMode, name?: str
   const data = mode === 'signup' ? { name: name ?? '', ...(password ? { passwordHash: await bcrypt.hash(password, PASSWORD_SALT_ROUNDS) } : {}) } : undefined;
   const code = await issueContactOtp(mode === 'login' ? 'phone-login' : 'phone-signup', phone, data);
   await sendOtpSms(phone, code);
-  return { phone: maskPhone(phone), cooldownSeconds: CONTACT_OTP_COOLDOWN_SECONDS };
+  return { phone: maskPhone(phone), cooldownSeconds: CONTACT_OTP_COOLDOWN_SECONDS, ...devCode(code) };
 }
 
 /** Step 2: check the code, creating the account on sign-up, and sign in. */
@@ -73,7 +73,7 @@ export async function sendAddPhoneOtp(userId: string, rawPhone: string) {
   if (owner) throw new AppError('This number is used by another account', 409, { code: 'PHONE_TAKEN' });
   const code = await issueContactOtp('add-phone', phone, { userId });
   await sendOtpSms(phone, code);
-  return { phone: maskPhone(phone), cooldownSeconds: CONTACT_OTP_COOLDOWN_SECONDS };
+  return { phone: maskPhone(phone), cooldownSeconds: CONTACT_OTP_COOLDOWN_SECONDS, ...devCode(code) };
 }
 
 export async function verifyAddPhone(userId: string, rawPhone: string, code: string) {
@@ -152,7 +152,13 @@ export async function sendLoginOtp(raw: string) {
       throw new AppError("Couldn't send the email right now. Try again in a minute.", 502);
     }
   }
-  return { channel: id.kind === 'phone' ? 'sms' : 'email', sentTo: id.kind === 'phone' ? maskPhone(id.value) : maskEmail(id.value), cooldownSeconds: CONTACT_OTP_COOLDOWN_SECONDS };
+  return {
+    channel: id.kind === 'phone' ? 'sms' : 'email',
+    sentTo: id.kind === 'phone' ? maskPhone(id.value) : maskEmail(id.value),
+    cooldownSeconds: CONTACT_OTP_COOLDOWN_SECONDS,
+    // Emails really go out (SMTP is set up); only SMS has a test mode.
+    ...(id.kind === 'phone' ? devCode(code) : {}),
+  };
 }
 
 export async function verifyLoginOtp(raw: string, code: string) {

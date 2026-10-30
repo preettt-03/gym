@@ -114,6 +114,7 @@ function LoginForm() {
       <CodeStep
         channel={codeSent.channel}
         sentTo={codeSent.sentTo}
+        devCode={codeSent.devCode}
         submitLabel="Verify & log in"
         backLabel="Change"
         onBack={() => setCodeSent(null)}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { isAxiosError } from "axios";
-import { Loader2, Mail, MessageSquareText, Pencil } from "lucide-react";
+import { FlaskConical, Loader2, Mail, MessageSquareText, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, FormAlert } from "@/components/ui/form-message";
@@ -20,15 +20,19 @@ export function CodeStep({
   onResend,
   onBack,
   backLabel,
+  devCode: initialDevCode,
 }: {
   channel: "email" | "sms";
   sentTo: string;
   submitLabel: string;
   onVerify: (code: string) => Promise<unknown>;
-  onResend: () => Promise<{ cooldownSeconds: number }>;
+  onResend: () => Promise<{ cooldownSeconds: number; devCode?: string }>;
   onBack: () => void;
   backLabel: string;
+  /** Local test mode only: the code, because no SMS provider is connected yet. */
+  devCode?: string;
 }) {
+  const [devCode, setDevCode] = useState(initialDevCode);
   const [code, setCode] = useState("");
   const [fieldError, setFieldError] = useState<string>();
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +66,18 @@ export function CodeStep({
           </button>
         </span>
       </p>
+      {devCode && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold/50 bg-gold/5 px-4 py-3 text-sm" role="status">
+          <FlaskConical className="h-4 w-4 shrink-0 text-gold" />
+          <span className="flex-1">
+            <span className="font-semibold text-gold">Test mode</span> — SMS isn&apos;t connected yet, so here&apos;s your code:{" "}
+            <span className="font-mono font-bold tracking-widest">{devCode}</span>
+          </span>
+          <button type="button" onClick={() => setCode(devCode)} className="text-xs font-semibold text-gold hover:underline">
+            Use this code
+          </button>
+        </div>
+      )}
       <div>
         <label htmlFor="otp" className="mb-1.5 block text-sm font-medium">
           Verification code
@@ -88,7 +104,15 @@ export function CodeStep({
       <Button type="submit" disabled={pending} className="uppercase tracking-wider">
         {pending && <Loader2 className="h-4 w-4 animate-spin" />} {submitLabel}
       </Button>
-      <ResendCodeButton channel={channel} startCoolingDown onResend={onResend} />
+      <ResendCodeButton
+        channel={channel}
+        startCoolingDown
+        onResend={async () => {
+          const result = await onResend();
+          setDevCode(result.devCode);
+          return result;
+        }}
+      />
     </form>
   );
 }

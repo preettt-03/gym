@@ -29,6 +29,8 @@ export function ContactDialog({ kind, current, onClose }: { kind: "email" | "pho
   const [sentTo, setSentTo] = useState("");
   const [fieldError, setFieldError] = useState<string>();
   const [error, setError] = useState<string | null>(null);
+  // Local test mode only (no SMS provider yet): the code is shown here.
+  const [devCode, setDevCode] = useState<string>();
 
   // Mounted only while open, so every open starts from a clean slate.
   useEffect(() => {
@@ -38,18 +40,19 @@ export function ContactDialog({ kind, current, onClose }: { kind: "email" | "pho
   }, [onClose]);
 
   // Both endpoints answer with where the code went (masked for phones) and the cooldown.
-  const sendCode = async (): Promise<{ sentTo: string; cooldownSeconds: number }> => {
+  const sendCode = async (): Promise<{ sentTo: string; cooldownSeconds: number; devCode?: string }> => {
     if (kind === "email") {
       const r = await sendEmailChangeOtp(value.trim());
       return { sentTo: r.email, cooldownSeconds: r.cooldownSeconds };
     }
     const r = await sendPhoneChangeOtp(value.trim());
-    return { sentTo: r.phone, cooldownSeconds: r.cooldownSeconds };
+    return { sentTo: r.phone, cooldownSeconds: r.cooldownSeconds, devCode: r.devCode };
   };
   const send = useMutation({
     mutationFn: sendCode,
     onSuccess: (data) => {
       setSentTo(data.sentTo);
+      setDevCode(data.devCode);
       setStep("code");
       setError(null);
     },
@@ -128,6 +131,14 @@ export function ContactDialog({ kind, current, onClose }: { kind: "email" | "pho
             </div>
           ) : (
             <div>
+              {devCode && (
+                <p className="mb-3 rounded-xl border border-dashed border-gold/50 bg-gold/5 px-3 py-2 text-xs" role="status">
+                  <span className="font-semibold text-gold">Test mode</span> — SMS isn&apos;t connected yet. Code:{" "}
+                  <button type="button" onClick={() => setCode(devCode)} className="font-mono font-bold tracking-widest text-gold hover:underline">
+                    {devCode}
+                  </button>
+                </p>
+              )}
               <label htmlFor="contact-code" className="mb-1.5 block text-sm font-medium">
                 Verification code
               </label>

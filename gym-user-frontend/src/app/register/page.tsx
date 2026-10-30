@@ -40,7 +40,7 @@ export default function RegisterPage() {
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
   // Set once an SMS code has gone out for a mobile sign-up.
-  const [pendingPhone, setPendingPhone] = useState<{ values: FormValues; sentTo: string } | null>(null);
+  const [pendingPhone, setPendingPhone] = useState<{ values: FormValues; sentTo: string; devCode?: string } | null>(null);
 
   const {
     register,
@@ -59,11 +59,11 @@ export default function RegisterPage() {
         return { kind: "email" as const, v };
       }
       const sent = await phoneSignup(v);
-      return { kind: "phone" as const, v, sentTo: sent.phone };
+      return { kind: "phone" as const, v, sentTo: sent.phone, devCode: sent.devCode };
     },
     onSuccess: (r) => {
       if (r.kind === "email") router.push(`/verify-email?email=${encodeURIComponent(r.v.identifier)}&sent=1`);
-      else setPendingPhone({ values: r.v, sentTo: r.sentTo });
+      else setPendingPhone({ values: r.v, sentTo: r.sentTo, devCode: r.devCode });
     },
     onError: (err) => {
       setServerError(isAxiosError(err) ? err.response?.data?.error?.message ?? "Registration failed" : "Registration failed");
@@ -79,6 +79,7 @@ export default function RegisterPage() {
         <CodeStep
           channel="sms"
           sentTo={pendingPhone.sentTo}
+          devCode={pendingPhone.devCode}
           submitLabel="Verify & create account"
           backLabel="Edit details"
           onBack={() => setPendingPhone(null)}

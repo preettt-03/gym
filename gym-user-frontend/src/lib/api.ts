@@ -156,7 +156,8 @@ export async function getAuthMethods() {
 }
 
 export async function sendPhoneOtp(input: { phone: string; mode: PhoneMode; name?: string; password?: string }) {
-  const { data } = await apiClient.post<{ phone: string; cooldownSeconds: number }>("/auth/phone/send-otp", input);
+  // devCode only comes back in local test mode (no SMS provider configured).
+  const { data } = await apiClient.post<{ phone: string; cooldownSeconds: number; devCode?: string }>("/auth/phone/send-otp", input);
   return data;
 }
 
@@ -171,6 +172,7 @@ export interface CodeSent {
   channel: "email" | "sms";
   sentTo: string;
   cooldownSeconds: number;
+  devCode?: string;
 }
 
 export async function sendLoginOtp(identifier: string) {

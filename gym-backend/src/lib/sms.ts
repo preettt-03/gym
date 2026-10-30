@@ -9,6 +9,12 @@ export const isSmsConfigured =
 /** Mobile sign-in works when a provider is set up — or in dev/test, where codes go to the log. */
 export const isPhoneAuthAvailable = isSmsConfigured || env.NODE_ENV !== 'production';
 
+/**
+ * Test mode: with no SMS provider outside production, the code is also handed
+ * back to the app so the flow can be tried end to end. Never in production.
+ */
+export const devCode = (code: string) => (!isSmsConfigured && env.NODE_ENV !== 'production' ? { devCode: code } : {});
+
 /** Sends a one-time code to an E.164 number. Throws 502 if the provider rejects it. */
 export async function sendOtpSms(phone: string, code: string) {
   if (!isSmsConfigured) {

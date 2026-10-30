@@ -174,6 +174,16 @@ describe('Mobile number sign-in and contact changes', () => {
     await clearCooldowns(email);
   });
 
+  it('hands the code back in local test mode, and it works', async () => {
+    const mobile2 = randomMobile();
+    const sent = await request(app).post('/api/v1/auth/phone/send-otp').send({ phone: mobile2, mode: 'signup', name: 'Test Mode', password: 'TestMode123' });
+    expect(sent.body.devCode).toMatch(/^\d{6}$/);
+    const res = await request(app).post('/api/v1/auth/phone/verify').send({ phone: mobile2, mode: 'signup', code: sent.body.devCode });
+    expect(res.status).toBe(201);
+    await prisma.user.delete({ where: { id: res.body.user.id } });
+    await clearCooldowns(`+91${mobile2}`);
+  });
+
   it('reports which sign-in methods are available', async () => {
     const res = await request(app).get('/api/v1/auth/methods');
     expect(res.body).toMatchObject({ email: true, phone: true });

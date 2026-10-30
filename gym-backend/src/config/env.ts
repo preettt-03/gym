@@ -42,6 +42,8 @@ const envSchema = z.object({
   // with a clear "AI features not configured" error when absent, rather than crashing.
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
+  // Gemini occasionally accepts a request and never answers; give up after this long.
+  GEMINI_TIMEOUT_MS: z.coerce.number().int().positive().default(25_000),
 
   // Used to build absolute URLs for locally-stored uploads. Point this at a real
   // S3/Cloudinary-backed CDN URL in production instead of switching storage backends.

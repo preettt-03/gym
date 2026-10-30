@@ -88,7 +88,7 @@ export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] a
 
 // Contact details change only after the member proves the new one with a code.
 export async function sendPhoneChangeOtp(phone: string) {
-  const { data } = await apiClient.post<{ phone: string; cooldownSeconds: number }>("/users/me/phone/send-otp", { phone });
+  const { data } = await apiClient.post<{ phone: string; cooldownSeconds: number; devCode?: string }>("/users/me/phone/send-otp", { phone });
   return data;
 }
 export async function verifyPhoneChange(phone: string, code: string) {

@@ -44,6 +44,9 @@ describe('AI features', () => {
       // expected condition when other tests/manual use hit the same key).
       if (res.status === 429) {
         expect(res.body.error.message).toMatch(/rate-limited/i);
+      } else if (res.status === 504) {
+        // Gemini stalled: the API gives up with a clear message instead of hanging.
+        expect(res.body.error.message).toMatch(/taking too long/i);
       } else {
         expect(res.status).toBe(200);
         expect(typeof res.body.message).toBe('string');

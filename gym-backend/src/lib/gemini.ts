@@ -43,11 +43,20 @@ export async function generateWithGemini(prompt: string, options: GenerateOption
     body.systemInstruction = { parts: [{ text: options.systemInstruction }] };
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      // Without a limit a stalled request would keep the member's screen spinning forever.
+      signal: AbortSignal.timeout(env.GEMINI_TIMEOUT_MS),
+    });
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === 'TimeoutError';
+    logger.error('Gemini API request did not complete', { timedOut, err: err instanceof Error ? err.message : err });
+    throw new AppError(timedOut ? 'The AI coach is taking too long to answer. Please try again in a moment.' : 'Could not reach the AI service', timedOut ? 504 : 502);
+  }
 
   if (!res.ok) {
     const errText = await res.text();

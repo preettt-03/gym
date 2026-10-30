@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createVerifiedUser, deleteTestUser, deleteUserByPhone, getLatestSmsCode, randomIndianMobile, uniqueTestEmail } from "./helpers";
+import { createVerifiedUser, deleteTestUser, deleteUserByPhone, randomIndianMobile, uniqueTestEmail } from "./helpers";
 
 test.describe("Mobile number sign-up and login", () => {
   const mobile = randomIndianMobile();
@@ -21,7 +21,9 @@ test.describe("Mobile number sign-up and login", () => {
     await page.getByRole("button", { name: "Verify & create account" }).click();
     await expect(page.getByText(/Wrong code\. 4 attempts left/)).toBeVisible();
 
-    await page.getByLabel("Verification code").fill(await getLatestSmsCode(e164));
+    // Test mode (no SMS provider yet) shows the code on screen.
+    await expect(page.getByText("Test mode")).toBeVisible();
+    await page.getByRole("button", { name: "Use this code" }).click();
     await page.getByRole("button", { name: "Verify & create account" }).click();
     await expect(page).toHaveURL(/\/settings/);
     await expect(page.getByText(e164)).toBeVisible();
@@ -43,7 +45,7 @@ test.describe("Mobile number sign-up and login", () => {
     await expect(page.getByPlaceholder("Password")).toHaveCount(0);
     await page.getByLabel("Email or mobile number").fill(mobile);
     await page.getByRole("button", { name: "Send login code" }).click();
-    await page.getByLabel("Verification code").fill(await getLatestSmsCode(e164));
+    await page.getByRole("button", { name: "Use this code" }).click();
     await page.getByRole("button", { name: "Verify & log in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
   });
