@@ -22,7 +22,7 @@ export function PricingContent() {
         image={statsBg}
       />
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         {isError && (
           <Card className="mx-auto max-w-md text-center">
             <CardDescription>Couldn&apos;t load plans right now. Please try again shortly.</CardDescription>

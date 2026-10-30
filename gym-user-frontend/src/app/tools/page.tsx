@@ -18,7 +18,7 @@ export default function ToolsHubPage() {
   const shown = tools?.filter((t) => !category || t.category === category);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <p className="eyebrow">Tools</p>
       <h1 className="mt-3 text-4xl font-bold uppercase sm:text-5xl">Fitness tools &amp; calculators</h1>
       <p className="mt-2 max-w-2xl text-muted">Work out your max, calories, macros, heart-rate zones and more — free, no account needed.</p>

@@ -26,7 +26,7 @@ export function AboutContent() {
     <>
       <PageHero eyebrow="About us" title={page?.title || "About Us"} description="Built from a passion for better fitness." image={trainingRopes} />
 
-      <section className="mx-auto grid max-w-7xl items-start gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2">
+      <section className="mx-auto grid max-w-7xl items-start gap-12 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-2">
         <Reveal className="relative aspect-4/3 overflow-hidden rounded-2xl border border-border">
           {banner ? (
             // CMS banners can be hosted anywhere, so skip next/image's domain allowlist.

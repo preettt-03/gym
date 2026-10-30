@@ -15,7 +15,7 @@ export function GalleryContent() {
     <>
       <PageHero eyebrow="Gallery" title="Inside King's Fitness" description="A look at our floor, our members and the work they put in." image={programEquipment} />
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         {isLoading && <SkeletonGrid count={8} className="lg:grid-cols-4" />}
         {images?.length === 0 && (
           <Card className="mx-auto max-w-md text-center">

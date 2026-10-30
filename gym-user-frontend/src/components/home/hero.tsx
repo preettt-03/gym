@@ -55,7 +55,7 @@ export function Hero() {
       <div className="absolute inset-0 -z-10 bg-linear-to-r from-background via-background/80 to-background/20" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-linear-to-t from-background to-transparent" />
 
-      <div className="mx-auto w-full max-w-7xl px-4 pb-10 pt-20 sm:px-6 sm:pt-28">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-10 pt-10 sm:px-6 sm:pt-20">
         <motion.p className="eyebrow" {...fadeUp(0)}>
           King&apos;s Fitness · Fatehabad
         </motion.p>

@@ -514,7 +514,7 @@ function TraineeDetailContent() {
 
   if (profile.isError) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+      <div className="mx-auto max-w-xl px-4 py-12 text-center sm:py-24">
         <p className="font-medium">This member isn&apos;t assigned to you, or doesn&apos;t exist.</p>
         <Link href="/trainer" className="mt-3 inline-block text-sm font-semibold text-gold hover:underline">
           Back to my trainees
@@ -526,7 +526,7 @@ function TraineeDetailContent() {
   const p = profile.data;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <Link href="/trainer" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-gold">
         <ArrowLeft className="h-4 w-4" /> My trainees
       </Link>

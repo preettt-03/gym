@@ -113,7 +113,7 @@ function TraineesContent() {
 
   if (!isCoach) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+      <div className="mx-auto max-w-xl px-4 py-12 text-center sm:py-24">
         <h1 className="text-3xl font-bold uppercase">Trainer area</h1>
         <p className="mt-3 text-muted">This section is for King&apos;s Fitness coaches. Ask an admin if you should have access.</p>
       </div>
@@ -128,7 +128,7 @@ function TraineesContent() {
     .sort((a, b) => attentionReasons(b).length - attentionReasons(a).length);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <p className="eyebrow">Coaching</p>
       <h1 className="mt-3 flex items-center gap-3 text-4xl font-bold uppercase">
         <Users className="h-8 w-8 text-gold" /> My Trainees

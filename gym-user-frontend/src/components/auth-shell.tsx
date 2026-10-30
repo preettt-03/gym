@@ -25,7 +25,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-4 py-14 sm:px-8">
+      <div className="flex items-center justify-center px-4 py-8 sm:px-8 sm:py-14">
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

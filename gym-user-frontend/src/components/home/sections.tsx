@@ -65,7 +65,7 @@ const PROGRAMS = [
 
 export function ProgramsSection() {
   return (
-    <section id="programs" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-24 sm:px-6">
+    <section id="programs" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20">
       <Reveal>
         <SectionHeading
           eyebrow="Our programs"
@@ -110,7 +110,7 @@ const ABOUT_POINTS = ["Crossfit, kickboxing & strength training", "Nutrition con
 export function AboutSection() {
   return (
     <section className="border-y border-border bg-surface">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-24 sm:px-6 lg:grid-cols-2 lg:gap-16">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16">
         <Reveal className="relative">
           <div className="relative aspect-4/3 overflow-hidden rounded-2xl border border-border">
             <Image
@@ -176,7 +176,7 @@ const PHILOSOPHY = [
 
 export function PhilosophySection() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <Reveal>
         <SectionHeading
           eyebrow="Our philosophy"
@@ -219,7 +219,7 @@ export function ServicesSection() {
     <section id="services" className="relative isolate scroll-mt-24 overflow-hidden">
       <Image src={trainingRopes} alt="" fill placeholder="blur" sizes="100vw" className="-z-20 object-cover" />
       <div className="absolute inset-0 -z-10 bg-background/90" />
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[1fr_1.6fr]">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.6fr]">
         <Reveal>
           <SectionHeading
             align="left"
@@ -268,7 +268,7 @@ const CLASSES = [
 
 export function ClassesSection() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <div className="grid gap-6 md:grid-cols-2">
         {CLASSES.map((c, i) => (
           <Reveal key={c.title} delay={i * 0.1}>
@@ -307,7 +307,7 @@ const FEATURES = [
 export function FeaturesSection() {
   return (
     <section className="border-y border-border bg-surface">
-      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
         <Reveal>
           <SectionHeading
             eyebrow="Member app"
@@ -365,7 +365,7 @@ export function InstagramSection() {
   const { handle, url } = BRAND.social.instagram;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <Reveal>
         <SectionHeading
           eyebrow="Follow us"
@@ -419,7 +419,7 @@ export function LocationSection() {
 
   return (
     <section id="location" className="scroll-mt-24 border-y border-border bg-surface">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[1fr_1.3fr] lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.3fr] lg:items-center">
         <Reveal>
           <SectionHeading
             align="left"
@@ -504,7 +504,7 @@ export function LocationSection() {
 
 export function CtaSection() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <Reveal>
         <div className="relative isolate overflow-hidden rounded-3xl border border-gold/30 px-6 py-20 text-center sm:px-16">
           <Image src={ctaBg} alt="" fill placeholder="blur" sizes="(min-width: 1280px) 1280px, 100vw" className="-z-20 object-cover grayscale" />

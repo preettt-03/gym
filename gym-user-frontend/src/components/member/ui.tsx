@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // uses the same header, panels, tiles and states as the dashboard.
 
 export function MemberPage({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("mx-auto max-w-6xl px-4 py-10 sm:px-6", className)}>{children}</div>;
+  return <div className={cn("mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10", className)}>{children}</div>;
 }
 
 export function MemberHeader({

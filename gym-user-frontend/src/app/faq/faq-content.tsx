@@ -17,7 +17,7 @@ export function FaqContent() {
     <>
       <PageHero eyebrow="FAQ" title="Frequently Asked Questions" description="Everything you need to know before you start training with us." />
 
-      <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         {isLoading && <SkeletonList rows={4} />}
         {faqs?.length === 0 && (
           <Card>

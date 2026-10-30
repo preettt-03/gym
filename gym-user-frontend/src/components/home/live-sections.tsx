@@ -18,7 +18,7 @@ export function PlansSection() {
   if (isError || (plans && plans.length === 0)) return null;
 
   return (
-    <section id="pricing" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-24 sm:px-6">
+    <section id="pricing" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20">
       <Reveal>
         <SectionHeading
           eyebrow="Membership"
@@ -57,7 +57,7 @@ export function TestimonialsSection() {
 
   return (
     <section className="border-y border-border bg-surface">
-      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
         <Reveal>
           <SectionHeading
             eyebrow="Testimonials"
