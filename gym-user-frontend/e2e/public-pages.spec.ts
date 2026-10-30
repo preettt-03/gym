@@ -53,8 +53,8 @@ test.describe("Public marketing pages", () => {
 
   test("exercise library filters by muscle group and opens a detail page", async ({ page }) => {
     await page.goto("/exercises");
-    await page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Chest" }).click();
-    await expect(page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Chest" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Chest" }).click();
+    await expect(page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Chest" })).toHaveAttribute("aria-pressed", "true");
     const cards = page.locator("main article, article").filter({ has: page.getByRole("link") });
     await expect(cards.first()).toBeVisible();
     // Every card left is a chest exercise (seed: bench press, push-up).
@@ -69,10 +69,10 @@ test.describe("Public marketing pages", () => {
 
   test("difficulty filter takes several levels at once", async ({ page }) => {
     await page.goto("/exercises");
-    await page.getByRole("button", { name: "Difficulty" }).click();
+    await page.getByRole("button", { name: "Level" }).click();
     await page.getByLabel("Beginner").check();
     await page.getByLabel("Advanced").check();
-    await expect(page.getByRole("button", { name: /Difficulty\s*2/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Level\s*2/ })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByLabel("Beginner")).toHaveCount(0);
 
@@ -89,8 +89,8 @@ test.describe("Public marketing pages", () => {
     await expect(page.getByRole("button", { name: "Scroll muscle group left" })).toHaveCount(0);
     await right.click();
     await expect(page.getByRole("button", { name: "Scroll muscle group left" })).toBeVisible();
-    await page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Core" }).click();
-    await expect(page.getByRole("group", { name: "Muscle group" }).getByRole("button", { name: "Core" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Core" }).click();
+    await expect(page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Core" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("manifest, robots, and sitemap are served", async ({ page }) => {

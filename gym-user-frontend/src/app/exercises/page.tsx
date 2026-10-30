@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Clock, Heart, LayoutGrid, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Heart, Search, Trash2 } from "lucide-react";
 import { listExerciseCategories, listExercises, type Exercise } from "@/lib/api";
 import { clearRecentExercises, listRecentExercises } from "@/lib/exercise-api";
 import { ExerciseCard, difficultyLabel } from "@/components/exercise/exercise-card";
@@ -99,39 +99,14 @@ export default function ExercisesPage() {
         : "No exercises match your filters.";
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <p className="eyebrow">Library</p>
       <h1 className="mt-3 text-4xl font-bold uppercase">Exercise Library</h1>
       <p className="mt-2 text-muted">Step-by-step instructions, target muscles and common mistakes — browse freely, no account needed.</p>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-        {isAuthed && (
-          <div role="tablist" aria-label="Exercise lists" className="no-scrollbar flex max-w-full overflow-x-auto rounded-xl border border-border bg-surface p-1 sm:inline-flex">
-            {(
-              [
-                ["all", "All", LayoutGrid],
-                ["favorites", `Favourites${favorites.data ? ` (${favorites.data.length})` : ""}`, Heart],
-                ["recent", "Recently viewed", Clock],
-              ] as const
-            ).map(([key, label, Icon]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === key}
-                onClick={() => setTab(key)}
-                className={cn(
-                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors sm:px-4",
-                  activeTab === key ? "bg-gold text-accent-foreground" : "text-muted hover:text-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="relative w-full sm:ml-auto sm:w-72">
+      {/* Mobile: search 75% / level 25% on one row. */}
+      <div className="mt-8 flex items-center gap-2">
+        <div className="relative min-w-0 flex-[3] sm:flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <Input
             type="search"
@@ -145,52 +120,76 @@ export default function ExercisesPage() {
             }}
           />
         </div>
-      </div>
-
-      <div className="glass-card mt-3 flex items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4">
-        <span className="hidden shrink-0 text-xs font-semibold uppercase tracking-[0.18em] text-muted sm:block">Muscle group</span>
-        <ChipSlider label="Muscle group">
-          <Chip active={!muscleGroup && !category} onClick={() => (setMuscleGroup(undefined), setCategory(undefined), resetPage())}>
-            All
-          </Chip>
-          {MUSCLE_GROUPS.map((g) => (
-            <Chip key={g.key} active={muscleGroup === g.key} onClick={() => (setMuscleGroup(muscleGroup === g.key ? undefined : g.key), resetPage())}>
-              {g.label}
-            </Chip>
-          ))}
-          {/* Admin-defined categories ride along in the same slider. */}
-          {categories && categories.length > 0 && <span aria-hidden className="mx-1 w-px shrink-0 self-stretch bg-border" />}
-          {categories?.map((c) => (
-            <Chip key={c.id} active={category === c.slug} onClick={() => (setCategory(category === c.slug ? undefined : c.slug), resetPage())}>
-              {c.name}
-            </Chip>
-          ))}
-        </ChipSlider>
         <MultiSelectMenu
-          label="Difficulty"
+          label="Level"
+          className="min-w-0 flex-1 sm:flex-none"
           options={DIFFICULTIES.map((d) => ({ value: d, label: difficultyLabel(d) }))}
           value={difficulty}
           onChange={(next) => (setDifficulty(next), resetPage())}
         />
       </div>
 
-      {activeTab === "recent" && recent.data && recent.data.length > 0 && (
-        <div className="mt-6 flex items-center gap-3 text-sm">
-          {confirmClear ? (
+      {/* One slider: saved lists (signed-in only), then muscle groups, then admin categories. */}
+      <div className="glass-card mt-3 flex items-center gap-3 px-3 py-2.5 sm:px-4">
+        <ChipSlider label="Exercise filters">
+          <Chip
+            active={activeTab === "all" && !muscleGroup && !category}
+            onClick={() => (setTab("all"), setMuscleGroup(undefined), setCategory(undefined), resetPage())}
+          >
+            All
+          </Chip>
+          {isAuthed && (
             <>
-              <span className="text-muted">Clear your viewing history?</span>
-              <Button variant="destructive" size="sm" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()}>
-                Yes, clear
-              </Button>
-              <Button variant="glass" size="sm" onClick={() => setConfirmClear(false)}>
-                Cancel
-              </Button>
+              <Chip active={activeTab === "favorites"} onClick={() => setTab(activeTab === "favorites" ? "all" : "favorites")}>
+                <Heart className="h-3.5 w-3.5" />
+                Favourites{favorites.data ? ` (${favorites.data.length})` : ""}
+              </Chip>
+              <Chip active={activeTab === "recent"} onClick={() => setTab(activeTab === "recent" ? "all" : "recent")}>
+                <Clock className="h-3.5 w-3.5" />
+                Recently viewed
+              </Chip>
             </>
-          ) : (
-            <Button variant="glass" size="sm" onClick={() => setConfirmClear(true)}>
-              <Trash2 className="h-4 w-4" /> Clear history
-            </Button>
           )}
+          {MUSCLE_GROUPS.map((g) => (
+            <Chip key={g.key} active={muscleGroup === g.key} onClick={() => (setMuscleGroup(muscleGroup === g.key ? undefined : g.key), resetPage())}>
+              {g.label}
+            </Chip>
+          ))}
+          {categories?.map((c) => (
+            <Chip key={c.id} active={category === c.slug} onClick={() => (setCategory(category === c.slug ? undefined : c.slug), resetPage())}>
+              {c.name}
+            </Chip>
+          ))}
+        </ChipSlider>
+        {activeTab === "recent" && recent.data && recent.data.length > 0 && (
+          <div className="group relative shrink-0">
+            <button
+              type="button"
+              aria-label="Clear history"
+              onClick={() => setConfirmClear(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-2 text-muted transition-colors hover:border-danger/50 hover:text-danger"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 py-1 text-xs text-foreground opacity-0 shadow-lg shadow-black/60 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+            >
+              Clear history
+            </span>
+          </div>
+        )}
+      </div>
+
+      {activeTab === "recent" && confirmClear && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-muted">Clear your viewing history?</span>
+          <Button variant="destructive" size="sm" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()}>
+            Yes, clear
+          </Button>
+          <Button variant="glass" size="sm" onClick={() => setConfirmClear(false)}>
+            Cancel
+          </Button>
         </div>
       )}
 

@@ -11,7 +11,7 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm transition-colors",
         active ? "border-gold bg-gold font-semibold text-accent-foreground" : "border-border bg-surface-2 text-muted hover:border-gold/40 hover:text-foreground"
       )}
     >
@@ -128,17 +128,19 @@ export function ChipSlider({ label, children }: { label: string; children: React
   );
 }
 
-/** "Difficulty" button opening a checkbox menu; any number of levels can be on. */
+/** "Level" button opening a checkbox menu; any number of levels can be on. */
 export function MultiSelectMenu<T extends string>({
   label,
   options,
   value,
   onChange,
+  className,
 }: {
   label: string;
   options: { value: T; label: string }[];
   value: T[];
   onChange: (next: T[]) => void;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -166,20 +168,20 @@ export function MultiSelectMenu<T extends string>({
   const toggle = (v: T) => onChange(value.includes(v) ? value.filter((x) => x !== v) : options.map((o) => o.value).filter((o) => o === v || value.includes(o)));
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div ref={rootRef} className={cn("relative shrink-0", className)}>
       <button
         type="button"
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors",
+          "flex h-10 w-full items-center justify-between gap-1.5 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors",
           value.length || open ? "border-gold/60 bg-gold/10 text-gold" : "border-border bg-surface-2 text-muted hover:border-gold/40 hover:text-foreground"
         )}
       >
-        {label}
+        <span className="truncate">{label}</span>
         {value.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[11px] font-bold text-accent-foreground">{value.length}</span>}
-        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (

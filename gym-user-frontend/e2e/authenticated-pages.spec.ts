@@ -23,13 +23,13 @@ test.describe("Authenticated feature pages", () => {
     await expect(saved).toHaveAttribute("aria-pressed", "true");
 
     await page.goto("/exercises");
-    await page.getByRole("tab", { name: /Favourites/ }).click();
+    await page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: /Favourites/ }).click();
     await expect(page.getByRole("link", { name: "Plank" })).toBeVisible();
-    await page.getByRole("tab", { name: "Recently viewed" }).click();
+    await page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Recently viewed" }).click();
     await expect(page.getByRole("link", { name: "Plank" })).toBeVisible();
 
     // Leave the shared admin account as we found it.
-    await page.getByRole("tab", { name: /Favourites/ }).click();
+    await page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: /Favourites/ }).click();
     await page.getByRole("button", { name: "Remove Plank from favourites" }).click();
     await expect(page.getByText(/No favourites yet/)).toBeVisible();
   });
