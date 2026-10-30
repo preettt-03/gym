@@ -12,7 +12,7 @@ const LINK_GROUPS = [
       { href: "/exercises", label: "Exercises" },
       { href: "/pricing", label: "Membership" },
       { href: "/gallery", label: "Gallery" },
-      { href: "/tools/body-fat", label: "Body-fat calculator" },
+      { href: "/tools", label: "Fitness tools" },
     ],
   },
   {

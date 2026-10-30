@@ -23,6 +23,7 @@ import {
   workoutPlansRouter,
 } from '@/features/workout-plans/workout-plans.routes';
 import { progressPhotosRouter } from '@/features/progress-photos/progress-photos.routes';
+import { adminToolsRouter, toolsRouter } from '@/features/tools/tools.routes';
 import {
   adminDietCategoriesRouter,
   dietCategoriesRouter,
@@ -113,6 +114,8 @@ export function createApp() {
   app.use('/api/v1/workout-logs', workoutLogsRouter);
   app.use('/api/v1/admin/workout-plans', adminWorkoutPlansRouter);
   app.use('/api/v1/progress-photos', progressPhotosRouter);
+  app.use('/api/v1/tools', toolsRouter);
+  app.use('/api/v1/admin/tools', adminToolsRouter);
   app.use('/api/v1/diet-categories', dietCategoriesRouter);
   app.use('/api/v1/admin/diet-categories', adminDietCategoriesRouter);
   app.use('/api/v1/foods', foodsRouter);
@@ -165,6 +168,8 @@ export function createApp() {
     { prefix: '/api/v1/workout-logs', router: workoutLogsRouter, tag: 'Workout Plans' },
     { prefix: '/api/v1/admin/workout-plans', router: adminWorkoutPlansRouter, tag: 'Admin: Workout Plans' },
     { prefix: '/api/v1/progress-photos', router: progressPhotosRouter, tag: 'Progress' },
+    { prefix: '/api/v1/tools', router: toolsRouter, tag: 'Tools' },
+    { prefix: '/api/v1/admin/tools', router: adminToolsRouter, tag: 'Admin: Tools' },
     { prefix: '/api/v1/diet-categories', router: dietCategoriesRouter, tag: 'Diet Plans' },
     { prefix: '/api/v1/admin/diet-categories', router: adminDietCategoriesRouter, tag: 'Admin: Diet Plans' },
     { prefix: '/api/v1/foods', router: foodsRouter, tag: 'Diet Plans' },

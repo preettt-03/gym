@@ -20,6 +20,7 @@ import {
   UtensilsCrossed,
   Users,
   X,
+  Calculator,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ const NAV_GROUPS = [
       { to: "/exercises", label: "Exercises", icon: Dumbbell, end: false },
       { to: "/foods", label: "Foods", icon: Apple, end: false },
       { to: "/categories", label: "Categories", icon: Tags, end: false },
+      { to: "/tools", label: "Fitness Tools", icon: Calculator, end: false },
       { to: "/workout-plans", label: "Workout Plans", icon: Dumbbell, end: false },
       { to: "/diet-plans", label: "Diet Plans", icon: UtensilsCrossed, end: false },
     ],

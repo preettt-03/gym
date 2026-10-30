@@ -6,6 +6,7 @@ import { UserDetailPage } from "@/pages/user-detail-page";
 import { ExercisesPage } from "@/pages/exercises-page";
 import { FoodsPage } from "@/pages/foods-page";
 import { CategoriesPage } from "@/pages/categories-page";
+import { ToolsPage } from "@/pages/tools-page";
 import { ChatPage } from "@/pages/chat-page";
 import { NotificationsPage } from "@/pages/notifications-page";
 import { MembershipPlansPage } from "@/pages/membership-plans-page";
@@ -38,6 +39,7 @@ function App() {
         <Route path="/exercises" element={<ExercisesPage />} />
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/tools" element={<ToolsPage />} />
         <Route path="/workout-plans" element={<WorkoutPlansPage />} />
         <Route path="/diet-plans" element={<DietPlansPage />} />
         <Route path="/membership-plans" element={<MembershipPlansPage />} />

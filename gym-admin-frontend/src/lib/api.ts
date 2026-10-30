@@ -589,3 +589,31 @@ export async function listFoodsForAdmin(search?: string) {
   const { data } = await apiClient.get<{ items: AdminFood[] }>("/foods", { params: { search } });
   return data.items;
 }
+
+export type ToolCategory = "STRENGTH" | "NUTRITION" | "BODY_COMP" | "CARDIO" | "TRAINING";
+
+export interface AdminTool {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: ToolCategory;
+  isEnabled: boolean;
+  position: number;
+}
+
+export async function listAdminTools() {
+  const { data } = await apiClient.get<{ tools: AdminTool[] }>("/admin/tools");
+  return data.tools;
+}
+
+export async function updateTool(id: string, input: Partial<Pick<AdminTool, "isEnabled" | "title" | "description">>) {
+  const { data } = await apiClient.patch<{ tool: AdminTool }>(`/admin/tools/${id}`, input);
+  return data.tool;
+}
+
+/** Every tool id, in the new display order. */
+export async function reorderTools(ids: string[]) {
+  const { data } = await apiClient.put<{ tools: AdminTool[] }>("/admin/tools/order", { ids });
+  return data.tools;
+}

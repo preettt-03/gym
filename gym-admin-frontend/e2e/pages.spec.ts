@@ -209,6 +209,34 @@ test.describe("Admin pages", () => {
     await expect(card).toHaveCount(0);
   });
 
+  test("tools manager hides a calculator from members and brings it back", async ({ page, request }) => {
+    await page.goto("/tools");
+    const toggle = page.getByRole("switch", { name: "Show BMI Calculator to members" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByText(/BMI Calculator is now hidden/)).toBeVisible();
+    const hidden = await request.get("http://localhost:8004/api/v1/tools");
+    expect((await hidden.json()).tools.map((t: { slug: string }) => t.slug)).not.toContain("bmi");
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    const shown = await request.get("http://localhost:8004/api/v1/tools");
+    expect((await shown.json()).tools.map((t: { slug: string }) => t.slug)).toContain("bmi");
+  });
+
+  test("tools manager reorders with the arrows", async ({ page }) => {
+    await page.goto("/tools");
+    const rows = page.locator("li[draggable]");
+    const first = (await rows.nth(0).locator("p").first().innerText()).trim();
+    await page.getByRole("button", { name: `Move ${first} down` }).click();
+    await expect(rows.nth(1).locator("p").first()).toHaveText(first);
+    // Put it back.
+    await page.getByRole("button", { name: `Move ${first} up` }).click();
+    await expect(rows.nth(0).locator("p").first()).toHaveText(first);
+  });
+
   test("workout plans page loads", async ({ page }) => {
     await page.getByRole("link", { name: "Workout Plans" }).click();
     await expect(page).toHaveURL(/\/workout-plans/);

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, FormAlert } from "@/components/ui/form-message";
 import { cn } from "@/lib/utils";
+import { ToolPage } from "@/components/tools/ui";
 
 type Unit = "cm" | "in";
 const IN_TO_CM = 2.54;
@@ -107,6 +108,11 @@ function Scale({ gender, value }: { gender: BodyFatGender; value: number }) {
 }
 
 export default function BodyFatCalculatorPage() {
+  return <ToolPage slug="body-fat">{() => <BodyFatWorkspace />}</ToolPage>;
+}
+
+// The profile query is shared with ToolPage, so this reads the cached result.
+function BodyFatWorkspace() {
   const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
   const [unit, setUnit] = useState<Unit>("cm");
   const [result, setResult] = useState<(BodyFatResult & { gender: BodyFatGender }) | null>(null);
@@ -171,14 +177,8 @@ export default function BodyFatCalculatorPage() {
   const fields: Field[] = gender === "FEMALE" ? ["heightCm", "neckCm", "waistCm", "hipCm"] : ["heightCm", "neckCm", "waistCm"];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <p className="eyebrow">Tools</p>
-      <h1 className="mt-3 text-4xl font-bold uppercase">Body-fat calculator</h1>
-      <p className="mt-2 max-w-2xl text-muted">
-        Estimate your body-fat percentage from a few tape measurements using the U.S. Navy circumference method.
-      </p>
-
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+    <div>
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         <form
           noValidate
           className="glass-card flex h-fit flex-col gap-5 p-6"
