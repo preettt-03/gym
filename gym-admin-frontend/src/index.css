@@ -51,8 +51,8 @@
   --color-danger: var(--danger);
   --color-success: var(--success);
 
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Oswald", "Arial Narrow", sans-serif;
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
 }
 
 html,

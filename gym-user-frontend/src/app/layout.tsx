@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Oswald } from "next/font/google";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/navbar";
@@ -7,16 +7,18 @@ import { Footer } from "@/components/footer";
 import { BRAND } from "@/lib/brand";
 import { sharedOpenGraph } from "./shared-metadata";
 
-const body = Inter({
+// Barlow Condensed for bold, athletic headings; Barlow (same family) for body text.
+const body = Barlow({
   variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const heading = Oswald({
+const heading = Barlow_Condensed({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600", "700", "800"],
   display: "swap",
 });
 
