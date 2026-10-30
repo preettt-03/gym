@@ -12,15 +12,32 @@ function generateInvoiceNumber(): string {
   return `INV-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
+/** Resumes a frozen membership, pushing its end date back by the time it was paused. */
+export async function resumeMembership(id: string, at: Date = new Date()) {
+  const m = await prisma.membership.findUniqueOrThrow({ where: { id }, include: { plan: true } });
+  if (m.status !== MembershipStatus.FROZEN || !m.frozenAt) return m;
+  const pausedMs = Math.max(0, at.getTime() - m.frozenAt.getTime());
+  return prisma.membership.update({
+    where: { id },
+    data: { status: MembershipStatus.ACTIVE, endDate: new Date(m.endDate.getTime() + pausedMs), frozenAt: null, resumeAt: null },
+    include: { plan: true },
+  });
+}
+
 // Lazily flips an expired-but-still-marked-ACTIVE membership to EXPIRED on read,
-// so status is always correct without needing a scheduled job for v1.
+// and resumes a freeze whose resume date has passed, so status is always correct
+// without needing a scheduled job for v1.
 export async function getEffectiveMembership(userId: string) {
-  const membership = await prisma.membership.findFirst({
+  let membership = await prisma.membership.findFirst({
     where: { userId },
     orderBy: { endDate: 'desc' },
     include: { plan: true },
   });
   if (!membership) return null;
+
+  if (membership.status === MembershipStatus.FROZEN && membership.resumeAt && membership.resumeAt <= new Date()) {
+    membership = await resumeMembership(membership.id, membership.resumeAt);
+  }
 
   if (membership.status === MembershipStatus.ACTIVE && membership.endDate < new Date()) {
     return prisma.membership.update({
@@ -45,18 +62,20 @@ export async function getMyMembershipStatus(userId: string) {
 // Shared by both the real Razorpay flow (after signature verification) and the
 // no-gateway-configured demo fallback — creates or extends the membership and
 // marks/creates its Payment row as COMPLETED.
-async function activateMembership(
+export async function activateMembership(
   userId: string,
   planId: string,
   finalPrice: number,
   gateway: PaymentGateway,
   gatewayReferenceId: string,
-  existingPaymentId?: string
+  existingPaymentId?: string,
+  desk?: { recordedById: string; note?: string | null }
 ) {
   const plan = await prisma.membershipPlan.findFirst({ where: { id: planId, isActive: true, deletedAt: null } });
   if (!plan) throw new AppError('Membership plan not found', 404);
 
   const existing = await getEffectiveMembership(userId);
+  if (existing?.status === MembershipStatus.FROZEN) throw new AppError('This membership is frozen — resume it before renewing', 409);
   const isRenewal = existing?.status === MembershipStatus.ACTIVE;
   const startDate = isRenewal ? existing!.endDate : new Date();
   const endDate = new Date(startDate.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
@@ -87,6 +106,8 @@ async function activateMembership(
           status: PaymentStatus.COMPLETED,
           gatewayReferenceId,
           invoiceNumber: generateInvoiceNumber(),
+          recordedById: desk?.recordedById,
+          note: desk?.note,
         },
       });
 

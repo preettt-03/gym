@@ -43,6 +43,7 @@ import { streaksRouter } from '@/features/streaks/streaks.routes';
 import { adminBadgesRouter, badgesRouter } from '@/features/badges/badges.routes';
 import { adminMissionsRouter, missionsRouter } from '@/features/missions/missions.routes';
 import { adminUsersRouter } from '@/features/admin-users/admin-users.routes';
+import { adminMemberCrmRouter } from '@/features/admin-users/member-crm.routes';
 import { adminDashboardRouter } from '@/features/admin-dashboard/admin-dashboard.routes';
 import { adminChatRouter, chatRouter } from '@/features/chat/chat.routes';
 import { adminNotificationsRouter, notificationsRouter } from '@/features/notifications/notifications.routes';
@@ -136,6 +137,7 @@ export function createApp() {
   app.use('/api/v1/missions', missionsRouter);
   app.use('/api/v1/admin/missions', adminMissionsRouter);
   app.use('/api/v1/admin/users', adminUsersRouter);
+  app.use('/api/v1/admin/users', adminMemberCrmRouter);
   app.use('/api/v1/admin/dashboard', adminDashboardRouter);
   app.use('/api/v1/chat', chatRouter);
   app.use('/api/v1/admin/chat', adminChatRouter);
@@ -194,6 +196,7 @@ export function createApp() {
     { prefix: '/api/v1/missions', router: missionsRouter, tag: 'Gamification' },
     { prefix: '/api/v1/admin/missions', router: adminMissionsRouter, tag: 'Admin: Gamification' },
     { prefix: '/api/v1/admin/users', router: adminUsersRouter, tag: 'Admin: Users' },
+    { prefix: '/api/v1/admin/users', router: adminMemberCrmRouter, tag: 'Admin: Member CRM' },
     { prefix: '/api/v1/admin/dashboard', router: adminDashboardRouter, tag: 'Admin: Dashboard' },
     { prefix: '/api/v1/chat', router: chatRouter, tag: 'Chat' },
     { prefix: '/api/v1/admin/chat', router: adminChatRouter, tag: 'Admin: Chat' },

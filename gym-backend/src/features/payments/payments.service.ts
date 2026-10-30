@@ -7,6 +7,11 @@ export async function listMyPayments(userId: string) {
 
 // Returns structured invoice data as JSON; see invoice-pdf.ts for the PDF rendering of this same data.
 export async function getInvoice(userId: string, paymentId: string) {
+  return buildInvoice(userId, paymentId);
+}
+
+// Shared by the member's own invoice download and the admin member page.
+export async function buildInvoice(userId: string, paymentId: string) {
   const payment = await prisma.payment.findFirst({
     where: { id: paymentId, userId },
     include: { plan: true, user: { select: { name: true, email: true } } },
@@ -22,5 +27,7 @@ export async function getInvoice(userId: string, paymentId: string) {
     currency: payment.currency,
     gateway: payment.gateway,
     status: payment.status,
+    // Online gateway ids are internal; show references staff typed in (UTR etc.).
+    reference: payment.recordedById ? payment.gatewayReferenceId : null,
   };
 }

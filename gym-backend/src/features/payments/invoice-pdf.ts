@@ -10,7 +10,18 @@ interface InvoiceData {
   currency: string;
   gateway: string;
   status: string;
+  /** UPI UTR, card slip or gateway id. */
+  reference?: string | null;
 }
+
+// Kept in sync with gym-user-frontend/src/lib/brand.ts.
+const GYM = {
+  name: "KING'S FITNESS",
+  address: 'Dharmat Rd, near Ranjit Hanuman Mandir, Fatehabad, Madhya Pradesh 453551',
+  phone: '+91 75667 78296',
+};
+const GOLD = '#ac9a5f';
+const METHOD: Record<string, string> = { CASH: 'Cash', UPI: 'UPI', CARD: 'Card', RAZORPAY: 'Razorpay (online)', STRIPE: 'Stripe', WALLET: 'Wallet' };
 
 export function sendInvoicePdf(res: Response, invoice: InvoiceData) {
   const invoiceNumber = invoice.invoiceNumber || 'N-A';
@@ -20,8 +31,10 @@ export function sendInvoicePdf(res: Response, invoice: InvoiceData) {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
   doc.pipe(res);
 
-  doc.fontSize(20).font('Helvetica-Bold').text('Gym Platform', 50, 50);
-  doc.fontSize(10).font('Helvetica').fillColor('#666').text('Membership Invoice', 50, 75);
+  doc.rect(0, 0, 595.28, 6).fill(GOLD);
+  doc.fontSize(20).font('Helvetica-Bold').fillColor('#111').text(GYM.name, 50, 50);
+  doc.fontSize(9).font('Helvetica').fillColor('#666').text(GYM.address, 50, 75, { width: 280 }).text(GYM.phone, 50, 99);
+  doc.fontSize(10).fillColor(GOLD).font('Helvetica-Bold').text('MEMBERSHIP INVOICE', 50, 118);
 
   doc
     .fontSize(10)
@@ -30,16 +43,16 @@ export function sendInvoicePdf(res: Response, invoice: InvoiceData) {
     .text(`Date: ${invoice.issuedAt.toLocaleDateString()}`, 350, 65, { align: 'right' })
     .text(`Status: ${invoice.status}`, 350, 80, { align: 'right' });
 
-  doc.moveTo(50, 110).lineTo(545, 110).strokeColor('#ddd').stroke();
+  doc.moveTo(50, 140).lineTo(545, 140).strokeColor('#ddd').stroke();
 
-  doc.fontSize(11).font('Helvetica-Bold').text('Billed To', 50, 130);
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#000').text('Billed To', 50, 156);
   doc
     .fontSize(10)
     .font('Helvetica')
-    .text(invoice.billedTo.name || 'Member', 50, 148)
-    .text(invoice.billedTo.email, 50, 163);
+    .text(invoice.billedTo.name || 'Member', 50, 174)
+    .text(invoice.billedTo.email, 50, 189);
 
-  const tableTop = 210;
+  const tableTop = 230;
   doc.fontSize(10).font('Helvetica-Bold');
   doc.text('Description', 50, tableTop);
   doc.text('Duration', 300, tableTop);
@@ -62,8 +75,8 @@ export function sendInvoicePdf(res: Response, invoice: InvoiceData) {
     .fontSize(9)
     .font('Helvetica')
     .fillColor('#888')
-    .text(`Payment gateway: ${invoice.gateway}`, 50, rowY + 90)
-    .text('This is a system-generated invoice.', 50, rowY + 104);
+    .text(`Paid via: ${METHOD[invoice.gateway] ?? invoice.gateway}${invoice.reference ? `   ·   Ref: ${invoice.reference}` : ''}`, 50, rowY + 90)
+    .text(`Thank you for training with ${GYM.name}. This is a system-generated invoice.`, 50, rowY + 104);
 
   doc.end();
 }

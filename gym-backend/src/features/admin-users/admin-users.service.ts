@@ -2,6 +2,7 @@ import { AccountStatus, Prisma, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
 import { PaginationParams } from '@/lib/pagination';
+import { getMemberInsights } from '@/features/admin-users/member-crm.service';
 
 const LIST_SELECT = {
   id: true,
@@ -91,6 +92,15 @@ export async function getUserDetail(id: string) {
       xp: true,
       coins: true,
       updatedAt: true,
+      phone: true,
+      emergencyContactName: true,
+      emergencyContactPhone: true,
+      emergencyContactRelation: true,
+      tags: true,
+      lockerNumber: true,
+      rfidTagId: true,
+      ptSessionsTotal: true,
+      ptSessionsUsed: true,
       _count: { select: { trainees: { where: { deletedAt: null } } } },
       memberships: {
         orderBy: { endDate: 'desc' },
@@ -128,9 +138,12 @@ export async function getUserDetail(id: string) {
     prisma.nutritionLog.count({ where: { userId: id, loggedAt: { gte: since7 } } }),
   ]);
 
+  const insights = await getMemberInsights(id, user.createdAt);
+
   const { googleId, _count, weightLogs, ...rest } = user;
   return {
     ...rest,
+    ...insights,
     signInMethod: googleId ? 'GOOGLE' : 'PASSWORD',
     traineeCount: _count.trainees,
     latestWeight: weightLogs[0] ?? null,

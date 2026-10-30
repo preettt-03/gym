@@ -72,6 +72,19 @@ model User {
   gymBranch         String?
   medicalConditions String[] @default([])
   allergies         String[] @default([])
+  // Staff-written clearance / injury notes; only revealed on demand (and audited).
+  medicalNotes      String?
+
+  // Front-desk CRM details, managed from the admin member page.
+  phone                    String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  tags                     String[] @default([])
+  lockerNumber             String?  @unique
+  rfidTagId                String?  @unique
+  ptSessionsTotal          Int      @default(0)
+  ptSessionsUsed           Int      @default(0)
 
   coins Int @default(0)
   xp    Int @default(0)
@@ -81,6 +94,10 @@ model User {
   trainees  User[]  @relation("TrainerAssignment")
   trainerNotesWritten TrainerNote[] @relation("TrainerNoteAuthor")
   trainerNotesAbout   TrainerNote[] @relation("TrainerNoteSubject")
+  staffNotesWritten   StaffNote[]   @relation("StaffNoteAuthor")
+  staffNotesAbout     StaffNote[]   @relation("StaffNoteSubject")
+  ptSessions          PtSession[]   @relation("PtSessionMember")
+  ptSessionsCoached   PtSession[]   @relation("PtSessionTrainer")
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -616,6 +633,8 @@ enum MembershipStatus {
   ACTIVE
   EXPIRED
   CANCELLED
+  // Paused by staff; the days left are added back when it resumes.
+  FROZEN
 }
 
 model Membership {
@@ -627,6 +646,8 @@ model Membership {
   startDate DateTime         @default(now())
   endDate   DateTime
   status    MembershipStatus @default(ACTIVE)
+  frozenAt  DateTime?
+  resumeAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -651,6 +672,8 @@ enum PaymentGateway {
   UPI
   CARD
   WALLET
+  // Collected at the front desk.
+  CASH
 }
 
 model Payment {
@@ -667,6 +690,9 @@ model Payment {
   status             PaymentStatus  @default(PENDING)
   gatewayReferenceId String?
   invoiceNumber      String?        @unique
+  // Desk payments: who recorded it and any remark (UTR goes in gatewayReferenceId).
+  recordedById       String?
+  note               String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1160,4 +1186,36 @@ model FitnessTool {
 
   @@index([position])
   @@map("fitness_tools")
+}
+
+// Private staff notes about a member, with optional follow-up reminders.
+model StaffNote {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation("StaffNoteSubject", fields: [userId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User      @relation("StaffNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  body         String
+  followUpDate DateTime?
+  isDone       Boolean   @default(false)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([followUpDate])
+  @@map("staff_notes")
+}
+
+model PtSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation("PtSessionMember", fields: [userId], references: [id], onDelete: Cascade)
+  trainerId    String?
+  trainer      User?    @relation("PtSessionTrainer", fields: [trainerId], references: [id], onDelete: SetNull)
+  recordedById String
+  completedAt  DateTime @default(now())
+
+  @@index([userId, completedAt])
+  @@map("pt_sessions")
 }
