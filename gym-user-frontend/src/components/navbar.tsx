@@ -26,8 +26,6 @@ const MEMBER_LINKS = [
   { href: "/nutrition", label: "Nutrition" },
   { href: "/exercises", label: "Exercises" },
   { href: "/ai-coach", label: "AI Coach" },
-  // Members see their own plan plus the plans they can buy or renew.
-  { href: "/membership", label: "Plans" },
 ];
 
 function isActive(pathname: string, href: string) {
