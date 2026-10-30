@@ -248,7 +248,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
           <div
             ref={menuRef}
             style={{ position: "fixed", left: position.left, width: Math.max(position.width, 180), top: position.top, bottom: position.bottom }}
-            className="z-[100] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl shadow-black/60"
+            className="z-[100] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl shadow-elevation"
           >
             {withSearch && (
               <div className="flex items-center gap-2 border-b border-border px-3 focus-within:bg-foreground/5">

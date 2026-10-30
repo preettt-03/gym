@@ -125,7 +125,7 @@ export function Pill({ children, tone = "muted", className }: { children: React.
     gold: "border-gold/30 bg-gold/10 text-gold",
     muted: "border-border text-muted",
     success: "border-success/30 bg-success/10 text-success",
-    warning: "border-[#fab219]/35 bg-[#fab219]/10 text-[#fab219]",
+    warning: "border-warning/35 bg-warning/10 text-warning",
     danger: "border-danger/35 bg-danger/10 text-danger",
   };
   return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium", tones[tone], className)}>{children}</span>;

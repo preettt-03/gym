@@ -94,7 +94,7 @@ function TraineeCard({ trainee }: { trainee: Trainee }) {
       {reasons.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
           {reasons.map((r) => (
-            <li key={r} className="flex items-center gap-1 rounded-full bg-[#fab219]/10 px-2.5 py-1 text-xs text-[#fab219]">
+            <li key={r} className="flex items-center gap-1 rounded-full bg-warning/10 px-2.5 py-1 text-xs text-warning">
               <AlertTriangle className="h-3 w-3" /> {r}
             </li>
           ))}

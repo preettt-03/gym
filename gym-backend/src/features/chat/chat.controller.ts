@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
 import { AuthedRequest } from '@/middlewares/auth';
 import { parsePagination } from '@/lib/pagination';
@@ -7,6 +7,10 @@ import * as service from '@/features/chat/chat.service';
 
 export async function listRooms(req: AuthedRequest, res: Response) {
   res.json(await service.listMyRooms(req.user!.id));
+}
+
+export async function listPublicGlobalMessages(_req: Request, res: Response) {
+  res.json(await service.listPublicGlobalMessages());
 }
 
 export async function getOrCreateDirect(req: AuthedRequest, res: Response) {
@@ -22,7 +26,12 @@ export async function sendMessage(req: AuthedRequest, res: Response) {
 
 export async function listMessages(req: AuthedRequest, res: Response) {
   const pagination = parsePagination(req.query as Record<string, unknown>);
-  res.json(await service.listMessages(req.params.roomId, req.user!.id, pagination));
+  const before = typeof req.query.before === 'string' ? req.query.before : undefined;
+  res.json(await service.listMessages(req.params.roomId, req.user!.id, pagination, before));
+}
+
+export async function unreadCounts(req: AuthedRequest, res: Response) {
+  res.json(await service.getUnreadCounts(req.user!.id));
 }
 
 export async function markRead(req: AuthedRequest, res: Response) {

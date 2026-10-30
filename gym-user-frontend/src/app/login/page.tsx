@@ -54,7 +54,11 @@ function identifierError(value: string) {
 
 function LoginForm() {
   const router = useRouter();
-  const justReset = useSearchParams().get("reset") === "1";
+  const searchParams = useSearchParams();
+  const justReset = searchParams.get("reset") === "1";
+  // Only same-site paths, so a crafted link can't bounce people elsewhere.
+  const nextParam = searchParams.get("next");
+  const next = nextParam && /^\/(?![/\\])/.test(nextParam) ? nextParam : "/dashboard";
   const setSession = useAuthStore((s) => s.setSession);
   const [mode, setMode] = useState<"password" | "code">("password");
   const [identifier, setIdentifier] = useState("");
@@ -69,7 +73,7 @@ function LoginForm() {
   const signedIn = (data: { accessToken: string; user: Parameters<typeof setSession>[1] }) => {
     clearLoginLock();
     setSession(data.accessToken, data.user);
-    router.push("/dashboard");
+    router.push(next);
   };
 
   const login = useMutation({

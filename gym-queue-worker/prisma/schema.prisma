@@ -1,3 +1,5 @@
+// Copy of gym-backend/prisma/schema.prisma — the backend owns migrations.
+// Re-copy it whenever the backend schema changes, then run `npx prisma generate`.
 generator client {
   provider = "prisma-client-js"
 }
@@ -48,13 +50,14 @@ enum ActivityLevel {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
+  id            String        @id @default(uuid())
+  // Optional: members can sign up with just a mobile number.
+  email         String?       @unique
   passwordHash  String?
-  googleId      String?   @unique
+  googleId      String?       @unique
   name          String?
   photoUrl      String?
-  role          Role      @default(USER)
+  role          Role          @default(USER)
   accountStatus AccountStatus @default(ACTIVE)
 
   isEmailVerified Boolean @default(false)
@@ -70,19 +73,51 @@ model User {
   activityLevel     ActivityLevel?
   gymName           String?
   gymBranch         String?
-  medicalConditions String[] @default([])
-  allergies         String[] @default([])
+  medicalConditions String[]         @default([])
+  allergies         String[]         @default([])
+  // Staff-written clearance / injury notes; only revealed on demand (and audited).
+  medicalNotes      String?
+
+  // Front-desk CRM details, managed from the admin member page.
+  // E.164 (+919876543210). Unique because it doubles as a login.
+  phone                    String?   @unique
+  isPhoneVerified          Boolean   @default(false)
+  alternatePhone           String?
+  dateOfBirth              DateTime? @db.Date
+  bloodGroup               String?
+  // Member-reported injuries / health issues (alongside medicalConditions and allergies).
+  injuries                 String[]  @default([])
+  addressLine1             String?
+  addressLine2             String?
+  city                     String?
+  state                    String?
+  postalCode               String?
+  country                  String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  tags                     String[]  @default([])
+  lockerNumber             String?   @unique
+  rfidTagId                String?   @unique
+  ptSessionsTotal          Int       @default(0)
+  ptSessionsUsed           Int       @default(0)
 
   coins Int @default(0)
   xp    Int @default(0)
 
-  trainerId String?
-  trainer   User?   @relation("TrainerAssignment", fields: [trainerId], references: [id])
-  trainees  User[]  @relation("TrainerAssignment")
+  trainerId           String?
+  trainer             User?         @relation("TrainerAssignment", fields: [trainerId], references: [id])
+  trainees            User[]        @relation("TrainerAssignment")
+  trainerNotesWritten TrainerNote[] @relation("TrainerNoteAuthor")
+  trainerNotesAbout   TrainerNote[] @relation("TrainerNoteSubject")
+  staffNotesWritten   StaffNote[]   @relation("StaffNoteAuthor")
+  staffNotesAbout     StaffNote[]   @relation("StaffNoteSubject")
+  ptSessions          PtSession[]   @relation("PtSessionMember")
+  ptSessionsCoached   PtSession[]   @relation("PtSessionTrainer")
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   refreshTokens RefreshToken[]
   otpCodes      OtpCode[]
@@ -90,8 +125,8 @@ model User {
   exerciseViews ExerciseView[]
   weightLogs    WeightLog[]
 
-  ownedWorkoutPlans      WorkoutPlan[]            @relation("PlanOwner")
-  createdWorkoutPlans    WorkoutPlan[]            @relation("PlanAdminCreator")
+  ownedWorkoutPlans      WorkoutPlan[]           @relation("PlanOwner")
+  createdWorkoutPlans    WorkoutPlan[]           @relation("PlanAdminCreator")
   workoutPlanAssignments WorkoutPlanAssignment[]
   exerciseOverrides      UserExerciseOverride[]
   workoutLogs            WorkoutLog[]
@@ -102,35 +137,42 @@ model User {
   dietPlanAssignments DietPlanAssignment[]
   nutritionLogs       NutritionLog[]
 
-  memberships          Membership[]
-  payments             Payment[]
-  attendances          Attendance[]
-  attendanceApprovals  Attendance[] @relation("AttendanceApprover")
+  memberships         Membership[]
+  payments            Payment[]
+  attendances         Attendance[]
+  attendanceApprovals Attendance[] @relation("AttendanceApprover")
 
-  streak            UserStreak?
-  badges            UserBadge[]
-  createdMissions   Mission[]             @relation("MissionCreator")
-  missionProgress   UserMissionProgress[]
+  streak          UserStreak?
+  badges          UserBadge[]
+  createdMissions Mission[]             @relation("MissionCreator")
+  missionProgress UserMissionProgress[]
 
-  createdChatRooms  ChatRoom[]        @relation("ChannelCreator")
-  chatRoomMembers   ChatRoomMember[]
-  sentMessages      ChatMessage[]     @relation("MessageSender")
-  messageReads      ChatMessageRead[]
-  blockedUsers      UserBlock[]       @relation("Blocker")
-  blockedByUsers    UserBlock[]       @relation("Blocked")
-  reportedMessages  MessageReport[]
-  notifications     Notification[]
+  createdChatRooms ChatRoom[]        @relation("ChannelCreator")
+  chatRoomMembers  ChatRoomMember[]
+  sentMessages     ChatMessage[]     @relation("MessageSender")
+  messageReads     ChatMessageRead[]
+  blockedUsers     UserBlock[]       @relation("Blocker")
+  blockedByUsers   UserBlock[]       @relation("Blocked")
+  reportedMessages MessageReport[]
+  notifications    Notification[]
 
-  mediaAssets   MediaAsset[]
-  cmsPagesEdited CmsPage[]  @relation("CmsPageEditor")
-  blogPosts      BlogPost[] @relation("BlogAuthor")
+  mediaAssets    MediaAsset[]
+  cmsPagesEdited CmsPage[]    @relation("CmsPageEditor")
+  blogPosts      BlogPost[]   @relation("BlogAuthor")
 
-  auditLogs      AuditLog[]
+  auditLogs       AuditLog[]
   createdSegments Segment[]
 
-  aiLogs         AiLog[]
-  aiChatMessages AiChatMessage[]
-  pushSubscriptions PushSubscription[]
+  aiLogs                     AiLog[]
+  aiChatMessages             AiChatMessage[]
+  pushSubscriptions          PushSubscription[]
+  leaderboardAdjustments     LeaderboardAdjustment[] @relation("LeaderboardAdjustmentMember")
+  leaderboardAdjustmentsMade LeaderboardAdjustment[] @relation("LeaderboardAdjustmentAuthor")
+  leaderboardExclusion       LeaderboardExclusion?
+  leaderboardAwards          LeaderboardAward[]
+  leaderboardClearance       LeaderboardClearance?
+  highFivesGiven             LeaderboardHighFive[]   @relation("HighFiveFrom")
+  highFivesReceived          LeaderboardHighFive[]   @relation("HighFiveTo")
 
   @@index([role])
   @@map("users")
@@ -149,13 +191,14 @@ model WeightLog {
 }
 
 model RefreshToken {
-  id          String    @id @default(uuid())
-  token       String    @unique
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime
-  revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
+  id        String    @id @default(uuid())
+  // SHA-256 of the token; the token itself only ever lives in the user's cookie.
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@map("refresh_tokens")
@@ -167,14 +210,17 @@ enum OtpPurpose {
 }
 
 model OtpCode {
-  id          String     @id @default(uuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code        String
-  purpose     OtpPurpose
-  expiresAt   DateTime
-  consumedAt  DateTime?
-  createdAt   DateTime   @default(now())
+  id         String     @id @default(uuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Keyed hash of the code (see lib/otp.ts hashOtp); the code itself is only emailed.
+  codeHash   String
+  purpose    OtpPurpose
+  expiresAt  DateTime
+  consumedAt DateTime?
+  // Wrong guesses against this code; it is burned once the limit is hit.
+  attempts   Int        @default(0)
+  createdAt  DateTime   @default(now())
 
   @@index([userId, purpose])
   @@map("otp_codes")
@@ -187,63 +233,87 @@ enum Difficulty {
 }
 
 model ExerciseCategory {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
   description String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  exercises   ExerciseCategoryLink[]
+  exercises ExerciseCategoryLink[]
 
   @@map("exercise_categories")
 }
 
 model Exercise {
-  id                     String     @id @default(uuid())
-  name                   String
-  slug                   String     @unique
-  description            String?
-  videoUrl               String?
-  gifUrl                 String?
-  images                 String[]   @default([])
+  id          String  @id @default(uuid())
+  name        String
+  slug        String  @unique
+  description String?
+  gifUrl      String?
 
-  difficulty             Difficulty @default(BEGINNER)
-  targetMuscle           String
-  secondaryMuscles       String[]   @default([])
-  equipment              String[]   @default([])
+  difficulty       Difficulty @default(BEGINNER)
+  targetMuscle     String
+  secondaryMuscles String[]   @default([])
+  equipment        String[]   @default([])
 
   caloriesBurnedEstimate Int?
   durationMinutes        Int?
   workoutType            String?
 
-  instructions           String[]   @default([])
-  commonMistakes         String[]   @default([])
+  instructions   String[] @default([])
+  commonMistakes String[] @default([])
+  coachTip       String?
 
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @updatedAt
-  deletedAt              DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  categories             ExerciseCategoryLink[]
-  favorites              ExerciseFavorite[]
-  views                  ExerciseView[]
-  planExercises          WorkoutPlanExercise[]
-  workoutExerciseLogs    WorkoutExerciseLog[]
-  overrideReplacements   UserExerciseOverride[] @relation("ReplacementExercise")
+  categories           ExerciseCategoryLink[]
+  // Photos and videos, in display order; one photo may be flagged as the card thumbnail.
+  media                ExerciseMedia[]
+  favorites            ExerciseFavorite[]
+  views                ExerciseView[]
+  planExercises        WorkoutPlanExercise[]
+  workoutExerciseLogs  WorkoutExerciseLog[]
+  overrideReplacements UserExerciseOverride[] @relation("ReplacementExercise")
 
   @@index([difficulty])
   @@index([targetMuscle])
   @@map("exercises")
 }
 
+enum ExerciseMediaType {
+  IMAGE
+  VIDEO
+}
+
+model ExerciseMedia {
+  id          String            @id @default(uuid())
+  exerciseId  String
+  exercise    Exercise          @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  type        ExerciseMediaType
+  // An uploaded file (/uploads/...) or, for videos, a YouTube/Vimeo link.
+  url         String
+  // e.g. "Front view", "Side angle", "Common flaw".
+  label       String?
+  isThumbnail Boolean           @default(false)
+  position    Int
+
+  createdAt DateTime @default(now())
+
+  @@index([exerciseId, position])
+  @@map("exercise_media")
+}
+
 model ExerciseCategoryLink {
   exerciseId String
   categoryId String
 
-  exercise   Exercise         @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  category   ExerciseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  exercise Exercise         @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  category ExerciseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([exerciseId, categoryId])
   @@index([categoryId])
@@ -288,8 +358,8 @@ model WorkoutPlan {
   estimatedMinutes  Int?
   source            PlanSource
 
-  ownerId          String?
-  owner            User?   @relation("PlanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String?
+  owner   User?   @relation("PlanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdByAdminId String?
   createdByAdmin   User?   @relation("PlanAdminCreator", fields: [createdByAdminId], references: [id])
@@ -387,37 +457,42 @@ model WorkoutLog {
 
   createdAt DateTime @default(now())
 
+  @@index([completedAt])
   @@index([userId, date])
   @@map("workout_logs")
 }
 
 model WorkoutExerciseLog {
-  id             String               @id @default(uuid())
-  workoutLogId   String
-  workoutLog     WorkoutLog           @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
-  planExerciseId String?
-  planExercise   WorkoutPlanExercise? @relation(fields: [planExerciseId], references: [id])
-  exerciseId     String
-  exercise       Exercise             @relation(fields: [exerciseId], references: [id])
-  setNumber      Int                  @default(1)
-  reps           Int?
-  weightKg       Float?
+  id              String               @id @default(uuid())
+  workoutLogId    String
+  workoutLog      WorkoutLog           @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  planExerciseId  String?
+  planExercise    WorkoutPlanExercise? @relation(fields: [planExerciseId], references: [id])
+  exerciseId      String
+  exercise        Exercise             @relation(fields: [exerciseId], references: [id])
+  setNumber       Int                  @default(1)
+  reps            Int?
+  weightKg        Float?
   durationSeconds Int?
-  distanceMeters Float?
-  caloriesBurned Int?
-  completedAt    DateTime             @default(now())
+  distanceMeters  Float?
+  caloriesBurned  Int?
+  completedAt     DateTime             @default(now())
 
+  @@index([completedAt])
   @@index([workoutLogId])
   @@map("workout_exercise_logs")
 }
 
 model ProgressPhoto {
-  id       String   @id @default(uuid())
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photoUrl String
-  takenAt  DateTime @default(now())
-  notes    String?
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Legacy public URL; new photos are private files referenced by storageKey
+  // and only ever handed out as short-lived signed URLs.
+  photoUrl   String?
+  storageKey String?  @unique
+  takenAt    DateTime @default(now())
+  notes      String?
 
   @@index([userId, takenAt])
   @@map("progress_photos")
@@ -433,9 +508,9 @@ enum MealType {
 }
 
 model DietCategory {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
   description String?
 
   createdAt DateTime  @default(now())
@@ -448,16 +523,16 @@ model DietCategory {
 }
 
 model Food {
-  id                String   @id @default(uuid())
-  name              String
-  slug              String   @unique
-  caloriesPer100g   Float
-  proteinPer100g    Float
-  carbsPer100g      Float
-  fatPer100g        Float
-  fiberPer100g      Float?
-  sugarPer100g      Float?
-  sodiumMgPer100g   Float?
+  id              String @id @default(uuid())
+  name            String
+  slug            String @unique
+  caloriesPer100g Float
+  proteinPer100g  Float
+  carbsPer100g    Float
+  fatPer100g      Float
+  fiberPer100g    Float?
+  sugarPer100g    Float?
+  sodiumMgPer100g Float?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -476,8 +551,8 @@ model DietPlan {
   estimatedCalories Int?
   source            PlanSource
 
-  ownerId          String?
-  owner            User?   @relation("DietPlanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String?
+  owner   User?   @relation("DietPlanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdByAdminId String?
   createdByAdmin   User?   @relation("DietPlanAdminCreator", fields: [createdByAdminId], references: [id])
@@ -583,6 +658,8 @@ enum MembershipStatus {
   ACTIVE
   EXPIRED
   CANCELLED
+  // Paused by staff; the days left are added back when it resumes.
+  FROZEN
 }
 
 model Membership {
@@ -594,6 +671,8 @@ model Membership {
   startDate DateTime         @default(now())
   endDate   DateTime
   status    MembershipStatus @default(ACTIVE)
+  frozenAt  DateTime?
+  resumeAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -618,6 +697,8 @@ enum PaymentGateway {
   UPI
   CARD
   WALLET
+  // Collected at the front desk.
+  CASH
 }
 
 model Payment {
@@ -634,6 +715,9 @@ model Payment {
   status             PaymentStatus  @default(PENDING)
   gatewayReferenceId String?
   invoiceNumber      String?        @unique
+  // Desk payments: who recorded it and any remark (UTR goes in gatewayReferenceId).
+  recordedById       String?
+  note               String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -649,20 +733,21 @@ enum AttendanceMethod {
 }
 
 model Attendance {
-  id                String            @id @default(uuid())
+  id                String           @id @default(uuid())
   userId            String
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   membershipId      String?
-  membership        Membership?       @relation(fields: [membershipId], references: [id])
-  checkInAt         DateTime          @default(now())
+  membership        Membership?      @relation(fields: [membershipId], references: [id])
+  checkInAt         DateTime         @default(now())
   checkOutAt        DateTime?
   durationMinutes   Int?
-  method            AttendanceMethod  @default(QR)
+  method            AttendanceMethod @default(QR)
   approvedByAdminId String?
-  approvedByAdmin   User?             @relation("AttendanceApprover", fields: [approvedByAdminId], references: [id])
+  approvedByAdmin   User?            @relation("AttendanceApprover", fields: [approvedByAdminId], references: [id])
 
   createdAt DateTime @default(now())
 
+  @@index([checkInAt])
   @@index([userId, checkInAt])
   @@map("attendances")
 }
@@ -743,14 +828,14 @@ model Mission {
 }
 
 model UserMissionProgress {
-  id               String    @id @default(uuid())
-  userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  missionId        String
-  mission          Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  currentValue     Float     @default(0)
-  isCompleted      Boolean   @default(false)
-  completedAt      DateTime?
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId    String
+  mission      Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  currentValue Float     @default(0)
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -872,17 +957,18 @@ enum NotificationType {
   ADMIN_ANNOUNCEMENT
   CHAT_MESSAGE
   SYSTEM
+  LEADERBOARD
 }
 
 model Notification {
-  id     String            @id @default(uuid())
+  id     String           @id @default(uuid())
   userId String
-  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type   NotificationType
   title  String
   body   String?
   data   Json?
-  isRead Boolean           @default(false)
+  isRead Boolean          @default(false)
 
   createdAt DateTime @default(now())
 
@@ -891,13 +977,13 @@ model Notification {
 }
 
 model MediaAsset {
-  id           String   @id @default(uuid())
+  id           String @id @default(uuid())
   url          String
   filename     String
   mimeType     String
   sizeBytes    Int
   uploadedById String
-  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -905,8 +991,8 @@ model MediaAsset {
 }
 
 model CmsPage {
-  id      String @id @default(uuid())
-  slug    String @unique
+  id      String  @id @default(uuid())
+  slug    String  @unique
   title   String?
   content Json
 
@@ -967,10 +1053,10 @@ model BlogPost {
 }
 
 model GalleryImage {
-  id        String  @id @default(uuid())
-  imageUrl  String
-  caption   String?
-  order     Int     @default(0)
+  id       String  @id @default(uuid())
+  imageUrl String
+  caption  String?
+  order    Int     @default(0)
 
   createdAt DateTime @default(now())
 
@@ -978,9 +1064,9 @@ model GalleryImage {
 }
 
 model AuditLog {
-  id         String   @id @default(uuid())
+  id         String  @id @default(uuid())
   adminId    String
-  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  admin      User    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   action     String
   method     String
   path       String
@@ -998,7 +1084,7 @@ model AuditLog {
 }
 
 model Segment {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
   rules       Json
@@ -1024,12 +1110,12 @@ enum AiFeature {
 model AiSettings {
   id String @id @default("singleton")
 
-  workoutPlanEnabled       Boolean @default(true)
-  dietPlanEnabled          Boolean @default(true)
-  formTipEnabled           Boolean @default(true)
-  motivationEnabled        Boolean @default(true)
+  workoutPlanEnabled         Boolean @default(true)
+  dietPlanEnabled            Boolean @default(true)
+  formTipEnabled             Boolean @default(true)
+  motivationEnabled          Boolean @default(true)
   nutritionSuggestionEnabled Boolean @default(true)
-  chatbotEnabled           Boolean @default(true)
+  chatbotEnabled             Boolean @default(true)
 
   // Editable system prompts per feature, keyed by AiFeature value. Falls back to
   // the built-in default prompt in code when a key is absent.
@@ -1041,15 +1127,15 @@ model AiSettings {
 }
 
 model AiLog {
-  id      String    @id @default(uuid())
-  userId  String?
-  user    User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  feature AiFeature
-  model   String
-  prompt  String
-  response String?
+  id           String    @id @default(uuid())
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  feature      AiFeature
+  model        String
+  prompt       String
+  response     String?
   errorMessage String?
-  latencyMs Int?
+  latencyMs    Int?
 
   createdAt DateTime @default(now())
 
@@ -1059,10 +1145,10 @@ model AiLog {
 }
 
 model AiChatMessage {
-  id     String @id @default(uuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role   String // "user" | "assistant"
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role    String // "user" | "assistant"
   content String
 
   createdAt DateTime @default(now())
@@ -1072,16 +1158,216 @@ model AiChatMessage {
 }
 
 model PushSubscription {
-  id       String @id @default(uuid())
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  endpoint String @unique
-  p256dh   String
-  auth     String
+  id        String  @id @default(uuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String  @unique
+  p256dh    String
+  auth      String
   userAgent String?
 
   createdAt DateTime @default(now())
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+// Private coaching notes. Visible to whoever currently coaches the trainee
+// (so they carry over on reassignment); only the author can edit or delete.
+// Never shown to the trainee.
+model TrainerNote {
+  id        String   @id @default(uuid())
+  authorId  String
+  author    User     @relation("TrainerNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  traineeId String
+  trainee   User     @relation("TrainerNoteSubject", fields: [traineeId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([traineeId, createdAt])
+  @@map("trainer_notes")
+}
+
+enum ToolCategory {
+  STRENGTH
+  NUTRITION
+  BODY_COMP
+  CARDIO
+  TRAINING
+}
+
+// The calculators themselves live in the member app's code; this table only
+// controls which ones members see, their order and the copy on their cards.
+model FitnessTool {
+  id          String       @id @default(uuid())
+  slug        String       @unique
+  title       String
+  description String
+  category    ToolCategory
+  isEnabled   Boolean      @default(true)
+  position    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position])
+  @@map("fitness_tools")
+}
+
+// Private staff notes about a member, with optional follow-up reminders.
+model StaffNote {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation("StaffNoteSubject", fields: [userId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User      @relation("StaffNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  body         String
+  followUpDate DateTime?
+  isDone       Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([followUpDate])
+  @@map("staff_notes")
+}
+
+model PtSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation("PtSessionMember", fields: [userId], references: [id], onDelete: Cascade)
+  trainerId    String?
+  trainer      User?    @relation("PtSessionTrainer", fields: [trainerId], references: [id], onDelete: SetNull)
+  recordedById String
+  completedAt  DateTime @default(now())
+
+  @@index([userId, completedAt])
+  @@map("pt_sessions")
+}
+
+// --- Leaderboard ---
+// Scores are computed live from workout, attendance and streak data; these
+// tables only hold the admin's knobs and corrections.
+
+model LeaderboardSettings {
+  id                    String  @id @default("default")
+  isEnabled             Boolean @default(true)
+  workoutPoints         Int     @default(50)
+  visitPoints           Int     @default(30)
+  caloriesPerPoint      Int     @default(10)
+  gymMinutePoints       Int     @default(1)
+  workoutMinutePoints   Int     @default(2)
+  streakPoints          Int     @default(25)
+  fraudDetection        Boolean @default(true)
+  maxWorkoutsPerDay     Int     @default(3)
+  maxCaloriesPerDay     Int     @default(3000)
+  maxGymMinutesPerVisit Int     @default(300)
+  // Flagged members drop off the member board until an admin approves them.
+  autoFreeze            Boolean @default(true)
+  overtakeAlerts        Boolean @default(true)
+  weeklyWrapUp          Boolean @default(true)
+  // { daily|weekly|monthly: { enabled, coins: [1st, 2nd, 3rd], xp: [1st, 2nd, 3rd] } }
+  rewards               Json    @default("{\"daily\":{\"enabled\":true,\"coins\":[50,30,20],\"xp\":[100,60,40]},\"weekly\":{\"enabled\":true,\"coins\":[300,200,100],\"xp\":[600,400,200]},\"monthly\":{\"enabled\":true,\"coins\":[1000,600,300],\"xp\":[2000,1200,600]}}")
+  // Secret for the reception TV view (/display/leaderboard?key=...). Null = off.
+  displayKey            String? @unique
+
+  updatedAt DateTime @updatedAt
+
+  @@map("leaderboard_settings")
+}
+
+model LeaderboardAdjustment {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("LeaderboardAdjustmentMember", fields: [userId], references: [id], onDelete: Cascade)
+  points      Int
+  reason      String
+  // Counts towards every board (day/week/month) that contains this instant.
+  effectiveAt DateTime @default(now())
+  createdById String?
+  createdBy   User?    @relation("LeaderboardAdjustmentAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, effectiveAt])
+  @@index([effectiveAt])
+  @@map("leaderboard_adjustments")
+}
+
+// Members an admin has taken off the public board (e.g. suspected fake logs).
+model LeaderboardExclusion {
+  userId      String  @id
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason      String?
+  createdById String?
+
+  createdAt DateTime @default(now())
+
+  @@map("leaderboard_exclusions")
+}
+
+// Frozen top of a finished day/week/month, written once when the cycle ends.
+model LeaderboardSnapshot {
+  id          String   @id @default(uuid())
+  period      String
+  periodStart DateTime
+  periodEnd   DateTime
+  entries     Json
+
+  createdAt DateTime @default(now())
+
+  awards LeaderboardAward[]
+
+  @@unique([period, periodStart])
+  @@map("leaderboard_snapshots")
+}
+
+model LeaderboardAward {
+  id           String              @id @default(uuid())
+  snapshotId   String
+  snapshot     LeaderboardSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rank         Int
+  points       Int
+  coins        Int                 @default(0)
+  xp           Int                 @default(0)
+  badgeName    String?
+  // When the member dismissed the celebration pop-up.
+  celebratedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([snapshotId, userId])
+  @@index([userId, celebratedAt])
+  @@map("leaderboard_awards")
+}
+
+// An admin reviewed a flagged member: boards already running at this moment
+// stop auto-freezing them.
+model LeaderboardClearance {
+  userId      String   @id
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clearedAt   DateTime @default(now())
+  clearedById String?
+
+  @@map("leaderboard_clearances")
+}
+
+model LeaderboardHighFive {
+  id          String   @id @default(uuid())
+  fromUserId  String
+  fromUser    User     @relation("HighFiveFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId    String
+  toUser      User     @relation("HighFiveTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  period      String
+  periodStart DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([fromUserId, toUserId, period, periodStart])
+  @@index([toUserId, period, periodStart])
+  @@map("leaderboard_high_fives")
 }

@@ -109,9 +109,9 @@ function OverviewTab({ traineeId }: { traineeId: string }) {
 
       <div className="flex flex-col gap-4">
         {p && (p.medicalConditions.length > 0 || p.allergies.length > 0 || p.injuries.length > 0) ? (
-          <section className="rounded-2xl border border-[#fab219]/40 bg-[#fab219]/5 p-6">
+          <section className="rounded-2xl border border-warning/40 bg-warning/5 p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold uppercase">
-              <AlertTriangle className="h-5 w-5 text-[#fab219]" /> Safety notes
+              <AlertTriangle className="h-5 w-5 text-warning" /> Safety notes
             </h2>
             {p.medicalConditions.length > 0 && (
               <p className="mt-3 text-sm">

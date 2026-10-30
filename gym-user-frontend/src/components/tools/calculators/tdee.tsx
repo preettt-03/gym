@@ -46,7 +46,7 @@ export function TdeeCalculator({ profile }: { profile: UserProfile | null }) {
                     <li key={g.key} className={cn("rounded-xl border p-3", g.key === "maintain" ? "border-gold/50 bg-gold/5" : "border-border bg-surface-2/50")}>
                       <p className="text-xs uppercase tracking-wider text-muted">{g.label}</p>
                       <p className="mt-0.5 font-display text-2xl font-bold">{fmt(kcal)} <span className="text-sm font-normal text-muted">kcal</span></p>
-                      <p className={cn("text-xs", low ? "text-[#fab219]" : "text-muted")}>{low ? "Very low — only with professional guidance" : g.note}</p>
+                      <p className={cn("text-xs", low ? "text-warning" : "text-muted")}>{low ? "Very low — only with professional guidance" : g.note}</p>
                     </li>
                   );
                 })}

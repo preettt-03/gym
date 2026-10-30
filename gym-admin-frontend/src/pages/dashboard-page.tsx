@@ -32,7 +32,7 @@ const RANGES: { days: AnalyticsRange; label: string }[] = [
 // Status colors are reserved for state and always ship with an icon + label.
 const STATUS = {
   good: "#0ca30c",
-  warning: "#fab219",
+  warning: "var(--warning)",
   critical: "#d03b3b",
   neutral: "#6b6b6b",
 };
@@ -255,8 +255,8 @@ export function DashboardPage() {
                         </Link>
                         <p className="truncate text-xs text-muted">{m.plan.name}</p>
                       </div>
-                      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#fab219]/10 px-2.5 py-1 text-xs text-foreground">
-                        <Clock className="h-3.5 w-3.5 text-[#fab219]" />
+                      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs text-foreground">
+                        <Clock className="h-3.5 w-3.5 text-warning" />
                         {shortDate.format(new Date(m.endDate))}
                       </span>
                     </li>

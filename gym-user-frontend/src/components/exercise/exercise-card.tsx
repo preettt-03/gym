@@ -38,8 +38,8 @@ export function ExerciseCard({ exercise, meta }: { exercise: Exercise; meta?: st
         ) : (
           <MuscleSilhouette group={muscleGroupOf(exercise.targetMuscle)} label={`${exercise.targetMuscle} diagram`} className="transition-transform duration-300 group-hover:scale-105" />
         )}
-        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-black/30" />
-        <span className={cn("absolute left-3 top-3 rounded-full border bg-black/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur", DIFFICULTY_STYLE[exercise.difficulty])}>
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-black/30 light:from-black/35 light:to-transparent" />
+        <span className={cn("absolute left-3 top-3 on-media rounded-full border bg-black/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur", DIFFICULTY_STYLE[exercise.difficulty])}>
           {difficultyLabel(exercise.difficulty)}
         </span>
         {exercise.videoCount > 0 && (
@@ -61,7 +61,7 @@ export function ExerciseCard({ exercise, meta }: { exercise: Exercise; meta?: st
         </h3>
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
           Target:
-          <span className="rounded-full border border-gold/25 bg-gold/10 px-2.5 py-0.5 font-semibold text-gold-light">{exercise.targetMuscle}</span>
+          <span className="rounded-full border border-gold/25 bg-gold/10 px-2.5 py-0.5 font-semibold text-accent-2">{exercise.targetMuscle}</span>
         </p>
         {secondary.length > 0 && (
           <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted">

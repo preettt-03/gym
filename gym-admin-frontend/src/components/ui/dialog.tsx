@@ -66,7 +66,7 @@ export function Dialog({
 
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div aria-hidden="true" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div aria-hidden="true" className="absolute inset-0 bg-black/70 backdrop-blur-sm light:bg-black/40" onClick={onClose} />
       <div
         ref={panelRef}
         role="dialog"

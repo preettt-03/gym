@@ -84,11 +84,11 @@ test.describe("Public marketing pages", () => {
   test("muscle group chips slide with arrows when they don't fit", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     await page.goto("/exercises");
-    const right = page.getByRole("button", { name: "Scroll muscle group right" });
+    const right = page.getByRole("button", { name: "Scroll exercise filters right" });
     await expect(right).toBeVisible();
-    await expect(page.getByRole("button", { name: "Scroll muscle group left" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Scroll exercise filters left" })).toHaveCount(0);
     await right.click();
-    await expect(page.getByRole("button", { name: "Scroll muscle group left" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Scroll exercise filters left" })).toBeVisible();
     await page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Core" }).click();
     await expect(page.getByRole("group", { name: "Exercise filters" }).getByRole("button", { name: "Core" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -102,5 +102,36 @@ test.describe("Public marketing pages", () => {
 
     const sitemap = await page.request.get("/sitemap.xml");
     expect(sitemap.status()).toBe(200);
+  });
+});
+
+test.describe("chat for guests", () => {
+  test("guests can read Everyone, and replying sends them to log in", async ({ page }) => {
+    await page.goto("/exercises");
+    await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Open chat" }).click();
+    const panel = page.getByRole("complementary", { name: "Chat" });
+    await expect(panel.getByRole("heading", { name: "Everyone" })).toBeVisible();
+    await expect(panel.getByRole("listitem").first()).toBeVisible();
+    await expect(panel.getByRole("button", { name: /^Report/ })).toHaveCount(0);
+    await panel.getByRole("textbox", { name: "Message" }).click();
+    await expect(page).toHaveURL(/\/login\?next=%2Fexercises/);
+  });
+
+  test("on phones the tab bar hides while chat covers the screen", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const tabs = page.getByRole("navigation", { name: "Quick links" });
+    await tabs.getByRole("button", { name: "Chat" }).click();
+    await expect(page.getByRole("complementary", { name: "Chat" })).toBeVisible();
+    await expect(tabs).toHaveCount(0);
+  });
+});
+
+test.describe("reception TV display", () => {
+  test("a wrong key shows a clear message and no site chrome", async ({ page }) => {
+    await page.goto("/display/leaderboard?key=not-a-real-key-123");
+    await expect(page.getByRole("heading", { name: "Display link not valid" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Quick links" })).toHaveCount(0);
   });
 });

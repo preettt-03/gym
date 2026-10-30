@@ -129,7 +129,7 @@ export function PlateLoaderCalculator() {
                 <p className="mt-4 text-sm text-muted">Just the bar — no plates needed.</p>
               )}
               {result.remainder > 0 ? (
-                <p role="alert" className="mt-4 rounded-xl border border-[#fab219]/40 bg-[#fab219]/10 p-3 text-sm text-[#fab219]">
+                <p role="alert" className="mt-4 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
                   Can&apos;t make exactly {fmt(result.target, 2)} {result.unit} with these plates — closest is {fmt(result.loaded, 2)} {result.unit} ({fmt(result.remainder, 2)} short).
                 </p>
               ) : (

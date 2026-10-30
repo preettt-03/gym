@@ -73,7 +73,7 @@ export function ContactDialog({ kind, current, onClose }: { kind: "email" | "pho
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="contact-title">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm light:bg-black/40" onClick={onClose} aria-hidden />
       <div className="relative w-full rounded-t-2xl border border-border bg-surface p-6 shadow-2xl sm:max-w-md sm:rounded-2xl">
         <div className="flex items-start justify-between gap-3">
           <div>

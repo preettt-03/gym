@@ -7,14 +7,21 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a0a0a" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      // Apply the saved theme before first paint (see src/lib/theme.ts).
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          var light = t === "light" || (t === "system" && matchMedia("(prefers-color-scheme: light)").matches);
+          var root = document.documentElement;
+          root.classList.add(light ? "light" : "dark");
+          root.style.colorScheme = light ? "light" : "dark";
+          if (light) document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f6f5f1");
+        } catch (e) {}
+      })();
+    </script>
     <meta name="robots" content="noindex, nofollow" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap"
-    />
     <title>King's Fitness Admin</title>
   </head>
   <body>

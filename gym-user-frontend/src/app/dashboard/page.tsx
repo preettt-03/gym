@@ -25,6 +25,7 @@ import { RequireAuth } from "@/components/require-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 import { cn, humanize } from "@/lib/utils";
+import { ProfileCompletionCard } from "@/components/profile-completion-card";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const longDate = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" });
@@ -34,7 +35,7 @@ function Meter({ value, max, label }: { value: number; max: number; label: strin
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
     <div role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.round(value)} className="h-2 rounded-full bg-surface-2">
-      <div className={cn("h-2 rounded-full transition-all", value > max ? "bg-[#fab219]" : "bg-gold")} style={{ width: `${pct}%` }} />
+      <div className={cn("h-2 rounded-full transition-all", value > max ? "bg-warning" : "bg-gold")} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -88,7 +89,7 @@ function MembershipBadge() {
 
   if (!data.isActive || !m) {
     return (
-      <Link href="/membership" className="flex items-center gap-2 rounded-full border border-[#fab219]/40 bg-[#fab219]/10 px-4 py-2 text-sm text-[#fab219] hover:border-[#fab219]">
+      <Link href="/membership" className="flex items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-4 py-2 text-sm text-warning hover:border-warning">
         <CreditCard className="h-4 w-4" /> {data.hasMembership ? "Membership expired — renew" : "No membership yet — view plans"}
       </Link>
     );
@@ -98,7 +99,7 @@ function MembershipBadge() {
       href="/membership"
       className={cn(
         "flex items-center gap-2 rounded-full border px-4 py-2 text-sm",
-        daysLeft <= 7 ? "border-[#fab219]/40 bg-[#fab219]/10 text-[#fab219]" : "border-border text-muted hover:text-foreground"
+        daysLeft <= 7 ? "border-warning/40 bg-warning/10 text-warning" : "border-border text-muted hover:text-foreground"
       )}
     >
       <CreditCard className="h-4 w-4" />
@@ -162,6 +163,8 @@ function DashboardContent() {
         </div>
         <MembershipBadge />
       </div>
+
+      <ProfileCompletionCard className="mt-6" />
 
       <nav aria-label="Quick actions" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {QUICK_ACTIONS.map((a) => (

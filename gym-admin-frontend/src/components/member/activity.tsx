@@ -168,7 +168,7 @@ export function NotesCard({ member }: { member: MemberDetail }) {
         {[...open, ...done].map((n) => {
           const due = n.followUpDate && !n.isDone ? n.followUpDate.slice(0, 10) <= today : false;
           return (
-            <li key={n.id} className={cn("rounded-xl border p-3", n.isDone ? "border-border opacity-60" : due ? "border-[#fab219]/50 bg-[#fab219]/5" : "border-border bg-surface-2/50")}>
+            <li key={n.id} className={cn("rounded-xl border p-3", n.isDone ? "border-border opacity-60" : due ? "border-warning/50 bg-warning/5" : "border-border bg-surface-2/50")}>
               <p className={cn("whitespace-pre-wrap text-sm", n.isDone && "line-through")}>{n.body}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
                 <span>

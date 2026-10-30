@@ -91,7 +91,7 @@ export function Meter({ value, max, label }: { value: number; max: number; label
       aria-valuenow={Math.round(value)}
       className="h-2 rounded-full bg-surface-2"
     >
-      <div className={cn("h-2 rounded-full transition-all", value > max ? "bg-[#fab219]" : "bg-gold")} style={{ width: `${pct}%` }} />
+      <div className={cn("h-2 rounded-full transition-all", value > max ? "bg-warning" : "bg-gold")} style={{ width: `${pct}%` }} />
     </div>
   );
 }

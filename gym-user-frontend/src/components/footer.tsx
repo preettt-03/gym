@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Clock, MapPin, Phone, Star } from "lucide-react";
 import { InstagramIcon } from "@/components/icons";
 import { Logo } from "@/components/logo";
+import { ThemeMenu } from "@/components/theme-toggle";
 import { BRAND } from "@/lib/brand";
 
 const LINK_GROUPS = [
@@ -103,9 +104,12 @@ export function Footer() {
       </div>
 
       <div className="border-t border-border">
-        <p className="mx-auto max-w-7xl px-4 py-5 text-center text-xs text-muted sm:px-6">
-          © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
-        </p>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <p className="text-xs text-muted">
+            © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
+          </p>
+          <ThemeMenu />
+        </div>
       </div>
     </footer>
   );

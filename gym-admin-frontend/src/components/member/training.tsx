@@ -157,7 +157,7 @@ export function PlansCard({ member, onChange }: { member: MemberDetail; onChange
             )
           : card("diet", UtensilsCrossed, "No diet plan", "Assign one to set calorie and macro targets.")}
       </div>
-      {(workout.length > 1 || diet.length > 1) && <p className="mt-3 text-xs text-[#fab219]">More than one active plan — changing will keep just the one you pick.</p>}
+      {(workout.length > 1 || diet.length > 1) && <p className="mt-3 text-xs text-warning">More than one active plan — changing will keep just the one you pick.</p>}
       <ConfirmDialog
         open={Boolean(detach)}
         title="Detach this plan?"
@@ -205,7 +205,7 @@ export function PtCard({ member }: { member: MemberDetail }) {
           {member.trainer ? (
             <p className="mt-2 text-xs text-muted">Notifies {member.trainer.name ?? member.trainer.email}.</p>
           ) : (
-            <p className="mt-2 text-xs text-[#fab219]">No trainer assigned — the session is logged without one.</p>
+            <p className="mt-2 text-xs text-warning">No trainer assigned — the session is logged without one.</p>
           )}
           {member.ptRecent.length > 0 && (
             <ul className="mt-3 flex flex-col gap-1 border-t border-border pt-3 text-xs text-muted">

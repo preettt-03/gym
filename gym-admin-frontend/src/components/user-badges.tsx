@@ -4,7 +4,7 @@ import { ROLE_LABEL, STATUS_LABEL } from "@/lib/format";
 
 const STATUS_STYLES: Record<AccountStatus, string> = {
   ACTIVE: "bg-success/10 text-success",
-  SUSPENDED: "bg-[#fab219]/10 text-[#fab219]",
+  SUSPENDED: "bg-warning/10 text-warning",
   BANNED: "bg-danger/10 text-danger",
 };
 

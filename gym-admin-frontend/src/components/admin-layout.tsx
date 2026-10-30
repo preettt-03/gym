@@ -16,6 +16,8 @@ import {
   ScrollText,
   Tags,
   Target,
+  Crown,
+  Gift,
   Trophy,
   UtensilsCrossed,
   Users,
@@ -24,6 +26,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 
@@ -49,6 +52,8 @@ const NAV_GROUPS = [
       { to: "/membership-plans", label: "Membership Plans", icon: CreditCard, end: false },
       { to: "/attendance", label: "Attendance", icon: CalendarCheck, end: false },
       { to: "/missions", label: "Missions & Badges", icon: Trophy, end: false },
+      { to: "/leaderboard", label: "Leaderboard", icon: Crown, end: false },
+      { to: "/rewards", label: "Rewards Store", icon: Gift, end: false },
       { to: "/cms", label: "Content (CMS)", icon: FileText, end: false },
     ],
   },
@@ -122,6 +127,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="border-t border-border pt-4">
+        <ThemeToggle className="mb-4" />
         <div className="mb-3 flex items-center gap-3 px-1">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/15 font-display text-sm text-gold">
             {(user?.name || user?.email || "A").charAt(0).toUpperCase()}
@@ -192,7 +198,7 @@ export function AdminLayout() {
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <div aria-hidden="true" className="absolute inset-0 bg-black/70" onClick={() => setMobileOpen(false)} />
+          <div aria-hidden="true" className="absolute inset-0 bg-black/70 light:bg-black/40" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col gap-6 overflow-y-auto border-r border-border bg-surface p-5">
             <div className="flex items-center justify-between">
               <Brand />

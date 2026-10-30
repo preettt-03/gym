@@ -12,6 +12,8 @@ import { NotificationsPage } from "@/pages/notifications-page";
 import { MembershipPlansPage } from "@/pages/membership-plans-page";
 import { AttendancePage } from "@/pages/attendance-page";
 import { MissionsPage } from "@/pages/missions-page";
+import { LeaderboardPage } from "@/pages/leaderboard-page";
+import { RewardsPage } from "@/pages/rewards-page";
 import { WorkoutPlansPage } from "@/pages/workout-plans-page";
 import { DietPlansPage } from "@/pages/diet-plans-page";
 import { CmsPage } from "@/pages/cms-page";
@@ -45,6 +47,8 @@ function App() {
         <Route path="/membership-plans" element={<MembershipPlansPage />} />
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/missions" element={<MissionsPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/rewards" element={<RewardsPage />} />
         <Route path="/cms" element={<CmsPage />} />
         <Route path="/segments" element={<SegmentsPage />} />
         <Route path="/ai-management" element={<AiManagementPage />} />

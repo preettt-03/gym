@@ -153,13 +153,13 @@ export default function ExerciseDetailPage() {
 
               <section className="glass-card p-6">
                 <h3 className="flex items-center gap-2 text-xl font-semibold uppercase">
-                  <AlertTriangle className="h-5 w-5 text-[#fab219]" /> Common mistakes
+                  <AlertTriangle className="h-5 w-5 text-warning" /> Common mistakes
                 </h3>
                 {exercise.commonMistakes.length > 0 ? (
                   <ul className="mt-4 flex flex-col gap-2.5">
                     {exercise.commonMistakes.map((m, i) => (
                       <li key={i} className="flex items-start gap-3 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm leading-relaxed text-foreground/85">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#fab219]" aria-hidden />
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
                         {m}
                       </li>
                     ))}

@@ -15,3 +15,27 @@ export function gymDayRange(dateKey = gymDateKey()) {
   const start = new Date(Date.UTC(y, m - 1, d) - IST_OFFSET_MS);
   return { dateKey, start, end: new Date(start.getTime() + DAY_MS - 1) };
 }
+
+export type LeaderboardPeriod = 'daily' | 'weekly' | 'monthly' | 'all-time';
+
+// [start, end) UTC instants of an IST day / Monday-start week / month.
+// `offset` steps back whole periods (1 = yesterday / last week / last month).
+export function gymPeriodRange(period: LeaderboardPeriod, offset = 0, now = new Date()) {
+  // Year 9999, not JS's max date: Postgres and Prisma can't take dates past that.
+  if (period === 'all-time') return { start: new Date(0), end: new Date(Date.UTC(9999, 0, 1)) };
+  const [y, m, d] = gymDateKey(now).split('-').map(Number);
+  let startUtc: number;
+  let endUtc: number;
+  if (period === 'daily') {
+    startUtc = Date.UTC(y, m - 1, d - offset);
+    endUtc = Date.UTC(y, m - 1, d - offset + 1);
+  } else if (period === 'weekly') {
+    const weekday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7; // Monday = 0
+    startUtc = Date.UTC(y, m - 1, d - weekday - offset * 7);
+    endUtc = startUtc + 7 * DAY_MS;
+  } else {
+    startUtc = Date.UTC(y, m - 1 - offset, 1);
+    endUtc = Date.UTC(y, m - offset, 1);
+  }
+  return { start: new Date(startUtc - IST_OFFSET_MS), end: new Date(endUtc - IST_OFFSET_MS) };
+}

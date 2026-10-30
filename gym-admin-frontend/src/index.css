@@ -1,11 +1,68 @@
 @import "tailwindcss";
 
+/* Bundled Barlow (SIL OFL, see assets/fonts/OFL.txt) — no request to Google Fonts. */
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-latin-700-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-condensed-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-condensed-latin-700-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./assets/fonts/barlow-condensed-latin-800-normal.woff2") format("woff2");
+}
+
+@custom-variant light (&:where(.light, .light *));
+
 /*
- * King's Fitness theme — always dark, shared with the member site. Palette is
- * lifted from the logo: black base, white type, and a gold scale as the only
- * accent. Keep new colors out of components; extend these tokens instead.
+ * King's Fitness theme, shared with the member site. Dark is the default and
+ * is lifted from the logo: black base, white type, and a gold scale as the
+ * only accent. `.light` on <html> (see lib/theme.ts) swaps in a warm paper
+ * palette with a deeper gold that stays readable on white. Keep new colors
+ * out of components; extend these tokens (in both blocks) instead.
  */
-:root {
+/* `.on-media` keeps dark tokens for chips laid over photos, in either theme. */
+:root,
+.on-media {
   color-scheme: dark;
 
   --background: #0a0a0a;
@@ -26,13 +83,59 @@
   --accent-foreground: var(--gold-foreground);
   --danger: #f87171;
   --success: #4ade80;
+  --warning: #fab219;
 
   --glass-bg: var(--surface);
   --glass-border: var(--border);
   --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.35);
+  /* Tint for popover/menu drop shadows. */
+  --elevation: rgba(0, 0, 0, 0.6);
+  --shimmer: rgba(255, 255, 255, 0.05);
+
+  /* Chart hairlines. */
+  --chart-grid: #2c2c2a;
+  --chart-axis: #383835;
+
+  /* Muscle diagram body. */
+  --silhouette-fill: #232323;
+  --silhouette-stroke: #3a3a3a;
+  --silhouette-inner: #2b2b2b;
 
   --radius-lg: 1.25rem;
   --radius-md: 1rem;
+}
+
+:root.light {
+  color-scheme: light;
+
+  --background: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #eeece6;
+  --foreground: #17160f;
+  --muted: #66635a;
+  --border: rgba(23, 22, 15, 0.1);
+
+  /* Antique gold: AA as text on paper, and white type sits on it at AA. */
+  --gold: #856612;
+  --gold-light: #9c7a18;
+  --gold-dark: #6b520e;
+  --gold-foreground: #ffffff;
+  --accent-2: var(--gold);
+
+  --danger: #c81e1e;
+  --success: #127235;
+  --warning: #9a4a06;
+
+  --glass-shadow: 0 1px 2px rgba(23, 22, 15, 0.04), 0 8px 24px rgba(23, 22, 15, 0.06);
+  --elevation: rgba(23, 22, 15, 0.14);
+  --shimmer: rgba(255, 255, 255, 0.7);
+
+  --chart-grid: #e6e3db;
+  --chart-axis: #cfcbc0;
+
+  --silhouette-fill: #dcd9d0;
+  --silhouette-stroke: #c4c0b4;
+  --silhouette-inner: #d0ccc1;
 }
 
 @theme inline {
@@ -50,6 +153,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-danger: var(--danger);
   --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-elevation: var(--elevation);
 
   --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -85,7 +190,7 @@ h2 {
   outline-offset: 2px;
 }
 
-/* Native form controls (selects, date pickers) follow the dark scheme. */
+/* Native form controls (selects, date pickers) follow the active theme. */
 select,
 option {
   background: var(--surface-2);
@@ -151,7 +256,7 @@ option {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
   animation: shimmer 1.4s infinite;
 }
 
@@ -176,6 +281,14 @@ option {
     linear-gradient(180deg, #151515, #0a0a0a);
   background-size: 8px 8px, 8px 8px, 100% 100%;
   background-position: 0 0, 4px 4px, 0 0;
+}
+
+.light .carbon {
+  background-color: #ebe8e0;
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.03) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.03) 75%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.03) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.03) 75%),
+    linear-gradient(180deg, #f1efe9, #e4e1d8);
 }
 
 /* Soft gold halo for the active media thumbnail and hovered cards. */

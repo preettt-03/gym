@@ -6,11 +6,17 @@ import { requireAuth, requireRole } from '@/middlewares/auth';
 import * as controller from '@/features/chat/chat.controller';
 import * as schemas from '@/features/chat/chat.schemas';
 
+// Public, read-only: /api/v1/chat/public — the "Everyone" room for signed-out visitors.
+export const publicChatRouter = Router();
+
+publicChatRouter.get('/everyone/messages', asyncHandler(controller.listPublicGlobalMessages));
+
 // User-facing: /api/v1/chat
 export const chatRouter = Router();
 chatRouter.use(requireAuth);
 
 chatRouter.get('/rooms', asyncHandler(controller.listRooms));
+chatRouter.get('/unread', asyncHandler(controller.unreadCounts));
 chatRouter.post('/rooms/direct', validate(schemas.directRoomSchema), asyncHandler(controller.getOrCreateDirect));
 chatRouter.get(
   '/rooms/:roomId/messages',

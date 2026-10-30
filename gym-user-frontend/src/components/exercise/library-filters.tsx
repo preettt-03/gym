@@ -71,7 +71,7 @@ export function ChipSlider({ label, children }: { label: string; children: React
           type="button"
           onClick={() => nudge(-1)}
           aria-label={`Scroll ${label.toLowerCase()} left`}
-          className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-lg shadow-black/60 hover:border-gold/50 hover:text-gold"
+          className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-lg shadow-elevation hover:border-gold/50 hover:text-gold"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -119,7 +119,7 @@ export function ChipSlider({ label, children }: { label: string; children: React
           type="button"
           onClick={() => nudge(1)}
           aria-label={`Scroll ${label.toLowerCase()} right`}
-          className="absolute right-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-lg shadow-black/60 hover:border-gold/50 hover:text-gold"
+          className="absolute right-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-lg shadow-elevation hover:border-gold/50 hover:text-gold"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -185,7 +185,7 @@ export function MultiSelectMenu<T extends string>({
       </button>
 
       {open && (
-        <div id={menuId} className="absolute right-0 top-11 z-30 w-52 rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-black/60">
+        <div id={menuId} className="absolute right-0 top-11 z-30 w-52 rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-elevation">
           <fieldset>
             <legend className="sr-only">{label}</legend>
             {options.map((o) => {

@@ -292,7 +292,7 @@ export function ToolsPage() {
                     </div>
                   </div>
                   <span className="hidden md:block">
-                    <span className="rounded-full border border-gold/20 bg-gold/10 px-2.5 py-0.5 text-xs text-gold-light">{CATEGORY_LABEL[tool.category]}</span>
+                    <span className="rounded-full border border-gold/20 bg-gold/10 px-2.5 py-0.5 text-xs text-accent-2">{CATEGORY_LABEL[tool.category]}</span>
                   </span>
                   <div className="col-start-2 row-start-2 flex items-center gap-2.5 md:col-start-auto md:row-start-auto">
                     <Toggle checked={tool.isEnabled} onChange={() => toggle.mutate(tool)} label={`Show ${tool.title} to members`} />

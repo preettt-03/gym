@@ -1,4 +1,4 @@
-import { ChatType, MessageType, Role } from '@prisma/client';
+import { ChatType, MessageType, Prisma, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/middlewares/errorHandler';
 import { PaginationParams } from '@/lib/pagination';
@@ -129,28 +129,66 @@ export async function sendMessage(
   });
 }
 
-export async function listMessages(roomId: string, userId: string, pagination: PaginationParams) {
+export async function listMessages(roomId: string, userId: string, pagination: PaginationParams, before?: string) {
   await assertRoomAccess(roomId, userId);
 
-  const [items, total] = await Promise.all([
+  // With a cursor, page backwards from that message; otherwise the newest page.
+  let olderThan: Date | undefined;
+  if (before) {
+    const cursor = await prisma.chatMessage.findFirst({ where: { id: before, roomId }, select: { createdAt: true } });
+    if (!cursor) throw new AppError('Message not found', 404);
+    olderThan = cursor.createdAt;
+  }
+  const where: Prisma.ChatMessageWhereInput = { roomId, deletedAt: null, ...(olderThan && { createdAt: { lt: olderThan } }) };
+
+  const [rows, total] = await Promise.all([
     prisma.chatMessage.findMany({
-      where: { roomId, deletedAt: null },
-      skip: pagination.skip,
-      take: pagination.limit,
-      orderBy: { createdAt: 'desc' },
+      where,
+      skip: before ? 0 : pagination.skip,
+      // One extra row tells us whether anything older is left.
+      take: pagination.limit + 1,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: { sender: { select: { id: true, name: true, email: true, photoUrl: true } } },
     }),
     prisma.chatMessage.count({ where: { roomId, deletedAt: null } }),
   ]);
+  const hasMore = rows.length > pagination.limit;
+  const items = rows.slice(0, pagination.limit).reverse();
 
   return {
-    items: items.reverse(),
+    items,
+    hasMore,
     pagination: {
       page: pagination.page,
       limit: pagination.limit,
       total,
       totalPages: Math.ceil(total / pagination.limit),
     },
+  };
+}
+
+// Read-only preview of the gym-wide room for signed-out visitors. Senders are
+// trimmed to name + photo so no contact details leave the API.
+const PUBLIC_PREVIEW_LIMIT = 50;
+
+export async function listPublicGlobalMessages() {
+  const globalRoom = await getOrCreateGlobalRoom();
+  const items = await prisma.chatMessage.findMany({
+    where: { roomId: globalRoom.id, deletedAt: null },
+    take: PUBLIC_PREVIEW_LIMIT,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      roomId: true,
+      senderId: true,
+      content: true,
+      createdAt: true,
+      sender: { select: { id: true, name: true, photoUrl: true } },
+    },
+  });
+  return {
+    room: { id: globalRoom.id, name: globalRoom.name },
+    items: items.reverse().map((m) => ({ ...m, sender: { ...m.sender, name: m.sender.name ?? 'Member', email: null } })),
   };
 }
 
@@ -163,8 +201,35 @@ export async function markRead(roomId: string, userId: string, messageId: string
       update: { readAt: new Date() },
       create: { messageId, userId },
     }),
-    prisma.chatRoomMember.updateMany({ where: { roomId, userId }, data: { lastReadAt: new Date() } }),
+    // The gym-wide room has no membership rows until someone reads it, so create one to hold their read marker.
+    prisma.chatRoomMember.upsert({
+      where: { roomId_userId: { roomId, userId } },
+      update: { lastReadAt: new Date() },
+      create: { roomId, userId, lastReadAt: new Date() },
+    }),
   ]);
+}
+
+/** Unread messages from others, per room and in total, since the member last read each room. */
+export async function getUnreadCounts(userId: string) {
+  const [globalRoom, user, memberships] = await Promise.all([
+    getOrCreateGlobalRoom(),
+    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { createdAt: true } }),
+    prisma.chatRoomMember.findMany({ where: { userId, room: { deletedAt: null } }, select: { roomId: true, lastReadAt: true, joinedAt: true } }),
+  ]);
+  const since = new Map(memberships.map((m) => [m.roomId, m.lastReadAt ?? m.joinedAt]));
+  // Never-opened "Everyone": count from when they joined the gym, not from the first message ever.
+  if (!since.has(globalRoom.id)) since.set(globalRoom.id, user.createdAt);
+
+  const rooms: Record<string, number> = {};
+  await Promise.all(
+    [...since].map(async ([roomId, after]) => {
+      rooms[roomId] = await prisma.chatMessage.count({
+        where: { roomId, deletedAt: null, senderId: { not: userId }, createdAt: { gt: after } },
+      });
+    })
+  );
+  return { total: Object.values(rooms).reduce((a, b) => a + b, 0), rooms };
 }
 
 export async function deleteMessage(userId: string, userRole: Role, messageId: string) {

@@ -25,6 +25,16 @@ export interface ChatMessage {
   sender: { id: string; name: string | null; email: string | null; photoUrl: string | null };
 }
 
+/** What the signed-out preview of the "Everyone" room carries — no contact details. */
+export type PublicChatMessage = Pick<ChatMessage, "id" | "roomId" | "senderId" | "content" | "createdAt" | "sender">;
+
+export async function listPublicEveryoneMessages() {
+  const { data } = await apiClient.get<{ room: { id: string; name: string | null }; items: PublicChatMessage[] }>(
+    "/chat/public/everyone/messages"
+  );
+  return data;
+}
+
 export async function listMyRooms() {
   const { data } = await apiClient.get<{ global: ChatRoom; channels: ChatRoom[]; direct: DirectRoom[] }>(
     "/chat/rooms"
@@ -37,11 +47,21 @@ export async function getOrCreateDirectRoom(userId: string) {
   return data.room;
 }
 
-export async function listMessages(roomId: string) {
-  const { data } = await apiClient.get<{ items: ChatMessage[]; pagination: { total: number } }>(
-    `/chat/rooms/${roomId}/messages`
+export async function listMessages(roomId: string, before?: string) {
+  const { data } = await apiClient.get<{ items: ChatMessage[]; hasMore: boolean; pagination: { total: number } }>(
+    `/chat/rooms/${roomId}/messages`,
+    { params: { limit: 30, before } }
   );
   return data;
+}
+
+export async function getUnreadCounts() {
+  const { data } = await apiClient.get<{ total: number; rooms: Record<string, number> }>("/chat/unread");
+  return data;
+}
+
+export async function markRoomRead(roomId: string, messageId: string) {
+  await apiClient.post(`/chat/rooms/${roomId}/read`, { messageId });
 }
 
 export async function sendMessageRest(roomId: string, content: string) {

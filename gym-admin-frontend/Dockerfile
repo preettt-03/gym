@@ -12,6 +12,8 @@ COPY . .
 # runtime environment variable.
 ARG VITE_API_URL=http://localhost:8004/api/v1
 ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_USER_APP_URL=http://localhost:3000
+ENV VITE_USER_APP_URL=$VITE_USER_APP_URL
 
 RUN npm run build
 

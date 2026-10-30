@@ -43,7 +43,7 @@ export function MarketingMenu() {
       </button>
 
       {open && (
-        <div role="menu" className="glass-panel absolute right-0 top-9 z-50 w-44 p-2">
+        <div role="menu" className="rounded-2xl border border-border bg-surface shadow-2xl shadow-elevation absolute right-0 top-9 z-50 w-44 p-2">
           {MARKETING_LINKS.map((link) => (
             <Link
               key={link.href}

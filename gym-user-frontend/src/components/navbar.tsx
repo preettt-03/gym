@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, MessageSquare, X } from "lucide-react";
+import { MessagesSquare } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { AccountMenu } from "@/components/account-menu";
 import { MarketingMenu, MARKETING_LINKS } from "@/components/marketing-menu";
 import { Logo } from "@/components/logo";
 import { useAuthStore } from "@/stores/auth-store";
+import { useUiStore } from "@/stores/ui-store";
+import { formatUnread, useChatUnread } from "@/hooks/use-chat-unread";
 import { cn } from "@/lib/utils";
 
 const PUBLIC_LINKS = [
@@ -25,6 +27,7 @@ const MEMBER_LINKS = [
   { href: "/diet-plans", label: "Diet" },
   { href: "/nutrition", label: "Nutrition" },
   { href: "/exercises", label: "Exercises" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/ai-coach", label: "AI Coach" },
 ];
 
@@ -35,7 +38,12 @@ function isActive(pathname: string, href: string) {
 export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // Opened from the Menu tab in the mobile bottom bar.
+  const mobileOpen = useUiStore((s) => s.menuOpen);
+  const setMobileOpen = useUiStore((s) => s.setMenuOpen);
+  const chatOpen = useUiStore((s) => s.chatOpen);
+  const toggleChat = useUiStore((s) => s.toggleChat);
+  const unreadChat = useChatUnread().data?.total ?? 0;
 
   const primaryLinks = user
     ? [...MEMBER_LINKS, ...(user.role === "TRAINER" ? [{ href: "/trainer", label: "Trainees" }] : [])]
@@ -73,48 +81,43 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          {user && <NotificationsBell />}
+          {/* Phones reach chat from the bottom tab bar. */}
+          <button
+            type="button"
+            aria-label={chatOpen ? "Close chat" : unreadChat ? `Open chat, ${unreadChat} unread` : "Open chat"}
+            aria-expanded={chatOpen}
+            onClick={toggleChat}
+            className={cn(
+              buttonVariants({ variant: "glass", size: "sm" }),
+              "relative hidden h-9 w-9 p-0 hover:border-gold/50 hover:text-gold lg:inline-flex",
+              chatOpen && "accent-gradient border-transparent text-accent-foreground hover:text-accent-foreground"
+            )}
+          >
+            <MessagesSquare className="h-[18px] w-[18px]" />
+            {unreadChat > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-background bg-danger px-1 text-[10px] font-bold text-white">
+                {formatUnread(unreadChat)}
+              </span>
+            )}
+          </button>
           {user ? (
-            <>
-              <NotificationsBell />
-              <Link
-                href="/chat"
-                aria-label="Chat"
-                aria-current={isActive(pathname, "/chat") ? "page" : undefined}
-                className={cn(
-                  buttonVariants({ variant: "glass", size: "sm" }),
-                  "h-9 w-9 p-0",
-                  isActive(pathname, "/chat") && "border-gold/50 text-gold"
-                )}
-              >
-                <MessageSquare className="h-4 w-4" />
-              </Link>
-              <AccountMenu />
-            </>
+            <AccountMenu />
           ) : (
             <>
-              <Link href="/login" className="hidden text-sm font-medium uppercase tracking-wider text-foreground/80 hover:text-gold sm:block">
+              <Link href="/login" onClick={() => setMobileOpen(false)} className="text-sm font-medium uppercase tracking-wider text-foreground/80 hover:text-gold">
                 Log in
               </Link>
-              <Link href="/register" className={cn(buttonVariants({ size: "sm" }), "hidden uppercase tracking-wider sm:inline-flex")}>
+              <Link href="/register" onClick={() => setMobileOpen(false)} className={cn(buttonVariants({ size: "sm" }), "px-3.5 text-xs uppercase tracking-wider sm:px-4 sm:text-sm")}>
                 Join now
               </Link>
             </>
           )}
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border lg:hidden"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-menu"
-            onClick={() => setMobileOpen((o) => !o)}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
         </div>
       </nav>
 
       {mobileOpen && (
-        <div id="mobile-menu" className="h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-border bg-background px-4 pb-10 pt-4 lg:hidden">
+        <div id="mobile-menu" className="h-[calc(100dvh-4.5rem-4rem-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain border-t border-border bg-background px-4 pb-10 pt-4 lg:hidden">
           <ul className="flex flex-col">
             {[...primaryLinks, ...MARKETING_LINKS].map((link) => (
               <li key={link.href}>

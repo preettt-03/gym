@@ -81,11 +81,11 @@ export function RiskBanner({ member }: { member: MemberDetail }) {
             key={alert.kind}
             className={cn(
               "flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center",
-              alert.kind === "EXPIRED" ? "border-danger/40 bg-danger/10" : "border-[#fab219]/40 bg-[#fab219]/10"
+              alert.kind === "EXPIRED" ? "border-danger/40 bg-danger/10" : "border-warning/40 bg-warning/10"
             )}
           >
             <span className="flex flex-1 items-center gap-2.5 text-sm font-medium">
-              <Icon className={cn("h-5 w-5 shrink-0", alert.kind === "EXPIRED" ? "text-danger" : "text-[#fab219]")} />
+              <Icon className={cn("h-5 w-5 shrink-0", alert.kind === "EXPIRED" ? "text-danger" : "text-warning")} />
               {text}
             </span>
             <div className="flex flex-wrap gap-2">
@@ -360,7 +360,7 @@ function SecurityMenu({ member, isSelf }: { member: MemberDetail; isSelf: boolea
         <ShieldAlert className="h-4 w-4" /> Security <ChevronDown className="h-4 w-4" />
       </Button>
       {open && (
-        <div role="menu" className="absolute right-0 top-12 z-40 w-60 rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-black/60">
+        <div role="menu" className="absolute right-0 top-12 z-40 w-60 rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-elevation">
           {item(LogOut, "Sign out of all devices", () => setDanger("logout"))}
           {member.email && !member.isEmailVerified && item(Mail, verify.isPending ? "Sending code…" : "Resend verification email", () => verify.mutate())}
           {member.signInMethod === "PASSWORD" && item(KeyRound, "Send password reset", () => setDanger("reset"))}
@@ -456,7 +456,7 @@ export function MemberHeader({ member, isSelf, onAssignPlan, onPrintCard }: { me
                 </a>
               )}
               {!member.phone && (
-                <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-[#fab219] hover:underline">
+                <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-warning hover:underline">
                   <Phone className="h-3.5 w-3.5" /> Add phone number
                 </button>
               )}

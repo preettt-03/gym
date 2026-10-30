@@ -44,7 +44,7 @@ type Flow = { state: "idle" } | { state: "opening" } | { state: "verifying" } | 
 
 const PAYMENT_STATUS: Record<string, string> = {
   COMPLETED: "bg-success/10 text-success",
-  PENDING: "bg-[#fab219]/10 text-[#fab219]",
+  PENDING: "bg-warning/10 text-warning",
   FAILED: "bg-danger/10 text-danger",
   REFUNDED: "bg-surface-2 text-muted",
 };
@@ -214,7 +214,7 @@ function MembershipContent() {
         {flow.state === "error" && <ErrorNote>{flow.message}</ErrorNote>}
       </div>
 
-      <section className={cn("mt-6 rounded-2xl border p-6", active ? (daysLeft <= 7 ? "border-[#fab219]/40 bg-[#fab219]/5" : "border-gold/40 bg-gold/5") : "border-border bg-surface")}>
+      <section className={cn("mt-6 rounded-2xl border p-6", active ? (daysLeft <= 7 ? "border-warning/40 bg-warning/5" : "border-gold/40 bg-gold/5") : "border-border bg-surface")}>
         {membership.isPending ? (
           <Skeleton className="h-20 rounded-xl" />
         ) : active ? (
@@ -236,7 +236,7 @@ function MembershipContent() {
               <div className="mt-2">
                 <Meter value={totalDays - daysLeft} max={totalDays} label="Membership time used" />
               </div>
-              {daysLeft <= 7 && <p className="mt-2 text-xs text-[#fab219]">Ending soon — renew below so you don&apos;t miss a day.</p>}
+              {daysLeft <= 7 && <p className="mt-2 text-xs text-warning">Ending soon — renew below so you don&apos;t miss a day.</p>}
             </div>
           </div>
         ) : (

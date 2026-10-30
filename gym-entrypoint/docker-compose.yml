@@ -146,6 +146,8 @@ services:
       args:
         # Same reasoning as user-frontend's NEXT_PUBLIC_API_URL above.
         VITE_API_URL: http://localhost:8004/api/v1
+        # Member site, for links the admin shares (e.g. the reception TV leaderboard).
+        VITE_USER_APP_URL: http://localhost:3000
     container_name: gym-admin-frontend
     restart: unless-stopped
     ports:

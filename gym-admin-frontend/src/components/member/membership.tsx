@@ -212,7 +212,7 @@ export function MembershipCard({ member, onRenew }: { member: MemberDetail; onRe
         </div>
         {live && (
           <p className="text-right">
-            <span className={cn("font-display text-3xl font-bold", m.daysRemaining <= 7 ? "text-[#fab219]" : "text-gold")}>{m.daysRemaining}</span>
+            <span className={cn("font-display text-3xl font-bold", m.daysRemaining <= 7 ? "text-warning" : "text-gold")}>{m.daysRemaining}</span>
             <span className="block text-xs text-muted">days left</span>
           </p>
         )}

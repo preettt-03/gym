@@ -1,25 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { AppShell } from "@/components/app-shell";
 import { BRAND } from "@/lib/brand";
 import { sharedOpenGraph } from "./shared-metadata";
 
 // Barlow Condensed for bold, athletic headings; Barlow (same family) for body text.
-const body = Barlow({
+// Bundled in ./fonts (SIL OFL) so builds never depend on reaching Google Fonts.
+const body = localFont({
   variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
+  src: [
+    { path: "./fonts/barlow-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/barlow-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/barlow-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/barlow-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
 });
 
-const heading = Barlow_Condensed({
+const heading = localFont({
   variable: "--font-heading",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
   display: "swap",
+  src: [
+    { path: "./fonts/barlow-condensed-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/barlow-condensed-latin-700-normal.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/barlow-condensed-latin-800-normal.woff2", weight: "800", style: "normal" },
+  ],
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -59,8 +66,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Dark-first; ThemeColorSync rewrites this once the visitor's theme is known.
   themeColor: "#0a0a0a",
-  colorScheme: "dark",
+  colorScheme: "dark light",
   width: "device-width",
   initialScale: 1,
 };
@@ -71,12 +79,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${body.variable} ${heading.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${body.variable} ${heading.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <Providers>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

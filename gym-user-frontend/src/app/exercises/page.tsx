@@ -173,7 +173,7 @@ export default function ExercisesPage() {
             </button>
             <span
               role="tooltip"
-              className="pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 py-1 text-xs text-foreground opacity-0 shadow-lg shadow-black/60 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              className="pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 py-1 text-xs text-foreground opacity-0 shadow-lg shadow-elevation transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
             >
               Clear history
             </span>

@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { initSocket } from '@/lib/socket';
 import { registerChatSocketHandlers } from '@/features/chat/chat.socket';
 import { startNotificationSubscriber } from '@/lib/notification-subscriber';
+import { startLeaderboardScheduler } from '@/features/leaderboard/leaderboard.scheduler';
 
 const app = createApp();
 const httpServer = http.createServer(app);
@@ -13,6 +14,7 @@ const httpServer = http.createServer(app);
 const io = initSocket(httpServer);
 registerChatSocketHandlers(io);
 const notificationSubscriber = startNotificationSubscriber();
+const stopLeaderboardScheduler = startLeaderboardScheduler();
 
 const server = httpServer.listen(env.PORT, () => {
   logger.info(`gym-backend listening on port ${env.PORT} [${env.NODE_ENV}]`);
@@ -32,6 +34,7 @@ async function shutdown(signal: string) {
   }, 5000);
   forceExitTimer.unref();
 
+  stopLeaderboardScheduler();
   io.close();
   server.close(async () => {
     await notificationSubscriber.quit();

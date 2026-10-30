@@ -24,6 +24,8 @@ export const listMessagesSchema = z.object({
   query: z.object({
     page: z.string().optional(),
     limit: z.string().optional(),
+    // Cursor: only messages older than this one (for "load earlier").
+    before: z.string().uuid().optional(),
   }),
 });
 

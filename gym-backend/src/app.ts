@@ -42,10 +42,12 @@ import { adminAttendanceRouter, attendanceRouter } from '@/features/attendance/a
 import { streaksRouter } from '@/features/streaks/streaks.routes';
 import { adminBadgesRouter, badgesRouter } from '@/features/badges/badges.routes';
 import { adminMissionsRouter, missionsRouter } from '@/features/missions/missions.routes';
+import { adminLeaderboardRouter, leaderboardDisplayRouter, leaderboardRouter } from '@/features/leaderboard/leaderboard.routes';
+import { adminRewardsRouter, rewardsRouter } from '@/features/rewards/rewards.routes';
 import { adminUsersRouter } from '@/features/admin-users/admin-users.routes';
 import { adminMemberCrmRouter } from '@/features/admin-users/member-crm.routes';
 import { adminDashboardRouter } from '@/features/admin-dashboard/admin-dashboard.routes';
-import { adminChatRouter, chatRouter } from '@/features/chat/chat.routes';
+import { adminChatRouter, chatRouter, publicChatRouter } from '@/features/chat/chat.routes';
 import { adminNotificationsRouter, notificationsRouter } from '@/features/notifications/notifications.routes';
 import { uploadsRouter } from '@/features/uploads/uploads.routes';
 import { adminCmsRouter, cmsRouter } from '@/features/cms/cms.routes';
@@ -136,9 +138,17 @@ export function createApp() {
   app.use('/api/v1/admin/badges', adminBadgesRouter);
   app.use('/api/v1/missions', missionsRouter);
   app.use('/api/v1/admin/missions', adminMissionsRouter);
+  // Before leaderboardRouter, whose requireAuth would otherwise claim this path.
+  app.use('/api/v1/leaderboard/display', leaderboardDisplayRouter);
+  app.use('/api/v1/leaderboard', leaderboardRouter);
+  app.use('/api/v1/admin/leaderboard', adminLeaderboardRouter);
+  app.use('/api/v1/rewards', rewardsRouter);
+  app.use('/api/v1/admin/rewards', adminRewardsRouter);
   app.use('/api/v1/admin/users', adminUsersRouter);
   app.use('/api/v1/admin/users', adminMemberCrmRouter);
   app.use('/api/v1/admin/dashboard', adminDashboardRouter);
+  // Before chatRouter, whose requireAuth would otherwise claim these paths.
+  app.use('/api/v1/chat/public', publicChatRouter);
   app.use('/api/v1/chat', chatRouter);
   app.use('/api/v1/admin/chat', adminChatRouter);
   app.use('/api/v1/notifications', notificationsRouter);
@@ -195,9 +205,15 @@ export function createApp() {
     { prefix: '/api/v1/admin/badges', router: adminBadgesRouter, tag: 'Admin: Gamification' },
     { prefix: '/api/v1/missions', router: missionsRouter, tag: 'Gamification' },
     { prefix: '/api/v1/admin/missions', router: adminMissionsRouter, tag: 'Admin: Gamification' },
+    { prefix: '/api/v1/leaderboard/display', router: leaderboardDisplayRouter, tag: 'Gamification' },
+    { prefix: '/api/v1/leaderboard', router: leaderboardRouter, tag: 'Gamification' },
+    { prefix: '/api/v1/admin/leaderboard', router: adminLeaderboardRouter, tag: 'Admin: Gamification' },
+    { prefix: '/api/v1/rewards', router: rewardsRouter, tag: 'Gamification' },
+    { prefix: '/api/v1/admin/rewards', router: adminRewardsRouter, tag: 'Admin: Gamification' },
     { prefix: '/api/v1/admin/users', router: adminUsersRouter, tag: 'Admin: Users' },
     { prefix: '/api/v1/admin/users', router: adminMemberCrmRouter, tag: 'Admin: Member CRM' },
     { prefix: '/api/v1/admin/dashboard', router: adminDashboardRouter, tag: 'Admin: Dashboard' },
+    { prefix: '/api/v1/chat/public', router: publicChatRouter, tag: 'Chat' },
     { prefix: '/api/v1/chat', router: chatRouter, tag: 'Chat' },
     { prefix: '/api/v1/admin/chat', router: adminChatRouter, tag: 'Admin: Chat' },
     { prefix: '/api/v1/notifications', router: notificationsRouter, tag: 'Notifications' },

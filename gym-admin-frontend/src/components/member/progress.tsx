@@ -176,7 +176,7 @@ export function WeightCard({ member }: { member: MemberDetail }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 h-auto w-full" role="img" aria-label={`Weight from ${series[0].kg} kg to ${series.at(-1)!.kg} kg${target ? `, target ${target} kg` : ""}`}>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="#2c2c2a" strokeWidth="1" />
+            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--chart-grid)" strokeWidth="1" />
             <text x={PAD.left - 6} y={y(t) + 3} textAnchor="end" className="fill-[var(--muted)] text-[10px]">
               {t}
             </text>

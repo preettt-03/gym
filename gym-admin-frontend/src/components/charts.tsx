@@ -7,8 +7,8 @@ import { formatDay } from "@/lib/format";
 // rounded data end, hairline solid grid) and every chart has a hover/keyboard
 // tooltip plus a table view, so no value is reachable by color or hover alone.
 
-const GRID = "#2c2c2a";
-const AXIS = "#383835";
+const GRID = "var(--chart-grid)";
+const AXIS = "var(--chart-axis)";
 const SERIES = "var(--gold)";
 const PLOT_HEIGHT = 200;
 const AXIS_BAND = 24;

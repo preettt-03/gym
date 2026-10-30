@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, MemberHeader, MemberPage, Meter, Panel, Tile } from "@/components/member/ui";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -128,7 +130,21 @@ function AchievementsContent() {
 
   return (
     <MemberPage>
-      <MemberHeader eyebrow="Rewards" title="Achievements" description="Keep your streak alive, complete missions and collect badges." />
+      <MemberHeader
+        eyebrow="Rewards"
+        title="Achievements"
+        description="Keep your streak alive, complete missions and collect badges."
+        actions={
+          <>
+            <Link href="/leaderboard/hall-of-fame" className={buttonVariants({ variant: "glass", size: "sm" })}>
+              Hall of Fame
+            </Link>
+            <Link href="/rewards" className={buttonVariants({ size: "sm" })}>
+              Spend coins
+            </Link>
+          </>
+        }
+      />
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Tile icon={Flame} label="Current streak" value={`${streak.data?.currentStreak ?? 0} days`} sub={`Best: ${streak.data?.longestStreak ?? 0} days`} />

@@ -61,7 +61,7 @@ export default function ToolsHubPage() {
                     <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/25 bg-gold/10 transition-colors group-hover:bg-gold/15">
                       <Icon className="h-7 w-7 text-gold" />
                     </span>
-                    <span className="rounded-full border border-gold/20 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-gold-light">
+                    <span className="rounded-full border border-gold/20 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent-2">
                       {CATEGORY_LABEL[tool.category]}
                     </span>
                   </div>

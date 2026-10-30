@@ -49,7 +49,7 @@ export function MuscleSilhouette({ group, label, className }: { group: Silhouett
             </feMerge>
           </filter>
         </defs>
-        <g fill="#232323" stroke="#3a3a3a" strokeWidth="1.2">
+        <g fill="var(--silhouette-fill)" stroke="var(--silhouette-stroke)" strokeWidth="1.2">
           {REGIONS.base.map((d) => (
             <path key={d} d={d} />
           ))}
@@ -57,7 +57,7 @@ export function MuscleSilhouette({ group, label, className }: { group: Silhouett
             <path key={d} d={d} />
           ))}
           {(["chest", "core"] as const).filter((g) => g !== group).flatMap((g) => REGIONS[g]).map((d) => (
-            <path key={d} d={d} fill="#2b2b2b" />
+            <path key={d} d={d} fill="var(--silhouette-inner)" />
           ))}
         </g>
         {group && (

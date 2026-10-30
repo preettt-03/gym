@@ -266,7 +266,7 @@ function Verified({ ok }: { ok: boolean }) {
       <BadgeCheck className="h-3 w-3" /> Verified
     </span>
   ) : (
-    <span className="rounded-full bg-[#fab219]/10 px-2 py-0.5 text-[11px] text-[#fab219]">Not verified</span>
+    <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] text-warning">Not verified</span>
   );
 }
 

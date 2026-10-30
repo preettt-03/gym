@@ -108,7 +108,7 @@ function SegmentCard({ segment }: { segment: Segment }) {
         </div>
       )}
 
-      <div className="flex flex-col gap-2 border-t border-white/10 pt-3">
+      <div className="flex flex-col gap-2 border-t border-border pt-3">
         <div className="flex items-center gap-2">
           <Select
             size="sm"
